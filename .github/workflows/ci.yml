@@ -1,4 +1,4 @@
-name: Python CI Pipeline
+name: VisionFit FastAPI CI
 
 on:
   push:
@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Repoyu Klonla
+    - name: Kaynak Kodlari Cek
       uses: actions/checkout@v3
 
     - name: Python 3.11 Kur
@@ -19,14 +19,15 @@ jobs:
       with:
         python-version: "3.11"
 
-    - name: Gereksinimleri Yukle
+    - name: Bağımlılıkları Yukle
       run: |
         python -m pip install --upgrade pip
-        pip install fastapi "uvicorn[standard]" sqlalchemy psycopg2-binary python-dotenv passlib bcrypt python-jose "pydantic[email]" pytest pytest-cov httpx
+        pip install fastapi "uvicorn[standard]" sqlalchemy psycopg2-binary python-dotenv bcrypt python-jose "pydantic[email]" pytest pytest-cov httpx
 
     - name: Testleri ve Coverage Raporunu Calistir
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
         JWT_SECRET: ${{ secrets.JWT_SECRET }}
       run: |
-        pytest -v --cov=main --cov=models --cov=schemas --cov=database
+        export PYTHONPATH=$PYTHONPATH:$(pwd)/backend
+        pytest -v --cov=backend/main --cov=backend/models --cov=backend/schemas --cov=backend/database
