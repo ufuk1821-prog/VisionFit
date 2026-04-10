@@ -8,7 +8,7 @@ from app.api import auth, news
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
     print("\n" + "="*60)
-    print("VISIONFIT BACKEND: VİZE SEVİYESİ AKTİF (%60 Tamamlandi)")
+    print("VISIONFIT BACKEND AKTİF")
     print("Modüller: Auth, News, AnalysisHistory")
     print("="*60 + "\n")
     yield
