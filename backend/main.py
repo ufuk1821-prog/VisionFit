@@ -6,16 +6,18 @@ from app.api import auth, news
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    Base.metadata.drop_all(bind=engine) 
+    
     Base.metadata.create_all(bind=engine)
     print("\n" + "="*60)
     print("VISIONFIT BACKEND AKTİF")
-    print("Modüller: Auth, News, AnalysisHistory")
+    print("Veritabani Sifirlandi ve Yeniden Kuruldu!")
     print("="*60 + "\n")
     yield
 
 app = FastAPI(
-    title="VisionFit API - Vize Sürümü",
-    description="Katmanli Mimari ve Genisletilmis Veritabani Semasi",
+    title="VisionFit API - Vize",
+    description="Katmanli Mimari, Otomatik Tablo Yönetimi",
     version="1.5.0",
     lifespan=lifespan
 )
@@ -33,4 +35,4 @@ app.include_router(news.router)
 
 @app.get("/", tags=["Genel"])
 def root():
-    return {"durum": "VisionFit Vize API Calisiyor", "versiyon": "1.5.0"}
+    return {"mesaj": "VisionFit Vize API Sorunsuz Calisiyor"}
