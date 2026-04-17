@@ -3,11 +3,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from app.core.database import engine, Base
 from app.api import auth, news
+from app.models import user, analysis, news as news_model
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.drop_all(bind=engine) 
-    
     Base.metadata.create_all(bind=engine)
     print("\n" + "="*60)
     print("VISIONFIT BACKEND AKTİF")
