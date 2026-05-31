@@ -16,7 +16,7 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(
-    title="VisionFit API - Vize",
+    title="VisionFit API",
     description="Katmanli Mimari, Otomatik Tablo Yönetimi",
     version="1.5.0",
     lifespan=lifespan
@@ -35,4 +35,4 @@ app.include_router(news.router)
 
 @app.get("/", tags=["Genel"])
 def root():
-    return {"mesaj": "VisionFit Vize API Sorunsuz Calisiyor"}
+    return {"mesaj": "VisionFit API Sorunsuz Calisiyor"}
