@@ -1,25 +1,25 @@
+import time
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+from sqlalchemy.exc import OperationalError
 from app.core.database import engine, Base
-from app.api import auth, news
 from app.api.analyze import router as analyze_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    Base.metadata.drop_all(bind=engine) 
-    
-    Base.metadata.create_all(bind=engine)
-    print("\n" + "="*60)
-    print("VISIONFIT BACKEND AKTİF")
-    print("Veritabani Sifirlandi ve Yeniden Kuruldu!")
-    print("="*60 + "\n")
+    max_retries = 5
+    for i in range(max_retries):
+        try:
+            Base.metadata.create_all(bind=engine)
+            break
+        except OperationalError:
+            time.sleep(2)
     yield
 
 app = FastAPI(
-    title="VisionFit API - Vize",
-    description="Katmanli Mimari, Otomatik Tablo Yönetimi",
-    version="2.0.0",
+    title="VisionFit API",
+    version="1.5.0",
     lifespan=lifespan
 )
 
@@ -31,10 +31,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(auth.router)
-app.include_router(news.router)
-app.include_router(analyze_router, prefix="/api/analyze", tags=["Yapay Zeka Analiz"])
+app.include_router(analyze_router, prefix="/api/analyze", tags=["Analyze"])
 
-@app.get("/", tags=["Genel"])
+@app.get("/")
 def root():
-    return {"mesaj": "VisionFit API Sorunsuz Calisiyor"}
+    return {"status": "VisionFit API Aktif ve Calisiyor!"}
