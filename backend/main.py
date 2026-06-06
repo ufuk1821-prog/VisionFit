@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from sqlalchemy.exc import OperationalError
 from app.core.database import engine, Base
+from app.api import auth, news
 from app.api.analyze import router as analyze_router
 
 @asynccontextmanager
@@ -19,7 +20,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="VisionFit API",
-    version="1.5.0",
+    version="2.0.0",
     lifespan=lifespan
 )
 
@@ -31,6 +32,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth.router)
+app.include_router(news.router)
 app.include_router(analyze_router, prefix="/api/analyze", tags=["Analyze"])
 
 @app.get("/")
