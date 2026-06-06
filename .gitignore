@@ -1,5 +1,12 @@
 .env
 __pycache__/
 *.pyc
-.pytest_cache/
-visionfit_postgres_data/
+*.pyo
+.DS_Store
+*.egg-info/
+dist/
+build/
+.coverage
+htmlcov/
+coverage.xml
+*.pkl
