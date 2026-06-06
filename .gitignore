@@ -9,4 +9,3 @@ build/
 .coverage
 htmlcov/
 coverage.xml
-*.pkl
