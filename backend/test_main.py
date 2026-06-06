@@ -10,7 +10,7 @@ from app.main import app
 from app.core.database import Base
 from app.api.analyze import get_db
 
-# CI ortamında ana DB'yi kirletmemek için RAM üzerinde çalışan geçici SQLite kullanıyoruz
+# CI ortaminda ana DB'yi kirletmemek icin gecici SQLite kullanilacak
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 
 engine = create_engine(
