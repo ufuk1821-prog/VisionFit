@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.core.database import Base
 
@@ -11,3 +12,5 @@ class User(Base):
     sifre = Column(String(255), nullable=False)
     createdAt = Column(DateTime(timezone=True), server_default=func.now())
     updatedAt = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    antrenmanlar = relationship("WorkoutHistory", back_populates="user")

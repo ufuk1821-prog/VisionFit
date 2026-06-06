@@ -10,6 +10,7 @@ from app.schemas.analyze import PoseData
 from app.schemas.history import HistoryRead
 from app.models.history import WorkoutHistory
 from app.core.database import SessionLocal
+from app.core.security import get_current_user
 
 router = APIRouter()
 
@@ -59,7 +60,11 @@ def calculate_angle(a: List[float], b: List[float], c: List[float]) -> float:
     return angle
 
 @router.post("/squat")
-async def analyze_squat(data: PoseData, db: Session = Depends(get_db)):
+async def analyze_squat(
+    data: PoseData,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
     try:
         if len(data.landmarks) < 132:
             raise HTTPException(
@@ -98,6 +103,7 @@ async def analyze_squat(data: PoseData, db: Session = Depends(get_db)):
                 durum = "UYARI: BELINI BUKUYORSUN"
 
         yeni_kayit = WorkoutHistory(
+            user_id=current_user.id,
             hareket_adi=hareket_sinifi,
             eminlik_skoru=confidence,
             diz_acisi=angle,
@@ -125,9 +131,14 @@ async def analyze_squat(data: PoseData, db: Session = Depends(get_db)):
         )
 
 @router.get("/history", response_model=List[HistoryRead])
-async def get_history(db: Session = Depends(get_db)):
+async def get_history(
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
     try:
-        return db.query(WorkoutHistory).order_by(WorkoutHistory.tarih.desc()).all()
+        return db.query(WorkoutHistory).filter(
+            WorkoutHistory.user_id == current_user.id
+        ).order_by(WorkoutHistory.tarih.desc()).all()
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
