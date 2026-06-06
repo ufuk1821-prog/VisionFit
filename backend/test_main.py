@@ -6,11 +6,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.main import app
+from main import app
 from app.core.database import Base
 from app.api.analyze import get_db
 
-# CI ortaminda ana DB'yi kirletmemek icin gecici SQLite kullanilacak
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 
 engine = create_engine(
