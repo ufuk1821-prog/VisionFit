@@ -1,72 +1,72 @@
-import pytest
+import os
+os.environ["TESTING"] = "True"
+
 from fastapi.testclient import TestClient
-from main import app
-import random
-import string
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
+
+from app.main import app
+from app.core.database import Base
+from app.api.analyze import get_db
+
+# CI ortamında ana DB'yi kirletmemek için RAM üzerinde çalışan geçici SQLite kullanıyoruz
+SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
+
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL,
+    connect_args={"check_same_thread": False},
+    poolclass=StaticPool,
+)
+TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+Base.metadata.create_all(bind=engine)
+
+def override_get_db():
+    try:
+        db = TestingSessionLocal()
+        yield db
+    finally:
+        db.close()
+
+app.dependency_overrides[get_db] = override_get_db
 
 client = TestClient(app)
 
-random_str = ''.join(random.choices(string.ascii_lowercase + string.digits, k=6))
-test_email = f"test_{random_str}@visionfit.com"
-test_password = "superGizliSifre123"
-
-def test_1_sunucu_ayakta_mi():
+def test_read_root():
     response = client.get("/")
     assert response.status_code == 200
+    assert response.json() == {"status": "VisionFit API Aktif ve Calisiyor!"}
 
-def test_2_basarili_kullanici_kaydi():
-    response = client.post("/api/auth/register", json={
-        "ad": "Ufuk", 
-        "soyad": "Test", 
-        "email": test_email, 
-        "sifre": test_password
-    })
-    assert response.status_code == 201
-
-def test_3_ayni_email_ile_kayit_engelle():
-    response = client.post("/api/auth/register", json={
-        "ad": "Kopya", 
-        "soyad": "Kullanici", 
-        "email": test_email, 
-        "sifre": test_password
-    })
+def test_analyze_squat_missing_landmarks():
+    payload = {
+        "landmarks": [0.1, 0.2, 0.3, 0.4] 
+    }
+    response = client.post("/api/analyze/squat", json=payload)
     assert response.status_code == 400
+    assert response.json() == {"detail": "Eksik landmark verisi gönderildi."}
 
-def test_4_dogru_bilgilerle_giris_yap_ve_token_al():
-    response = client.post("/api/auth/login", json={
-        "email": test_email, 
-        "sifre": test_password
-    })
+def test_analyze_squat_success():
+    valid_landmarks = [0.5] * 132
+    payload = {
+        "landmarks": valid_landmarks
+    }
+    response = client.post("/api/analyze/squat", json=payload)
     assert response.status_code == 200
-    assert "token" in response.json()
+    data = response.json()
+    assert "kayit_id" in data
+    assert data["hareket"] == "dogru_squat"
+    assert data["mesaj"] == "Veritabanina basariyla kaydedildi!"
 
-def test_5_hatali_sifre_ile_girisi_engelle():
-    response = client.post("/api/auth/login", json={
-        "email": test_email, 
-        "sifre": "yanlisSifre"
-    })
-    assert response.status_code == 400
-
-def test_6_token_ile_korumali_alan_erisi():
-    login_res = client.post("/api/auth/login", json={
-        "email": test_email, "sifre": test_password
-    })
-    token = login_res.json()["token"]
-    headers = {"Authorization": f"Bearer {token}"}
-    response = client.get("/api/data/news", headers=headers)
-    assert response.status_code == 200
-
-def test_7_gecersiz_token_hatasi():
-    headers = {"Authorization": "Bearer yanlis_token_123"}
-    response = client.get("/api/data/news", headers=headers)
-    assert response.status_code == 401
-
-def test_8_gecmis_verisi_bulunamadi_404():
-    login_res = client.post("/api/auth/login", json={
-        "email": test_email, "sifre": test_password
-    })
-    token = login_res.json()["token"]
-    headers = {"Authorization": f"Bearer {token}"}
+def test_get_history():
+    valid_landmarks = [0.5] * 132
+    client.post("/api/analyze/squat", json={"landmarks": valid_landmarks})
     
-    response = client.get("/api/data/history/99999", headers=headers)
-    assert response.status_code == 404
+    response = client.get("/api/analyze/history")
+    assert response.status_code == 200
+    data = response.json()
+    assert isinstance(data, list)
+    assert len(data) >= 1
+    assert data[0]["hareket_adi"] == "dogru_squat"
+    assert "eminlik_skoru" in data[0]
+    assert "diz_acisi" in data[0]
