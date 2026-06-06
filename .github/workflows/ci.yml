@@ -14,13 +14,13 @@ jobs:
       db:
         image: postgres:15
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: guclu_sifre_buraya
-          POSTGRES_DB: visionfit
+          POSTGRES_USER: visionfit_test_user
+          POSTGRES_PASSWORD: visionfit_test_pass
+          POSTGRES_DB: visionfit_test_db
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U visionfit_test_user"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -31,17 +31,19 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-numeric-version: '3.12'
+        python-version: '3.12'
 
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r backend/requirements.txt
+        python -m pip install -r backend/requirements.txt
+        python -m pip install pytest pytest-cov httpx
 
-    - name: Run tests
+    - name: Run tests with coverage
       env:
-        DATABASE_URL: postgresql://postgres:guclu_sifre_buraya@localhost:5432/visionfit
-        JWT_SECRET: guclu_jwt_secret_buraya
+        DATABASE_URL: postgresql+psycopg2://visionfit_test_user:visionfit_test_pass@localhost:5432/visionfit_test_db
+        JWT_SECRET: test_secret_key_12345
+        TESTING: "True"
       run: |
         cd backend
-        pytest
+        PYTHONPATH=. python -m pytest --cov=app --cov=main --cov-report=xml

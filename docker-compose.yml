@@ -1,27 +1,35 @@
-version: '3.8'
-
 services:
   db:
     image: postgres:15
     container_name: visionfit_db
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 123
-      POSTGRES_DB: visionfit
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - visionfit_postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U visionfit_user -d visionfit_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: visionfit_backend
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
     ports:
       - "8000:8000"
-    environment:
-      - DATABASE_URL=postgresql://postgres:123@db:5432/visionfit
-    depends_on:
-      - db
+    volumes:
+      - ./backend:/app
 
 volumes:
-  postgres_data:
+  visionfit_postgres_data:
