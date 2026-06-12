@@ -1,0 +1,263 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #0a0a0c;
+  color: #e4e4e7;
+  min-height: 100vh;
+}
+
+.app-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.title-text {
+  color: #3b82f6;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin-bottom: 30px;
+  text-transform: uppercase;
+  font-size: 2rem;
+  text-align: center;
+}
+
+.auth-box {
+  background: #111115;
+  padding: 40px;
+  border-radius: 16px;
+  border: 1px solid #1f1f29;
+  width: 100%;
+  max-width: 400px;
+  margin: 40px auto;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+}
+
+.auth-box h2 {
+  text-align: center;
+  margin-bottom: 30px;
+  color: #fff;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  margin-bottom: 8px;
+  color: #a1a1aa;
+}
+
+.form-group input {
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #27273a;
+  background: #181820;
+  color: #fff;
+  outline: none;
+  font-size: 1rem;
+}
+
+.form-group input:focus {
+  border-color: #3b82f6;
+}
+
+.submit-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  background: #3b82f6;
+  color: white;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+  margin-top: 10px;
+  font-size: 1rem;
+}
+
+.submit-btn:hover {
+  background: #2563eb;
+}
+
+.link-text {
+  text-align: center;
+  margin-top: 20px;
+  display: block;
+  color: #3b82f6;
+  text-decoration: none;
+}
+
+.link-text:hover {
+  text-decoration: underline;
+}
+
+.logout-btn {
+  padding: 8px 16px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.logout-btn:hover {
+  background: #dc2626;
+}
+
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.nav-links {
+  display: flex;
+  gap: 12px;
+}
+
+.nav-btn {
+  padding: 8px 16px;
+  background: #27273a;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.nav-btn:hover {
+  background: #3b82f6;
+}
+
+.main-wrapper {
+  display: flex;
+  gap: 24px;
+  background: #111115;
+  padding: 24px;
+  border-radius: 16px;
+  border: 1px solid #1f1f29;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.video-container {
+  position: relative;
+  width: 640px;
+  height: 480px;
+  background: #000;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid #27273a;
+}
+
+#webcam,
+#output_canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 640px;
+  height: 480px;
+  transform: rotateY(180deg);
+}
+
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  width: 300px;
+  gap: 16px;
+}
+
+.card {
+  background: #181820;
+  border: 1px solid #27273a;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-title {
+  font-size: 0.85rem;
+  color: #71717a;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.card-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.status-card {
+  border-left: 5px solid #3b82f6;
+}
+
+.angle-card {
+  border-left: 5px solid #10b981;
+}
+
+.confidence-card {
+  border-left: 5px solid #f59e0b;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #111115;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.history-table th {
+  background: #181820;
+  padding: 14px 16px;
+  text-align: left;
+  color: #a1a1aa;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.history-table td {
+  padding: 14px 16px;
+  border-top: 1px solid #1f1f29;
+  color: #e4e4e7;
+}
+
+.history-table tr:hover td {
+  background: #181820;
+}
+
+.loading-text {
+  text-align: center;
+  color: #a1a1aa;
+  padding: 40px;
+  font-size: 1.1rem;
+}
+
+.error-text {
+  text-align: center;
+  color: #ef4444;
+  padding: 20px;
+}
+
+.section-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 20px;
+}
