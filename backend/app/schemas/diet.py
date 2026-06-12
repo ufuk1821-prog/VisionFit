@@ -20,6 +20,3 @@ class DietRecommendation(BaseModel):
 
 class DietCustomRequest(BaseModel):
     istek: str
-
-class DietCustomResponse(BaseModel):
-    oneri: str

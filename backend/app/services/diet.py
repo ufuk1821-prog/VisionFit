@@ -1,3 +1,111 @@
+import re
+from typing import List, Dict, Set, Optional
+
+ACTIVITY_MULTIPLIERS = {
+    "sedanter": 1.2,
+    "az_hareketli": 1.375,
+    "orta_hareketli": 1.55,
+    "cok_hareketli": 1.725,
+    "asiri_hareketli": 1.9,
+}
+
+GOAL_ADJUSTMENTS = {
+    "kilo_verme": -500,
+    "kilo_koruma": 0,
+    "kilo_alma": 500,
+}
+
+DIET_TEMPLATES = [
+    {
+        "baslik": "Dengeli Beslenme Plani",
+        "protein_oran": 0.30,
+        "karbonhidrat_oran": 0.40,
+        "yag_oran": 0.30,
+    },
+    {
+        "baslik": "Yuksek Proteinli Plan",
+        "protein_oran": 0.40,
+        "karbonhidrat_oran": 0.30,
+        "yag_oran": 0.30,
+    },
+    {
+        "baslik": "Akdeniz Tipi Plan",
+        "protein_oran": 0.25,
+        "karbonhidrat_oran": 0.45,
+        "yag_oran": 0.30,
+    },
+]
+
+MEAL_POOL = {
+    "Kahvalti": [
+        {"metin": "Yulaf ezmesi, sut ve taze meyve", "anahtarlar": ["yulaf", "sut", "meyve"]},
+        {"metin": "Hasimli yumurta, beyaz peynir, tam tahil ekmek", "anahtarlar": ["yumurta", "peynir", "ekmek", "sut"]},
+        {"metin": "Yogurt, ceviz ve bal", "anahtarlar": ["yogurt", "sut", "ceviz", "bal"]},
+        {"metin": "Avokadolu tam tahil tost, domates", "anahtarlar": ["ekmek", "avokado"]},
+        {"metin": "Domates, salatalik, zeytin ve zeytinyagi", "anahtarlar": ["zeytin"]},
+    ],
+    "Ogle": [
+        {"metin": "Izgara tavuk gogsu, bulgur pilavi, salata", "anahtarlar": ["tavuk", "et", "bulgur"]},
+        {"metin": "Mercimek corbasi, tam tahil ekmek, salata", "anahtarlar": ["mercimek", "ekmek"]},
+        {"metin": "Firinda somon, kinoa, sebze", "anahtarlar": ["balik", "kinoa"]},
+        {"metin": "Nohut yemegi, pirinc pilavi, yogurt", "anahtarlar": ["nohut", "pirinc", "yogurt", "sut"]},
+        {"metin": "Sebzeli omlet, salata", "anahtarlar": ["yumurta"]},
+    ],
+    "Aksam": [
+        {"metin": "Izgara kofte, bulgur pilavi, yogurt", "anahtarlar": ["et", "bulgur", "yogurt", "sut"]},
+        {"metin": "Firinda tavuk but, sebze garnitur", "anahtarlar": ["tavuk", "et"]},
+        {"metin": "Mercimek koftesi, salata, ayran", "anahtarlar": ["mercimek", "sut"]},
+        {"metin": "Izgara balik, sebzeli bulgur", "anahtarlar": ["balik", "bulgur"]},
+        {"metin": "Sebze yemegi, pirinc pilavi", "anahtarlar": ["pirinc"]},
+    ],
+}
+
+FOOD_KEYWORDS = ["yumurta", "et", "tavuk", "balik", "sut", "peynir", "yogurt", "ekmek", "seker", "mercimek", "nohut"]
+
+NEGATIVE_TRIGGERS = ["alerjim var", "alerjisi var", "sevmiyorum", "istemiyorum", "olmasin", "yemiyorum", "tuketemiyorum"]
+POSITIVE_TRIGGERS = ["seviyorum", "bayilirim", "bol olsun", "fazla olsun", "tercih ederim", "istiyorum"]
+
+TR_MAP = str.maketrans("çğıöşü", "cgiosu")
+
+def normalize(text: str) -> str:
+    return text.lower().translate(TR_MAP)
+
+def extract_preferences(istek: Optional[str]) -> tuple[Set[str], Set[str]]:
+    if not istek:
+        return set(), set()
+
+    text = normalize(istek)
+    clauses = re.split(r"ama|fakat|ancak", text)
+
+    excluded = set()
+    preferred = set()
+
+    for clause in clauses:
+        is_negative = any(trigger in clause for trigger in NEGATIVE_TRIGGERS)
+        is_positive = any(trigger in clause for trigger in POSITIVE_TRIGGERS)
+
+        for food in FOOD_KEYWORDS:
+            if food in clause:
+                if is_negative:
+                    excluded.add(food)
+                elif is_positive:
+                    preferred.add(food)
+
+    return excluded, preferred
+
+def select_meal(options: List[Dict], excluded: Set[str], preferred: Set[str]) -> Dict:
+    safe_options = [o for o in options if not any(k in excluded for k in o["anahtarlar"])]
+
+    if not safe_options:
+        safe_options = options
+
+    preferred_options = [o for o in safe_options if any(k in preferred for k in o["anahtarlar"])]
+
+    if preferred_options:
+        return preferred_options[0]
+
+    return safe_options[0]
+
 def calculate_bmi(boy_cm: float, kilo_kg: float) -> float:
     boy_m = boy_cm / 100
     return round(kilo_kg / (boy_m ** 2), 1)
@@ -11,34 +119,55 @@ def get_bmi_category(bmi: float) -> str:
         return "Kilolu"
     return "Obez"
 
-def get_daily_calorie_estimate(kilo_kg: float, bmi_category: str) -> int:
-    base = kilo_kg * 24
+def calculate_bmr(boy_cm: float, kilo_kg: float, yas: int, cinsiyet: str) -> float:
+    base = 10 * kilo_kg + 6.25 * boy_cm - 5 * yas
+    return base + 5 if cinsiyet == "Erkek" else base - 161
 
-    if bmi_category == "Zayif":
-        base += 400
-    elif bmi_category == "Kilolu":
-        base -= 300
-    elif bmi_category == "Obez":
-        base -= 500
+def calculate_tdee(bmr: float, aktiflik_seviyesi: str) -> float:
+    return bmr * ACTIVITY_MULTIPLIERS[aktiflik_seviyesi]
 
-    return int(round(base / 50) * 50)
+def calculate_target_calories(tdee: float, hedef: str) -> int:
+    target = tdee + GOAL_ADJUSTMENTS[hedef]
+    return int(round(max(target, 1200) / 50) * 50)
 
-def get_diet_message(bmi_category: str) -> str:
-    messages = {
-        "Zayif": "Kilo almak icin protein ve kompleks karbonhidrat agirlikli, ogun sayisi artirilmis bir beslenme plani onerilir.",
-        "Normal": "Mevcut kilonu korumak icin dengeli ve cesitli bir beslenme programi onerilir.",
-        "Kilolu": "Kalori acigi olusturmak icin islenmis gida ve sekerli icecekler azaltilmali, lifli besinler artirilmalidir.",
-        "Obez": "Saglikli kilo verme icin kontrollu kalori acigi ve duzenli egzersiz programi onerilir. Bir uzmana danismaniz tavsiye edilir.",
-    }
-    return messages[bmi_category]
+def build_diet_plans(target_calories: int, istek: Optional[str] = None) -> List[Dict]:
+    excluded, preferred = extract_preferences(istek)
+    plans = []
 
-def build_diet_recommendation(boy_cm: float, kilo_kg: float) -> dict:
+    for template in DIET_TEMPLATES:
+        protein_g = round((target_calories * template["protein_oran"]) / 4)
+        karbonhidrat_g = round((target_calories * template["karbonhidrat_oran"]) / 4)
+        yag_g = round((target_calories * template["yag_oran"]) / 9)
+
+        ornek_ogunler = [
+            f"Kahvalti: {select_meal(MEAL_POOL['Kahvalti'], excluded, preferred)['metin']}",
+            f"Ogle: {select_meal(MEAL_POOL['Ogle'], excluded, preferred)['metin']}",
+            f"Aksam: {select_meal(MEAL_POOL['Aksam'], excluded, preferred)['metin']}",
+        ]
+
+        plans.append({
+            "baslik": template["baslik"],
+            "kalori": target_calories,
+            "protein_g": protein_g,
+            "karbonhidrat_g": karbonhidrat_g,
+            "yag_g": yag_g,
+            "ornek_ogunler": ornek_ogunler,
+        })
+
+    return plans
+
+def build_diet_recommendation(boy_cm: float, kilo_kg: float, yas: int, cinsiyet: str, aktiflik_seviyesi: str, hedef: str, istek: Optional[str] = None) -> dict:
     bmi = calculate_bmi(boy_cm, kilo_kg)
-    category = get_bmi_category(bmi)
+    bmr = calculate_bmr(boy_cm, kilo_kg, yas, cinsiyet)
+    tdee = calculate_tdee(bmr, aktiflik_seviyesi)
+    target_calories = calculate_target_calories(tdee, hedef)
 
     return {
         "bmi": bmi,
-        "kategori": category,
-        "gunluk_kalori_onerisi": get_daily_calorie_estimate(kilo_kg, category),
-        "oneri_mesaji": get_diet_message(category),
+        "bmi_kategori": get_bmi_category(bmi),
+        "bmr": round(bmr),
+        "tdee": round(tdee),
+        "hedef_kalori": target_calories,
+        "hedef": hedef,
+        "planlar": build_diet_plans(target_calories, istek),
     }

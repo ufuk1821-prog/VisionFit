@@ -11,4 +11,3 @@ numpy
 pandas
 scikit-learn
 asyncpg
-google-genai
