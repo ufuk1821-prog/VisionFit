@@ -17,6 +17,10 @@ async def lifespan(app: FastAPI):
             with engine.connect() as conn:
                 conn.execute(text('ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS boy FLOAT'))
                 conn.execute(text('ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS kilo FLOAT'))
+                conn.execute(text('ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS yas INTEGER'))
+                conn.execute(text('ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS cinsiyet VARCHAR(20)'))
+                conn.execute(text('ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS aktiflik_seviyesi VARCHAR(30)'))
+                conn.execute(text('ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS hedef VARCHAR(30)'))
                 conn.commit()
             break
         except OperationalError:

@@ -12,6 +12,10 @@ class User(Base):
     sifre = Column(String(255), nullable=False)
     boy = Column(Float, nullable=True)
     kilo = Column(Float, nullable=True)
+    yas = Column(Integer, nullable=True)
+    cinsiyet = Column(String(20), nullable=True)
+    aktiflik_seviyesi = Column(String(30), nullable=True)
+    hedef = Column(String(30), nullable=True)
     createdAt = Column(DateTime(timezone=True), server_default=func.now())
     updatedAt = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 

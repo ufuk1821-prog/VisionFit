@@ -20,9 +20,17 @@ class UserProfileRead(BaseModel):
     email: EmailStr
     boy: Optional[float] = None
     kilo: Optional[float] = None
+    yas: Optional[int] = None
+    cinsiyet: Optional[str] = None
+    aktiflik_seviyesi: Optional[str] = None
+    hedef: Optional[str] = None
 
 class UserProfileUpdate(BaseModel):
     ad: Optional[str] = None
     soyad: Optional[str] = None
     boy: Optional[float] = None
     kilo: Optional[float] = None
+    yas: Optional[int] = None
+    cinsiyet: Optional[str] = None
+    aktiflik_seviyesi: Optional[str] = None
+    hedef: Optional[str] = None
