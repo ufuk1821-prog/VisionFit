@@ -10,10 +10,12 @@ function Profile() {
   const [kilo, setKilo] = useState('');
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
+  const [diet, setDiet] = useState(null);
+  const [dietError, setDietError] = useState('');
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
 
-  useEffect(() => {
+  const fetchProfile = () => {
     axios.get(`${import.meta.env.VITE_API_URL}/api/users/me`, {
       headers: { Authorization: `Bearer ${token}` },
     }).then((res) => {
@@ -26,6 +28,23 @@ function Profile() {
     }).catch(() => {
       setLoading(false);
     });
+  };
+
+  const fetchDiet = () => {
+    axios.get(`${import.meta.env.VITE_API_URL}/api/users/me/diet`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }).then((res) => {
+      setDiet(res.data);
+      setDietError('');
+    }).catch(() => {
+      setDiet(null);
+      setDietError('Diyet onerisi icin boy ve kilo bilgisi gereklidir.');
+    });
+  };
+
+  useEffect(() => {
+    fetchProfile();
+    fetchDiet();
   }, []);
 
   const handleSave = async (e) => {
@@ -41,6 +60,7 @@ function Profile() {
         headers: { Authorization: `Bearer ${token}` },
       });
       setMessage('Profil basariyla guncellendi.');
+      fetchDiet();
     } catch (err) {
       setMessage('Guncelleme basarisiz oldu.');
     }
@@ -92,6 +112,33 @@ function Profile() {
           <button type="submit" className="submit-btn">Kaydet</button>
         </form>
       </div>
+
+      <div className="section-title">Diyet Onerisi</div>
+
+      {dietError && <p className="error-text">{dietError}</p>}
+
+      {diet && (
+        <div className="main-wrapper">
+          <div className="dashboard" style={{ width: '100%' }}>
+            <div className="card status-card">
+              <div className="card-title">Vucut Kitle Indeksi</div>
+              <div className="card-value">{diet.bmi}</div>
+            </div>
+            <div className="card angle-card">
+              <div className="card-title">Kategori</div>
+              <div className="card-value">{diet.kategori}</div>
+            </div>
+            <div className="card confidence-card">
+              <div className="card-title">Gunluk Kalori Onerisi</div>
+              <div className="card-value">{diet.gunluk_kalori_onerisi} kcal</div>
+            </div>
+            <div className="card status-card">
+              <div className="card-title">Tavsiye</div>
+              <div className="card-value" style={{ fontSize: '1rem' }}>{diet.oneri_mesaji}</div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
