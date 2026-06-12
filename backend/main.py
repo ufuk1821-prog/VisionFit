@@ -33,6 +33,8 @@ ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://localhost:3000",
     "https://visionfit-backend.onrender.com",
+    "https://vision-fit-git-main-ufuk1821-s-projects.vercel.app",
+    "https://vision-fit.vercel.app",
 ]
 
 app.add_middleware(
