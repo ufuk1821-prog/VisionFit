@@ -31,6 +31,7 @@ function History() {
       <div className="top-bar">
         <div className="nav-links">
           <button className="nav-btn" onClick={() => navigate('/dashboard')}>Kameraya Don</button>
+          <button className="nav-btn" onClick={() => navigate('/profile')}>Profilim</button>
         </div>
         <button className="logout-btn" onClick={handleLogout}>Cikis Yap</button>
       </div>

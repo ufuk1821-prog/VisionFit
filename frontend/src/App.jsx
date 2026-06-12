@@ -1,8 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import Login from './pages/Login';
+import Login from './pages/login';
 import Register from './pages/register';
-import Dashboard from './pages/Dashboard';
-import History from './pages/History';
+import Dashboard from './pages/dashboard';
+import History from './pages/history';
+import Profile from './pages/Profile';
 import './App.css';
 
 function App() {
@@ -22,6 +23,10 @@ function App() {
           <Route
             path="/history"
             element={isAuthenticated ? <History /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/profile"
+            element={isAuthenticated ? <Profile /> : <Navigate to="/login" />}
           />
           <Route
             path="*"
