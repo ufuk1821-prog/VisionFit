@@ -1,5 +1,5 @@
 fastapi
-uvicorn
+uvicorn[standard]
 sqlalchemy
 psycopg2-binary
 pydantic[email]
@@ -7,6 +7,8 @@ email-validator
 python-dotenv
 bcrypt
 python-jose[cryptography]
+numpy
 pandas
 scikit-learn
-numpy
+asyncpg
+google-genai
