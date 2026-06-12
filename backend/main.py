@@ -2,6 +2,7 @@ import time
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
 from app.core.database import engine, Base
 from app.api import auth, news, users
@@ -13,6 +14,10 @@ async def lifespan(app: FastAPI):
     for i in range(max_retries):
         try:
             Base.metadata.create_all(bind=engine)
+            with engine.connect() as conn:
+                conn.execute(text('ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS boy FLOAT'))
+                conn.execute(text('ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS kilo FLOAT'))
+                conn.commit()
             break
         except OperationalError:
             time.sleep(2)
