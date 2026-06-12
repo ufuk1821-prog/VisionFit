@@ -1,6 +1,20 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import Sidebar from '../components/Sidebar';
+
+const AKTIFLIK_OPTIONS = [
+  { value: 'sedanter', label: 'Sedanter (nerdeyse hic hareket etmiyorum)' },
+  { value: 'az_hareketli', label: 'Az hareketli (haftada 1-3 gun hafif egzersiz)' },
+  { value: 'orta_hareketli', label: 'Orta derece hareketli (haftada 3-5 gun egzersiz)' },
+  { value: 'cok_hareketli', label: 'Cok hareketli (haftada 6-7 gun yogun egzersiz)' },
+  { value: 'asiri_hareketli', label: 'Asiri hareketli (gunde 2 kez antrenman / fiziksel is)' },
+];
+
+const HEDEF_OPTIONS = [
+  { value: 'kilo_verme', label: 'Kilo Verme' },
+  { value: 'kilo_koruma', label: 'Kilo Koruma' },
+  { value: 'kilo_alma', label: 'Kilo Alma' },
+];
 
 function Profile() {
   const [ad, setAd] = useState('');
@@ -8,14 +22,15 @@ function Profile() {
   const [email, setEmail] = useState('');
   const [boy, setBoy] = useState('');
   const [kilo, setKilo] = useState('');
+  const [yas, setYas] = useState('');
+  const [cinsiyet, setCinsiyet] = useState('');
+  const [aktiflikSeviyesi, setAktiflikSeviyesi] = useState('');
+  const [hedef, setHedef] = useState('');
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
-  const [diet, setDiet] = useState(null);
-  const [dietError, setDietError] = useState('');
-  const navigate = useNavigate();
   const token = localStorage.getItem('token');
 
-  const fetchProfile = () => {
+  useEffect(() => {
     axios.get(`${import.meta.env.VITE_API_URL}/api/users/me`, {
       headers: { Authorization: `Bearer ${token}` },
     }).then((res) => {
@@ -24,27 +39,14 @@ function Profile() {
       setEmail(res.data.email);
       setBoy(res.data.boy ?? '');
       setKilo(res.data.kilo ?? '');
+      setYas(res.data.yas ?? '');
+      setCinsiyet(res.data.cinsiyet ?? '');
+      setAktiflikSeviyesi(res.data.aktiflik_seviyesi ?? '');
+      setHedef(res.data.hedef ?? '');
       setLoading(false);
     }).catch(() => {
       setLoading(false);
     });
-  };
-
-  const fetchDiet = () => {
-    axios.get(`${import.meta.env.VITE_API_URL}/api/users/me/diet`, {
-      headers: { Authorization: `Bearer ${token}` },
-    }).then((res) => {
-      setDiet(res.data);
-      setDietError('');
-    }).catch(() => {
-      setDiet(null);
-      setDietError('Diyet onerisi icin boy ve kilo bilgisi gereklidir.');
-    });
-  };
-
-  useEffect(() => {
-    fetchProfile();
-    fetchDiet();
   }, []);
 
   const handleSave = async (e) => {
@@ -52,23 +54,21 @@ function Profile() {
     setMessage('');
     try {
       await axios.put(`${import.meta.env.VITE_API_URL}/api/users/me`, {
-        ad: ad,
-        soyad: soyad,
+        ad,
+        soyad,
         boy: boy === '' ? null : parseFloat(boy),
         kilo: kilo === '' ? null : parseFloat(kilo),
+        yas: yas === '' ? null : parseInt(yas, 10),
+        cinsiyet: cinsiyet === '' ? null : cinsiyet,
+        aktiflik_seviyesi: aktiflikSeviyesi === '' ? null : aktiflikSeviyesi,
+        hedef: hedef === '' ? null : hedef,
       }, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setMessage('Profil basariyla guncellendi.');
-      fetchDiet();
     } catch (err) {
       setMessage('Guncelleme basarisiz oldu.');
     }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    window.location.href = '/login';
   };
 
   if (loading) {
@@ -77,16 +77,10 @@ function Profile() {
 
   return (
     <div>
-      <div className="top-bar">
-        <div className="nav-links">
-          <button className="nav-btn" onClick={() => navigate('/dashboard')}>Kameraya Don</button>
-          <button className="nav-btn" onClick={() => navigate('/history')}>Gecmis Antrenmanlar</button>
-        </div>
-        <button className="logout-btn" onClick={handleLogout}>Cikis Yap</button>
-      </div>
+      <Sidebar />
+      <div className="section-title">Profilim</div>
 
       <div className="auth-box">
-        <h2>Profilim</h2>
         {message && <p className="loading-text">{message}</p>}
         <form onSubmit={handleSave}>
           <div className="form-group">
@@ -109,36 +103,39 @@ function Profile() {
             <label>Kilo (kg)</label>
             <input type="number" step="0.1" value={kilo} onChange={(e) => setKilo(e.target.value)} />
           </div>
+          <div className="form-group">
+            <label>Yas</label>
+            <input type="number" value={yas} onChange={(e) => setYas(e.target.value)} />
+          </div>
+          <div className="form-group">
+            <label>Cinsiyet</label>
+            <select value={cinsiyet} onChange={(e) => setCinsiyet(e.target.value)}>
+              <option value="">Seciniz</option>
+              <option value="Erkek">Erkek</option>
+              <option value="Kadin">Kadin</option>
+            </select>
+          </div>
+          <div className="form-group">
+            <label>Aktiflik Seviyesi</label>
+            <select value={aktiflikSeviyesi} onChange={(e) => setAktiflikSeviyesi(e.target.value)}>
+              <option value="">Seciniz</option>
+              {AKTIFLIK_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="form-group">
+            <label>Hedef</label>
+            <select value={hedef} onChange={(e) => setHedef(e.target.value)}>
+              <option value="">Seciniz</option>
+              {HEDEF_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
           <button type="submit" className="submit-btn">Kaydet</button>
         </form>
       </div>
-
-      <div className="section-title">Diyet Onerisi</div>
-
-      {dietError && <p className="error-text">{dietError}</p>}
-
-      {diet && (
-        <div className="main-wrapper">
-          <div className="dashboard" style={{ width: '100%' }}>
-            <div className="card status-card">
-              <div className="card-title">Vucut Kitle Indeksi</div>
-              <div className="card-value">{diet.bmi}</div>
-            </div>
-            <div className="card angle-card">
-              <div className="card-title">Kategori</div>
-              <div className="card-value">{diet.kategori}</div>
-            </div>
-            <div className="card confidence-card">
-              <div className="card-title">Gunluk Kalori Onerisi</div>
-              <div className="card-value">{diet.gunluk_kalori_onerisi} kcal</div>
-            </div>
-            <div className="card status-card">
-              <div className="card-title">Tavsiye</div>
-              <div className="card-value" style={{ fontSize: '1rem' }}>{diet.oneri_mesaji}</div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

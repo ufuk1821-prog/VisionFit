@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import Sidebar from '../components/Sidebar';
 
 function History() {
   const [kayitlar, setKayitlar] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const navigate = useNavigate();
   const token = localStorage.getItem('token');
 
   useEffect(() => {
@@ -21,21 +20,9 @@ function History() {
     });
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    window.location.href = '/login';
-  };
-
   return (
     <div>
-      <div className="top-bar">
-        <div className="nav-links">
-          <button className="nav-btn" onClick={() => navigate('/dashboard')}>Kameraya Don</button>
-          <button className="nav-btn" onClick={() => navigate('/profile')}>Profilim</button>
-        </div>
-        <button className="logout-btn" onClick={handleLogout}>Cikis Yap</button>
-      </div>
-
+      <Sidebar />
       <div className="section-title">Gecmis Antrenmanlar</div>
 
       {loading && <p className="loading-text">Yukleniyor...</p>}

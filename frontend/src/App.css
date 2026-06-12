@@ -28,6 +28,107 @@ body {
   text-align: center;
 }
 
+.menu-btn {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 1001;
+  width: 44px;
+  height: 44px;
+  background: #181820;
+  border: 1px solid #27273a;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  cursor: pointer;
+}
+
+.menu-btn span {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: #fff;
+  border-radius: 2px;
+}
+
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: -280px;
+  width: 260px;
+  height: 100vh;
+  background: #111115;
+  border-right: 1px solid #1f1f29;
+  z-index: 1000;
+  transition: left 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  padding: 80px 20px 20px;
+}
+
+.sidebar.open {
+  left: 0;
+}
+
+.sidebar-header {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #3b82f6;
+  text-transform: uppercase;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+
+.sidebar-nav button {
+  text-align: left;
+  padding: 12px 14px;
+  background: #181820;
+  color: #e4e4e7;
+  border: 1px solid #27273a;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: background 0.2s;
+}
+
+.sidebar-nav button:hover {
+  background: #27273a;
+}
+
+.sidebar-logout {
+  padding: 12px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.sidebar-logout:hover {
+  background: #dc2626;
+}
+
 .auth-box {
   background: #111115;
   padding: 40px;
@@ -54,9 +155,12 @@ body {
 .form-group label {
   margin-bottom: 8px;
   color: #a1a1aa;
+  font-size: 0.9rem;
 }
 
-.form-group input {
+.form-group input,
+.form-group select,
+.form-group textarea {
   padding: 12px;
   border-radius: 8px;
   border: 1px solid #27273a;
@@ -64,10 +168,40 @@ body {
   color: #fff;
   outline: none;
   font-size: 1rem;
+  font-family: inherit;
 }
 
-.form-group input:focus {
+.form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
   border-color: #3b82f6;
+}
+
+.form-group input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.checkbox-row input {
+  width: 18px;
+  height: 18px;
+}
+
+.checkbox-row label {
+  color: #d4d4d8;
+  font-size: 0.9rem;
 }
 
 .submit-btn {
@@ -81,10 +215,16 @@ body {
   cursor: pointer;
   margin-top: 10px;
   font-size: 1rem;
+  transition: background 0.2s;
 }
 
 .submit-btn:hover {
   background: #2563eb;
+}
+
+.submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .link-text {
@@ -97,47 +237,6 @@ body {
 
 .link-text:hover {
   text-decoration: underline;
-}
-
-.logout-btn {
-  padding: 8px 16px;
-  background: #ef4444;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-
-.logout-btn:hover {
-  background: #dc2626;
-}
-
-.top-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.nav-links {
-  display: flex;
-  gap: 12px;
-}
-
-.nav-btn {
-  padding: 8px 16px;
-  background: #27273a;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  text-decoration: none;
-}
-
-.nav-btn:hover {
-  background: #3b82f6;
 }
 
 .main-wrapper {
@@ -259,5 +358,95 @@ body {
   font-size: 1.3rem;
   font-weight: 700;
   color: #fff;
-  margin-bottom: 20px;
+  margin: 32px 0 16px;
+}
+
+.bmi-card {
+  background: #181820;
+  border: 1px solid #27273a;
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  width: 200px;
+}
+
+.bmi-value {
+  font-size: 3rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.bmi-badge {
+  display: inline-block;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.bmi-badge.zayif {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+}
+
+.bmi-badge.normal {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.bmi-badge.kilolu {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.bmi-badge.obez {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.diet-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.plan-card {
+  background: #181820;
+  border: 1px solid #27273a;
+  border-radius: 12px;
+  padding: 20px 24px;
+}
+
+.plan-card h3 {
+  color: #fff;
+  margin-bottom: 10px;
+  font-size: 1.1rem;
+}
+
+.plan-macros {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.plan-macros span {
+  font-size: 0.8rem;
+  color: #a1a1aa;
+  background: #0a0a0c;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.plan-meals {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #d4d4d8;
+  font-size: 0.9rem;
 }

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { PoseLandmarker, FilesetResolver, DrawingUtils } from '@mediapipe/tasks-vision';
 import axios from 'axios';
+import Sidebar from '../components/Sidebar';
 
 function Dashboard() {
   const videoRef = useRef(null);
@@ -11,13 +11,6 @@ function Dashboard() {
   const [statusText, setStatusText] = useState('Model Yukleniyor...');
   const [angle, setAngle] = useState(0);
   const [confidence, setConfidence] = useState(0);
-  const [isReady, setIsReady] = useState(false);
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    window.location.href = '/login';
-  };
 
   useEffect(() => {
     let poseLandmarker;
@@ -42,7 +35,6 @@ function Dashboard() {
       stream = await navigator.mediaDevices.getUserMedia({ video: true });
       videoRef.current.srcObject = stream;
       videoRef.current.onloadeddata = () => {
-        setIsReady(true);
         setStatusText('Harekete Basla');
         detectLoop();
       };
@@ -108,14 +100,7 @@ function Dashboard() {
 
   return (
     <div>
-      <div className="top-bar">
-        <div className="nav-links">
-          <button className="nav-btn" onClick={() => navigate('/history')}>Gecmis Antrenmanlar</button>
-          <button className="nav-btn" onClick={() => navigate('/profile')}>Profilim</button>
-        </div>
-        <button className="logout-btn" onClick={handleLogout}>Cikis Yap</button>
-      </div>
-
+      <Sidebar />
       <div className="main-wrapper">
         <div className="video-container">
           <video ref={videoRef} id="webcam" autoPlay playsInline muted></video>

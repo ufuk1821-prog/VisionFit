@@ -1,0 +1,111 @@
+import { useState } from 'react';
+import axios from 'axios';
+import Sidebar from '../components/Sidebar';
+
+function Diet() {
+  const [confirmed, setConfirmed] = useState(false);
+  const [istek, setIstek] = useState('');
+  const [diet, setDiet] = useState(null);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const token = localStorage.getItem('token');
+
+  const handleGenerate = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/users/me/diet/custom`,
+        { istek },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setDiet(response.data);
+    } catch (err) {
+      setError('Profil bilgileriniz eksik. Once Profilim sayfasindan boy, kilo, yas, cinsiyet, aktiflik seviyesi ve hedef bilgilerini doldurun.');
+      setDiet(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div>
+      <Sidebar />
+      <div className="section-title">Diyet Onerisi</div>
+
+      <div className="auth-box">
+        <div className="checkbox-row">
+          <input
+            type="checkbox"
+            checked={confirmed}
+            onChange={(e) => setConfirmed(e.target.checked)}
+          />
+          <label>Boy, kilo, yas, cinsiyet, aktiflik ve hedef bilgilerim guncel</label>
+        </div>
+
+        <div className="form-group">
+          <label>Ozel istek / alerji / tercih (opsiyonel)</label>
+          <textarea
+            value={istek}
+            onChange={(e) => setIstek(e.target.value)}
+            placeholder="Ornek: Yumurtaya alerjim var, kirmizi et seviyorum"
+          />
+        </div>
+
+        <button className="submit-btn" disabled={!confirmed || loading} onClick={handleGenerate}>
+          {loading ? 'Hesaplaniyor...' : 'Diyet Onerisi Al'}
+        </button>
+      </div>
+
+      {error && <p className="error-text">{error}</p>}
+
+      {diet && (
+        <>
+          <div className="main-wrapper" style={{ marginTop: '24px' }}>
+            <div className="bmi-card">
+              <div className="bmi-value">{diet.bmi}</div>
+              <span className={`bmi-badge ${diet.bmi_kategori.toLowerCase()}`}>{diet.bmi_kategori}</span>
+            </div>
+            <div className="dashboard">
+              <div className="card status-card">
+                <div className="card-title">Bazal Metabolizma (BMR)</div>
+                <div className="card-value">{diet.bmr} kcal</div>
+              </div>
+              <div className="card angle-card">
+                <div className="card-title">Toplam Gunluk Harcama (TDEE)</div>
+                <div className="card-value">{diet.tdee} kcal</div>
+              </div>
+              <div className="card confidence-card">
+                <div className="card-title">Hedef Gunluk Kalori</div>
+                <div className="card-value">{diet.hedef_kalori} kcal</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="section-title">Onerilen Planlar</div>
+
+          <div className="diet-panel">
+            {diet.planlar.map((plan, index) => (
+              <div className="plan-card" key={index}>
+                <h3>{plan.baslik}</h3>
+                <div className="plan-macros">
+                  <span>{plan.kalori} kcal</span>
+                  <span>Protein: {plan.protein_g}g</span>
+                  <span>Karbonhidrat: {plan.karbonhidrat_g}g</span>
+                  <span>Yag: {plan.yag_g}g</span>
+                </div>
+                <ul className="plan-meals">
+                  {plan.ornek_ogunler.map((ogun, i) => (
+                    <li key={i}>{ogun}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+export default Diet;
