@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, DateTime, Float
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.core.database import Base
@@ -10,6 +10,8 @@ class User(Base):
     soyad = Column(String(255), nullable=False)
     email = Column(String(255), unique=True, index=True, nullable=False)
     sifre = Column(String(255), nullable=False)
+    boy = Column(Float, nullable=True)
+    kilo = Column(Float, nullable=True)
     createdAt = Column(DateTime(timezone=True), server_default=func.now())
     updatedAt = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
