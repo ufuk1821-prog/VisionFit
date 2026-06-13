@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Menu, Home, Camera, History, User, Salad, Footprints, LogOut } from 'lucide-react';
+import { Menu, Home, Camera, History, User, Salad, Footprints, Award, LogOut } from 'lucide-react';
 
 const NAV_ITEMS = [
   { path: '/', label: 'Ana Sayfa', icon: Home },
@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { path: '/profile', label: 'Profilim', icon: User },
   { path: '/diet', label: 'Diyet Önerisi', icon: Salad },
   { path: '/steps', label: 'Adım Sayacı', icon: Footprints },
+  { path: '/badges', label: 'Rozetlerim', icon: Award },
 ];
 
 function Sidebar() {

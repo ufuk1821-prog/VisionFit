@@ -7,6 +7,7 @@ import History from './pages/history';
 import Profile from './pages/profile';
 import Diet from './pages/diet';
 import Steps from './pages/steps';
+import Badges from './pages/badges';
 import './App.css';
 
 function App() {
@@ -25,6 +26,7 @@ function App() {
           <Route path="/profile" element={isAuthenticated ? <Profile /> : <Navigate to="/login" />} />
           <Route path="/diet" element={isAuthenticated ? <Diet /> : <Navigate to="/login" />} />
           <Route path="/steps" element={isAuthenticated ? <Steps /> : <Navigate to="/login" />} />
+          <Route path="/badges" element={isAuthenticated ? <Badges /> : <Navigate to="/login" />} />
           <Route path="*" element={<Navigate to={isAuthenticated ? "/" : "/login"} />} />
         </Routes>
       </div>
