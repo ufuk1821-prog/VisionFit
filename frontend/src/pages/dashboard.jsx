@@ -83,8 +83,8 @@ function Dashboard() {
         ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
 
         if (results.landmarks && results.landmarks.length > 0) {
-          drawingUtils.drawConnectors(results.landmarks[0], PoseLandmarker.POSE_CONNECTIONS, { color: '#39ff88', lineWidth: 3 });
-          drawingUtils.drawLandmarks(results.landmarks[0], { color: '#ff8c42', lineWidth: 1, radius: 3 });
+          drawingUtils.drawConnectors(results.landmarks[0], PoseLandmarker.POSE_CONNECTIONS, { color: '#e8313f', lineWidth: 3 });
+          drawingUtils.drawLandmarks(results.landmarks[0], { color: '#f5f5f5', lineWidth: 1, radius: 3 });
 
           if (phaseRef.current === 'recording') {
             const flat = [];

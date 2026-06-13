@@ -68,7 +68,7 @@ function MuscleDiagram({ selectedMuscle, onSelectMuscle }) {
           data={data}
           onClick={handleClick}
           bodyColor="#c4956a"
-          highlightedColors={['#39ff88']}
+          highlightedColors={['#e8313f']}
           style={modelStyle}
           svgStyle={svgStyle}
         />
@@ -80,7 +80,7 @@ function MuscleDiagram({ selectedMuscle, onSelectMuscle }) {
           data={data}
           onClick={handleClick}
           bodyColor="#c4956a"
-          highlightedColors={['#39ff88']}
+          highlightedColors={['#e8313f']}
           style={modelStyle}
           svgStyle={svgStyle}
         />
