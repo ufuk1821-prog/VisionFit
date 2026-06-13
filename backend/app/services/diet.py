@@ -41,14 +41,14 @@ DIET_TEMPLATES = [
 MEAL_POOL = {
     "Kahvalti": [
         {"metin": "Yulaf ezmesi, sut ve taze meyve", "anahtarlar": ["yulaf", "sut", "meyve"]},
-        {"metin": "Hasimli yumurta, beyaz peynir, tam tahil ekmek", "anahtarlar": ["yumurta", "peynir", "ekmek", "sut"]},
+        {"metin": "Haslanmis yumurta, beyaz peynir, tam tahilli ekmek", "anahtarlar": ["yumurta", "peynir", "ekmek", "sut"]},
         {"metin": "Yogurt, ceviz ve bal", "anahtarlar": ["yogurt", "sut", "ceviz", "bal"]},
-        {"metin": "Avokadolu tam tahil tost, domates", "anahtarlar": ["ekmek", "avokado"]},
-        {"metin": "Domates, salatalik, zeytin ve zeytinyagi", "anahtarlar": ["zeytin"]},
+        {"metin": "Avokadolu tam tahilli tost, domates", "anahtarlar": ["ekmek", "avokado"]},
+        {"metin": "Domates, salatalik, zeytin ve zeytinyagi", "anahtarlar": ["zeytin", "zeytinyagi"]},
     ],
     "Ogle": [
         {"metin": "Izgara tavuk gogsu, bulgur pilavi, salata", "anahtarlar": ["tavuk", "et", "bulgur"]},
-        {"metin": "Mercimek corbasi, tam tahil ekmek, salata", "anahtarlar": ["mercimek", "ekmek"]},
+        {"metin": "Mercimek corbasi, tam tahilli ekmek, salata", "anahtarlar": ["mercimek", "ekmek"]},
         {"metin": "Firinda somon, kinoa, sebze", "anahtarlar": ["balik", "kinoa"]},
         {"metin": "Nohut yemegi, pirinc pilavi, yogurt", "anahtarlar": ["nohut", "pirinc", "yogurt", "sut"]},
         {"metin": "Sebzeli omlet, salata", "anahtarlar": ["yumurta"]},
@@ -62,7 +62,13 @@ MEAL_POOL = {
     ],
 }
 
-FOOD_KEYWORDS = ["yumurta", "et", "tavuk", "balik", "sut", "peynir", "yogurt", "ekmek", "seker", "mercimek", "nohut"]
+FOOD_KEYWORDS = [
+    "yumurta", "et", "tavuk", "balik", "sut", "peynir", "yogurt", "ekmek",
+    "seker", "mercimek", "nohut", "pirinc", "makarna", "patates", "domates",
+    "salatalik", "biber", "havuc", "muz", "elma", "ceviz", "findik", "badem",
+    "zeytin", "zeytinyagi", "tereyagi", "bal", "cikolata", "kahve", "cay",
+    "bulgur", "kinoa", "avokado", "yulaf",
+]
 
 TR_MAP = str.maketrans("çğıöşü", "cgiosu")
 
@@ -81,14 +87,15 @@ def _load_preference_model():
 
 PREFERENCE_MODEL = _load_preference_model()
 
-def extract_preferences(istek: Optional[str]) -> Tuple[Set[str], Set[str]]:
+def extract_preferences(istek: Optional[str]) -> Tuple[Set[str], Set[str], Set[str]]:
     if not istek:
-        return set(), set()
+        return set(), set(), set()
 
     text = normalize(istek)
     clauses = re.split(r"ama|fakat|ancak", text)
 
-    excluded = set()
+    hard_excluded = set()
+    soft_excluded = set()
     preferred = set()
 
     for clause in clauses:
@@ -98,27 +105,33 @@ def extract_preferences(istek: Optional[str]) -> Tuple[Set[str], Set[str]]:
 
             if PREFERENCE_MODEL is not None:
                 prediction = PREFERENCE_MODEL.predict([clause])[0]
-                if prediction == 1:
-                    preferred.add(food)
-                else:
-                    excluded.add(food)
             else:
-                excluded.add(food)
+                prediction = 1
 
-    return excluded, preferred
+            if prediction == 0:
+                hard_excluded.add(food)
+            elif prediction == 1:
+                soft_excluded.add(food)
+            else:
+                preferred.add(food)
 
-def select_meal(options: List[Dict], excluded: Set[str], preferred: Set[str]) -> Dict:
-    safe_options = [o for o in options if not any(k in excluded for k in o["anahtarlar"])]
+    return hard_excluded, soft_excluded, preferred
 
-    if not safe_options:
-        safe_options = options
+def select_meal(options: List[Dict], hard_excluded: Set[str], soft_excluded: Set[str], preferred: Set[str], offset: int) -> Dict:
+    candidates = [o for o in options if not any(k in hard_excluded for k in o["anahtarlar"])]
 
-    preferred_options = [o for o in safe_options if any(k in preferred for k in o["anahtarlar"])]
+    if not candidates:
+        candidates = options
 
-    if preferred_options:
-        return preferred_options[0]
+    preferred_candidates = [o for o in candidates if any(k in preferred for k in o["anahtarlar"])]
+    soft_safe = [o for o in candidates if not any(k in soft_excluded for k in o["anahtarlar"])]
+    preferred_soft_safe = [o for o in preferred_candidates if not any(k in soft_excluded for k in o["anahtarlar"])]
 
-    return safe_options[0]
+    for pool in (preferred_soft_safe, preferred_candidates, soft_safe, candidates):
+        if pool:
+            return pool[offset % len(pool)]
+
+    return options[0]
 
 def calculate_bmi(boy_cm: float, kilo_kg: float) -> float:
     boy_m = boy_cm / 100
@@ -145,18 +158,22 @@ def calculate_target_calories(tdee: float, hedef: str) -> int:
     return int(round(max(target, 1200) / 50) * 50)
 
 def build_diet_plans(target_calories: int, istek: Optional[str] = None) -> List[Dict]:
-    excluded, preferred = extract_preferences(istek)
+    hard_excluded, soft_excluded, preferred = extract_preferences(istek)
     plans = []
 
-    for template in DIET_TEMPLATES:
+    for index, template in enumerate(DIET_TEMPLATES):
         protein_g = round((target_calories * template["protein_oran"]) / 4)
         karbonhidrat_g = round((target_calories * template["karbonhidrat_oran"]) / 4)
         yag_g = round((target_calories * template["yag_oran"]) / 9)
 
+        kahvalti = select_meal(MEAL_POOL["Kahvalti"], hard_excluded, soft_excluded, preferred, index)
+        ogle = select_meal(MEAL_POOL["Ogle"], hard_excluded, soft_excluded, preferred, index)
+        aksam = select_meal(MEAL_POOL["Aksam"], hard_excluded, soft_excluded, preferred, index)
+
         ornek_ogunler = [
-            f"Kahvalti: {select_meal(MEAL_POOL['Kahvalti'], excluded, preferred)['metin']}",
-            f"Ogle: {select_meal(MEAL_POOL['Ogle'], excluded, preferred)['metin']}",
-            f"Aksam: {select_meal(MEAL_POOL['Aksam'], excluded, preferred)['metin']}",
+            f"Kahvalti: {kahvalti['metin']}",
+            f"Ogle: {ogle['metin']}",
+            f"Aksam: {aksam['metin']}",
         ]
 
         plans.append({

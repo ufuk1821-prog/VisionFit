@@ -27,12 +27,12 @@ function Sidebar() {
         <div className="sidebar-header">VisionFit</div>
         <nav className="sidebar-nav">
           <button onClick={() => go('/dashboard')}>Kamera</button>
-          <button onClick={() => go('/history')}>Gecmis Antrenmanlar</button>
+          <button onClick={() => go('/history')}>Geçmis Antrenmanlar</button>
           <button onClick={() => go('/profile')}>Profilim</button>
-          <button onClick={() => go('/diet')}>Diyet Onerisi</button>
-          <button onClick={() => go('/steps')}>Adim Sayaci</button>
+          <button onClick={() => go('/diet')}>Diyet Önerisi</button>
+          <button onClick={() => go('/steps')}>Adım Sayacı</button>
         </nav>
-        <button className="sidebar-logout" onClick={handleLogout}>Cikis Yap</button>
+        <button className="sidebar-logout" onClick={handleLogout}>Çıkış Yap</button>
       </div>
     </>
   );
