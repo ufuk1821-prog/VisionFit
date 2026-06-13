@@ -1492,3 +1492,88 @@ body {
   font-size: 1.2rem;
   font-variant-numeric: tabular-nums;
 }
+.notebook-date-row {
+  display: flex;
+  gap: 20px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.notebook-date-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--accent);
+  font-family: var(--font-display);
+  font-weight: 600;
+  padding-bottom: 12px;
+}
+
+.notebook-table-wrapper {
+  overflow-x: auto;
+  margin-bottom: 16px;
+}
+
+.notebook-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--surface);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.notebook-table th {
+  background: var(--surface-2);
+  padding: 14px 16px;
+  text-align: left;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.notebook-table td {
+  padding: 10px 12px;
+  border-top: 1px solid var(--border);
+}
+
+.notebook-table input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.notebook-table input:focus {
+  border-color: var(--accent);
+}
+
+.notebook-table td:nth-child(2) input,
+.notebook-table td:nth-child(3) input,
+.notebook-table td:nth-child(4) input {
+  font-family: var(--font-mono);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.notebook-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.notebook-save-btn {
+  width: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 28px;
+  margin-top: 0;
+}
