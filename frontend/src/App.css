@@ -1788,12 +1788,31 @@ body {
   fill: #c4a07a !important;
 }
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(18px) scale(0.985); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes fadeInLeft {
+  from { opacity: 0; transform: translateX(-24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(57, 255, 136, 0.0); }
+  50%      { box-shadow: 0 0 22px 4px rgba(57, 255, 136, 0.35); }
+}
+
+@keyframes ripple {
+  from { transform: scale(0); opacity: 0.5; }
+  to   { transform: scale(2.5); opacity: 0; }
 }
 
 .fade-in {
-  animation: fadeIn 0.35s ease-out;
+  animation: fadeIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.app-container > *:not(.brand-logo) {
+  animation: fadeIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .card,
@@ -1805,9 +1824,54 @@ body {
 .exercise-row,
 .meal-item,
 .notebook-table-wrapper,
-.home-hero {
-  animation: fadeIn 0.35s ease-out;
+.home-hero,
+.rest-tip-card {
+  animation: fadeIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
+
+.dashboard-grid > *:nth-child(1) { animation-delay: 0.03s; }
+.dashboard-grid > *:nth-child(2) { animation-delay: 0.09s; }
+.dashboard-grid > *:nth-child(3) { animation-delay: 0.15s; }
+.dashboard-grid > *:nth-child(4) { animation-delay: 0.21s; }
+
+.quick-actions > *:nth-child(1) { animation-delay: 0.05s; }
+.quick-actions > *:nth-child(2) { animation-delay: 0.12s; }
+.quick-actions > *:nth-child(3) { animation-delay: 0.19s; }
+.quick-actions > *:nth-child(4) { animation-delay: 0.26s; }
+
+.badge-grid > * { animation: fadeIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.badge-grid > *:nth-child(1) { animation-delay: 0.02s; }
+.badge-grid > *:nth-child(2) { animation-delay: 0.06s; }
+.badge-grid > *:nth-child(3) { animation-delay: 0.10s; }
+.badge-grid > *:nth-child(4) { animation-delay: 0.14s; }
+.badge-grid > *:nth-child(5) { animation-delay: 0.18s; }
+.badge-grid > *:nth-child(6) { animation-delay: 0.22s; }
+.badge-grid > *:nth-child(7) { animation-delay: 0.26s; }
+.badge-grid > *:nth-child(8) { animation-delay: 0.30s; }
+
+.exercise-list > * { animation: fadeInLeft 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.exercise-list > *:nth-child(1) { animation-delay: 0.02s; }
+.exercise-list > *:nth-child(2) { animation-delay: 0.06s; }
+.exercise-list > *:nth-child(3) { animation-delay: 0.10s; }
+.exercise-list > *:nth-child(4) { animation-delay: 0.14s; }
+.exercise-list > *:nth-child(5) { animation-delay: 0.18s; }
+
+.sidebar.open .sidebar-nav button {
+  animation: fadeInLeft 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.sidebar.open .sidebar-nav button:nth-child(1)  { animation-delay: 0.02s; }
+.sidebar.open .sidebar-nav button:nth-child(2)  { animation-delay: 0.05s; }
+.sidebar.open .sidebar-nav button:nth-child(3)  { animation-delay: 0.08s; }
+.sidebar.open .sidebar-nav button:nth-child(4)  { animation-delay: 0.11s; }
+.sidebar.open .sidebar-nav button:nth-child(5)  { animation-delay: 0.14s; }
+.sidebar.open .sidebar-nav button:nth-child(6)  { animation-delay: 0.17s; }
+.sidebar.open .sidebar-nav button:nth-child(7)  { animation-delay: 0.20s; }
+.sidebar.open .sidebar-nav button:nth-child(8)  { animation-delay: 0.23s; }
+.sidebar.open .sidebar-nav button:nth-child(9)  { animation-delay: 0.26s; }
+.sidebar.open .sidebar-nav button:nth-child(10) { animation-delay: 0.29s; }
+.sidebar.open .sidebar-nav button:nth-child(11) { animation-delay: 0.32s; }
+.sidebar.open .sidebar-nav button:nth-child(12) { animation-delay: 0.35s; }
 
 .success-text {
   text-align: center;
@@ -1818,6 +1882,7 @@ body {
   padding: 10px 16px;
   margin-bottom: 16px;
   font-size: 0.9rem;
+  animation: fadeIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .password-rules {
@@ -1830,83 +1895,265 @@ body {
 .password-rule {
   font-size: 0.78rem;
   color: var(--text-muted);
-  transition: color 0.2s;
+  transition: color 0.25s ease, transform 0.25s ease;
+  display: inline-block;
 }
 
 .password-rule.valid {
   color: var(--accent);
+  transform: translateX(2px);
+}
+
+button,
+a,
+input,
+select,
+textarea,
+.exercise-row,
+.badge-card,
+.plan-card,
+.meal-item,
+.theme-option {
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
+              opacity 0.2s ease,
+              background-color 0.2s ease,
+              border-color 0.2s ease,
+              color 0.2s ease,
+              box-shadow 0.2s ease;
 }
 
 .submit-btn,
 .quick-action-btn,
 .timer-btn,
 .tab-btn,
-.delete-btn,
 .danger-btn,
 .banner-btn,
 .quick-add-btn,
-.theme-option,
-.exercise-row,
-.notebook-save-btn,
-.sidebar-nav button,
-.sidebar-logout,
-.food-modal-close,
-.brand-logo,
-.menu-btn {
-  transition: transform 0.15s ease, opacity 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+.notebook-save-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.submit-btn::after,
+.quick-action-btn::after,
+.timer-btn::after,
+.tab-btn::after,
+.danger-btn::after,
+.banner-btn::after,
+.quick-add-btn::after,
+.notebook-save-btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  background: currentColor;
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.submit-btn:active::after,
+.quick-action-btn:active::after,
+.timer-btn:active::after,
+.tab-btn:active::after,
+.danger-btn:active::after,
+.banner-btn:active::after,
+.quick-add-btn:active::after,
+.notebook-save-btn:active::after {
+  animation: ripple 0.5s ease-out;
 }
 
 .submit-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px -6px var(--accent);
+  transform: translateY(-3px) scale(1.015);
+  box-shadow: 0 10px 24px -8px var(--accent);
 }
 
 .submit-btn:active:not(:disabled) {
-  transform: translateY(0);
+  transform: translateY(-1px) scale(0.99);
 }
 
-.quick-action-btn:hover,
-.timer-btn:hover,
+.quick-action-btn:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 10px 24px -10px var(--accent);
+  border-color: var(--accent);
+}
+
+.quick-action-btn:active {
+  transform: translateY(-1px) scale(0.98);
+}
+
+.timer-btn:hover {
+  transform: translateY(-3px) scale(1.03);
+}
+
+.timer-btn:active {
+  transform: translateY(0) scale(0.97);
+}
+
+.timer-btn.primary {
+  animation: glowPulse 2.4s ease-in-out infinite;
+}
+
 .quick-add-btn:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 8px 18px -8px var(--accent-blue);
 }
 
-.quick-action-btn:active,
-.timer-btn:active,
 .quick-add-btn:active {
-  transform: translateY(0);
+  transform: translateY(0) scale(0.96);
 }
 
 .tab-btn:hover {
-  transform: translateY(-1px);
+  transform: translateY(-2px) scale(1.03);
+}
+
+.tab-btn.active {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.danger-btn:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 10px 22px -10px var(--danger);
+}
+
+.banner-btn:hover {
+  transform: translateY(-3px) scale(1.04);
+  box-shadow: 0 8px 20px -8px var(--accent);
 }
 
 .badge-card,
 .plan-card,
 .exercise-row,
 .meal-item,
-.notebook-table tr,
-.history-table tr {
-  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+.rest-tip-card,
+.history-table tr,
+.notebook-table tr {
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
-.badge-card:hover:not(.locked),
+.badge-card:hover:not(.locked) {
+  transform: translateY(-6px) scale(1.03);
+  box-shadow: 0 14px 28px -12px rgba(0, 0, 0, 0.5);
+  border-color: var(--accent);
+}
+
 .plan-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 20px -10px rgba(0, 0, 0, 0.4);
+  transform: translateY(-5px);
+  box-shadow: 0 14px 28px -12px rgba(0, 0, 0, 0.45);
+  border-color: var(--accent);
+}
+
+.exercise-row:hover {
+  transform: translateX(6px);
+  border-color: var(--accent);
+  box-shadow: -4px 0 0 0 var(--accent);
+}
+
+.meal-item:hover {
+  transform: translateX(4px);
+  border-color: var(--accent-blue);
+}
+
+.history-table tr:hover,
+.notebook-table tr:hover {
+  transform: scale(1.005);
+}
+
+.sidebar-nav button {
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, padding-left 0.2s ease;
+}
+
+.sidebar-nav button:hover {
+  transform: translateX(6px);
+  padding-left: 18px;
+}
+
+.sidebar-nav button.active {
+  transform: translateX(4px);
+}
+
+.sidebar-logout:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 18px -10px var(--danger);
+}
+
+.menu-btn {
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.menu-btn:hover {
+  transform: scale(1.1) rotate(8deg);
+  border-color: var(--accent);
+}
+
+.menu-btn:active {
+  transform: scale(0.92) rotate(0deg);
+}
+
+.brand-logo {
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease;
+}
+
+.brand-logo:hover {
+  transform: scale(1.05);
+  opacity: 1;
+}
+
+.brand-logo:hover svg {
+  animation: glowPulse 1.2s ease-in-out infinite;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  transform: scale(1.01);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.theme-option {
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.theme-option:hover {
+  transform: translateY(-3px) scale(1.02);
+}
+
+.theme-option.active {
+  animation: glowPulse 2s ease-in-out infinite;
+}
+
+.delete-btn,
+.food-modal-close {
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s ease;
+}
+
+.delete-btn:hover {
+  transform: scale(1.25) rotate(8deg);
+}
+
+.food-modal-close:hover {
+  transform: scale(1.2) rotate(90deg);
 }
 
 .food-modal {
-  animation: modalPop 0.2s ease-out;
+  animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
 @keyframes modalPop {
-  from { opacity: 0; transform: scale(0.96); }
-  to   { opacity: 1; transform: scale(1); }
+  from { opacity: 0; transform: scale(0.9) translateY(12px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 .food-modal-overlay {
-  animation: fadeIn 0.2s ease-out;
+  animation: fadeIn 0.25s ease-out both;
+}
+
+.water-progress-fill,
+.macro-bar-segment {
+  transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1914,6 +2161,7 @@ body {
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }
