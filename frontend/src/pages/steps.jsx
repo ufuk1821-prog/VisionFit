@@ -46,7 +46,7 @@ function Steps() {
       if (err.response && err.response.data && err.response.data.detail) {
         setError(err.response.data.detail);
       } else {
-        setError('Kayit eklenemedi.');
+        setError('Kayıt eklenemedi.');
       }
     } finally {
       setLoading(false);

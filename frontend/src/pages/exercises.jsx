@@ -4,57 +4,57 @@ import Sidebar from '../components/sidebar';
 const EXERCISES = [
   {
     ad: 'Squat',
-    aciklama: 'Bacak ve kalça kaslarını calistiran temel bir egzersizdir. Sirt duz, dizler ayak ucunu gecmeyecek sekilde cokulur.',
-    kas_gruplari: 'Quadriceps, Kalca, Hamstring',
+    aciklama: 'Bacak ve kalça kaslarını çalıştıran temel bir egzersizdir. Sırt düz, dizler ayak ucunu geçmeyecek şekilde çökülür.',
+    kas_gruplari: 'Quadriceps, Kalça, Hamstring',
     seviye: 'Baslangic',
     ai_destegi: true,
   },
   {
     ad: 'Plank',
-    aciklama: 'Govde stabilitesini ve karin kaslarini gelistiren statik bir egzersizdir. Vucut duz bir hat olusturmalidir.',
-    kas_gruplari: 'Core, Karin, Sirt',
+    aciklama: 'Gövde stabilitesini ve karın kaslarını geliştiren statik bir egzersizdir. Vücut düz bir hat oluşturmalıdır.',
+    kas_gruplari: 'Core, Karın, Sırt',
     seviye: 'Baslangic',
     ai_destegi: false,
   },
   {
-    ad: 'Lunge (Adim Atma)',
-    aciklama: 'Tek bacak uzerinde denge ve guc gelistiren bir egzersizdir. On diz, ayak ucunu gecmemelidir.',
-    kas_gruplari: 'Quadriceps, Kalca, Hamstring',
+    ad: 'Lunge (Adım Atma)',
+    aciklama: 'Tek bacak üzerinde denge ve güç geliştiren bir egzersizdir. Ön diz, ayak ucunu geçmemelidir.',
+    kas_gruplari: 'Quadriceps, Kalça, Hamstring',
     seviye: 'Orta',
     ai_destegi: false,
   },
   {
-    ad: 'Push-Up (Sinav)',
-    aciklama: 'Ust govde gucunu gelistiren klasik bir egzersizdir. Govde duz tutularak gogus yere yaklastirilir.',
-    kas_gruplari: 'Gogus, Omuz, Triceps',
+    ad: 'Push-Up (Şınav)',
+    aciklama: 'Üst gövde gücünü geliştiren klasik bir egzersizdir. Gövde düz tutularak göğüs yere yaklaştırılır.',
+    kas_gruplari: 'Göğüs, Omuz, Triceps',
     seviye: 'Orta',
     ai_destegi: false,
   },
   {
     ad: 'Glute Bridge',
-    aciklama: 'Kalca ve alt sirt kaslarini guclendiren, sirt ustu yapilan bir egzersizdir.',
-    kas_gruplari: 'Kalca, Hamstring, Core',
+    aciklama: 'Kalça ve alt sırt kaslarını güçlendiren, sırt üstü yapılan bir egzersizdir.',
+    kas_gruplari: 'Kalça, Hamstring, Core',
     seviye: 'Baslangic',
     ai_destegi: false,
   },
   {
     ad: 'Mountain Climber',
-    aciklama: 'Kardiyo ve core guclendirmeyi birlestiren dinamik bir egzersizdir.',
+    aciklama: 'Kardiyo ve core güçlendirmeyi birleştiren dinamik bir egzersizdir.',
     kas_gruplari: 'Core, Bacak, Omuz',
     seviye: 'Orta',
     ai_destegi: false,
   },
   {
     ad: 'Bicycle Crunch',
-    aciklama: 'Karin kaslarini ve obliklerini hedefleyen dinamik bir egzersizdir.',
-    kas_gruplari: 'Karin, Oblik',
+    aciklama: 'Karın kaslarını ve oblik kaslarını hedefleyen dinamik bir egzersizdir.',
+    kas_gruplari: 'Karın, Oblik',
     seviye: 'Orta',
     ai_destegi: false,
   },
   {
     ad: 'Deadlift (Romanian)',
-    aciklama: 'Arka zincir kaslarini guclendiren, sirt duz tutularak yapilan bir egzersizdir.',
-    kas_gruplari: 'Hamstring, Kalca, Sirt',
+    aciklama: 'Arka zincir kaslarını güçlendiren, sırt düz tutularak yapılan bir egzersizdir.',
+    kas_gruplari: 'Hamstring, Kalça, Sırt',
     seviye: 'Ileri',
     ai_destegi: false,
   },
@@ -64,6 +64,12 @@ const SEVIYE_RENK = {
   Baslangic: 'var(--accent)',
   Orta: 'var(--accent-2)',
   Ileri: 'var(--danger)',
+};
+
+const SEVIYE_ETIKET = {
+  Baslangic: 'Başlangıç',
+  Orta: 'Orta',
+  Ileri: 'İleri',
 };
 
 function Exercises() {
@@ -85,7 +91,7 @@ function Exercises() {
             <p className="exercise-desc">{ex.aciklama}</p>
 
             <div className="exercise-meta">
-              <span className="exercise-tag" style={{ color: SEVIYE_RENK[ex.seviye] }}>{ex.seviye}</span>
+              <span className="exercise-tag" style={{ color: SEVIYE_RENK[ex.seviye] }}>{SEVIYE_ETIKET[ex.seviye]}</span>
               <span className="exercise-muscle">{ex.kas_gruplari}</span>
             </div>
 

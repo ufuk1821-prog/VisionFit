@@ -6,6 +6,12 @@ from app.models.user import User
 
 REQUIRED_DIET_FIELDS = ["boy", "kilo", "yas", "cinsiyet", "aktiflik_seviyesi", "hedef"]
 
+SEVIYE_ETIKET = {
+    "Bronz": "Bronz",
+    "Gumus": "Gümüş",
+    "Altin": "Altın",
+}
+
 def to_iso(value):
     if value is None:
         return None
@@ -19,8 +25,8 @@ def get_badge_status(db: Session, user: User):
 
     badges.append({
         "key": "ilk_antrenman",
-        "baslik": "Ilk Adim",
-        "aciklama": "Ilk antrenman analizini tamamla",
+        "baslik": "İlk Adım",
+        "aciklama": "İlk antrenman analizini tamamla",
         "seviye": "Bronz",
         "kazanildi": len(workouts) >= 1,
         "kazanilma_tarihi": to_iso(workouts[0].tarih) if len(workouts) >= 1 else None,
@@ -30,7 +36,7 @@ def get_badge_status(db: Session, user: User):
         kazanildi = len(correct_squats) >= esik
         badges.append({
             "key": key,
-            "baslik": f"Squat Ustasi ({seviye})",
+            "baslik": f"Squat Ustası ({SEVIYE_ETIKET[seviye]})",
             "aciklama": f"Toplam {esik} dogru squat tamamla",
             "seviye": seviye,
             "kazanildi": kazanildi,
@@ -49,7 +55,7 @@ def get_badge_status(db: Session, user: User):
         kazanildi = len(eligible) > 0
         badges.append({
             "key": key,
-            "baslik": f"Adim Avcisi ({seviye})",
+            "baslik": f"Adım Avcısı ({SEVIYE_ETIKET[seviye]})",
             "aciklama": f"Bir gunde en az {esik} adim at",
             "seviye": seviye,
             "kazanildi": kazanildi,
