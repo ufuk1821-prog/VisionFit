@@ -31,12 +31,52 @@ function Diet() {
   const [diet, setDiet] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [boyHata, setBoyHata] = useState('');
+  const [kiloHata, setKiloHata] = useState('');
+  const [yasHata, setYasHata] = useState('');
   const token = localStorage.getItem('token');
+
+  const handleBoyChange = (e) => {
+    const val = e.target.value;
+    setBoy(val);
+    const num = parseFloat(val);
+    if (val !== '' && (isNaN(num) || num < 50 || num > 300)) {
+      setBoyHata('Boy 50 ile 300 cm arasında olmalıdır.');
+    } else {
+      setBoyHata('');
+    }
+  };
+
+  const handleKiloChange = (e) => {
+    const val = e.target.value;
+    setKilo(val);
+    const num = parseFloat(val);
+    if (val !== '' && (isNaN(num) || num < 20 || num > 500)) {
+      setKiloHata('Kilo 20 ile 500 kg arasında olmalıdır.');
+    } else {
+      setKiloHata('');
+    }
+  };
+
+  const handleYasChange = (e) => {
+    const val = e.target.value;
+    setYas(val);
+    const num = parseInt(val, 10);
+    if (val !== '' && (isNaN(num) || num < 1 || num > 120)) {
+      setYasHata('Yaş 1 ile 120 arasında olmalıdır.');
+    } else {
+      setYasHata('');
+    }
+  };
 
   const handleGenerate = async () => {
     setError('');
     if (!boy || !kilo || !yas || !cinsiyet || !aktiflik || !hedef) {
       setError('Lütfen tüm alanları doldurun.');
+      return;
+    }
+    if (boyHata || kiloHata || yasHata) {
+      setError('Lütfen geçerli değerler girin.');
       return;
     }
     setLoading(true);
@@ -72,15 +112,44 @@ function Diet() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '16px' }}>
           <div className="form-group">
             <label>Boy (cm)</label>
-            <input type="number" value={boy} onChange={(e) => setBoy(e.target.value)} placeholder="175" min="100" max="250" />
+            <input
+              type="number"
+              step="0.1"
+              value={boy}
+              onChange={handleBoyChange}
+              placeholder="175"
+              min="50"
+              max="300"
+              style={{ borderColor: boyHata ? 'var(--danger)' : undefined }}
+            />
+            {boyHata && <span style={{ color: 'var(--danger)', fontSize: '0.78rem', marginTop: '4px' }}>{boyHata}</span>}
           </div>
           <div className="form-group">
             <label>Kilo (kg)</label>
-            <input type="number" value={kilo} onChange={(e) => setKilo(e.target.value)} placeholder="70" min="30" max="300" />
+            <input
+              type="number"
+              step="0.1"
+              value={kilo}
+              onChange={handleKiloChange}
+              placeholder="70"
+              min="20"
+              max="500"
+              style={{ borderColor: kiloHata ? 'var(--danger)' : undefined }}
+            />
+            {kiloHata && <span style={{ color: 'var(--danger)', fontSize: '0.78rem', marginTop: '4px' }}>{kiloHata}</span>}
           </div>
           <div className="form-group">
             <label>Yaş</label>
-            <input type="number" value={yas} onChange={(e) => setYas(e.target.value)} placeholder="25" min="10" max="100" />
+            <input
+              type="number"
+              value={yas}
+              onChange={handleYasChange}
+              placeholder="25"
+              min="1"
+              max="120"
+              style={{ borderColor: yasHata ? 'var(--danger)' : undefined }}
+            />
+            {yasHata && <span style={{ color: 'var(--danger)', fontSize: '0.78rem', marginTop: '4px' }}>{yasHata}</span>}
           </div>
           <div className="form-group">
             <label>Cinsiyet</label>
@@ -117,7 +186,7 @@ function Diet() {
           />
         </div>
 
-        <button className="submit-btn" disabled={loading} onClick={handleGenerate}>
+        <button className="submit-btn" disabled={loading || !!boyHata || !!kiloHata || !!yasHata} onClick={handleGenerate}>
           {loading ? 'Hesaplanıyor...' : 'Diyet Önerisi Al'}
         </button>
       </div>

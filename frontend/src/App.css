@@ -90,8 +90,8 @@ body {
 .sidebar {
   position: fixed;
   top: 0;
-  left: -280px;
-  width: 260px;
+  left: -320px;
+  width: 300px;
   height: 100vh;
   background: var(--surface);
   border-right: 1px solid var(--border);
@@ -99,7 +99,27 @@ body {
   transition: left 0.25s ease;
   display: flex;
   flex-direction: column;
-  padding: 80px 20px 20px;
+  padding: 24px 20px 20px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent) var(--surface-2);
+}
+
+.sidebar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: var(--surface-2);
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: var(--accent);
+  border-radius: 4px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-2);
 }
 
 .sidebar.open {
@@ -131,6 +151,7 @@ body {
   flex-direction: column;
   gap: 8px;
   flex: 1;
+  margin-bottom: 16px;
 }
 
 .sidebar-nav button {

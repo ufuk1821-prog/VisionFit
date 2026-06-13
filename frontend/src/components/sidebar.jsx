@@ -57,7 +57,7 @@ function Sidebar() {
             </button>
           ))}
         </nav>
-        <button className="sidebar-logout" onClick={handleLogout}>
+        <button className="sidebar-logout" onClick={handleLogout} style={{ flexShrink: 0 }}>
           <LogOut size={18} />
           Çıkış Yap
         </button>
