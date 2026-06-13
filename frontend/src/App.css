@@ -11,10 +11,13 @@
   --accent-2-soft: rgba(255, 140, 66, 0.12);
   --accent-blue: #5b8def;
   --accent-blue-soft: rgba(91, 141, 239, 0.12);
+  --bronze: #c97b3c;
+  --silver: #b8becb;
+  --gold: #ffd166;
   --danger: #ef4444;
-  --font-display: 'Space Grotesk', sans-serif;
+  --font-display: 'Outfit', sans-serif;
   --font-body: 'Inter', 'Segoe UI', sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+  --font-mono: 'Outfit', sans-serif;
 }
 
 * {
@@ -360,6 +363,7 @@ body {
   font-size: 1.8rem;
   font-weight: 700;
   color: var(--text);
+  font-variant-numeric: tabular-nums;
 }
 
 .status-card .card-icon {
@@ -413,6 +417,7 @@ body {
   border-top: 1px solid var(--border);
   color: var(--text);
   font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }
 
 .history-table tr:hover td {
@@ -454,10 +459,11 @@ body {
 .bmi-value {
   font-family: var(--font-mono);
   font-size: 3rem;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--text);
   line-height: 1;
   margin-bottom: 8px;
+  font-variant-numeric: tabular-nums;
 }
 
 .bmi-badge {
@@ -577,6 +583,7 @@ body {
   color: var(--text);
   font-size: 0.9rem;
 }
+
 .welcome-text {
   font-family: var(--font-display);
   font-size: 1.8rem;
@@ -638,17 +645,13 @@ body {
   border-color: var(--accent);
   color: var(--accent);
 }
+
 .chart-card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: 24px;
   margin-bottom: 24px;
-}
-:root {
-  --bronze: #c97b3c;
-  --silver: #b8becb;
-  --gold: #ffd166;
 }
 
 .badge-grid {
@@ -708,6 +711,7 @@ body {
   font-size: 0.7rem;
   color: var(--text-muted);
 }
+
 .tab-switcher {
   display: flex;
   gap: 8px;
@@ -782,12 +786,14 @@ body {
   font-family: var(--font-mono);
   font-size: 0.8rem;
   color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .meal-item-kcal {
   font-family: var(--font-mono);
   font-weight: 700;
   color: var(--accent);
+  font-variant-numeric: tabular-nums;
 }
 
 .delete-btn {
@@ -848,6 +854,7 @@ body {
   font-weight: 600;
   cursor: pointer;
   transition: border-color 0.2s;
+  font-variant-numeric: tabular-nums;
 }
 
 .quick-add-btn:hover {
@@ -861,7 +868,9 @@ body {
   font-weight: 700;
   font-size: 1.1rem;
   margin-bottom: 8px;
+  font-variant-numeric: tabular-nums;
 }
+
 .search-input-row {
   display: flex;
   align-items: center;
@@ -968,6 +977,7 @@ body {
   font-family: var(--font-mono);
   font-size: 1.1rem;
   outline: none;
+  font-variant-numeric: tabular-nums;
 }
 
 .food-modal-row input:focus {
@@ -987,6 +997,7 @@ body {
 .food-modal-close:hover {
   color: var(--text);
 }
+
 .comparison-delta {
   display: flex;
   align-items: center;
@@ -994,6 +1005,7 @@ body {
   font-family: var(--font-mono);
   font-size: 0.8rem;
   margin-top: 6px;
+  font-variant-numeric: tabular-nums;
 }
 
 .comparison-delta.up {
