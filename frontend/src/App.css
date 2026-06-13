@@ -1137,8 +1137,18 @@ body {
 }
 
 .muscle-diagram svg {
-  width: 210px;
-  height: 400px;
+  cursor: pointer;
+}
+
+.rbh polygon,
+.rbh path {
+  transition: fill 0.15s;
+}
+
+.rbh polygon:hover,
+.rbh path:hover {
+  fill: var(--accent-2) !important;
+  cursor: pointer;
 }
 
 .muscle-diagram-label {
@@ -1170,8 +1180,9 @@ body {
 }
 
 .exercise-row {
-  display: flex;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  align-items: start;
   gap: 16px;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -1189,12 +1200,10 @@ body {
   font-family: var(--font-display);
   font-weight: 800;
   font-size: 1.3rem;
+  line-height: 1.5;
   color: var(--accent);
-  width: 28px;
-  flex-shrink: 0;
   text-align: center;
   font-variant-numeric: tabular-nums;
-  padding-top: 2px;
 }
 
 .exercise-row-info {
@@ -1204,6 +1213,7 @@ body {
 
 .exercise-row-name {
   font-weight: 600;
+  line-height: 1.5;
   color: var(--text);
 }
 

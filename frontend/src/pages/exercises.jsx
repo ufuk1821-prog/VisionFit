@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Sparkles, X } from 'lucide-react';
 import Sidebar from '../components/sidebar';
-import MuscleDiagram from '../components/MuscleDiagram';
+import MuscleDiagram, { GROUP_TO_SLUG, SLUG_TO_GROUPS } from '../components/MuscleDiagram';
 import { MUSCLE_GROUPS, EXERCISES } from '../data/exercises';
 
 function Exercises() {
@@ -10,6 +10,9 @@ function Exercises() {
 
   const muscleInfo = MUSCLE_GROUPS.find((m) => m.key === selectedMuscle);
   const exerciseList = EXERCISES[selectedMuscle] || [];
+
+  const currentSlug = GROUP_TO_SLUG[selectedMuscle];
+  const subGroups = SLUG_TO_GROUPS[currentSlug] || [selectedMuscle];
 
   return (
     <div>
@@ -20,6 +23,23 @@ function Exercises() {
       </p>
 
       <MuscleDiagram selectedMuscle={selectedMuscle} onSelectMuscle={setSelectedMuscle} />
+
+      {subGroups.length > 1 && (
+        <div className="tab-switcher">
+          {subGroups.map((key) => {
+            const info = MUSCLE_GROUPS.find((m) => m.key === key);
+            return (
+              <button
+                key={key}
+                className={`tab-btn ${selectedMuscle === key ? 'active' : ''}`}
+                onClick={() => setSelectedMuscle(key)}
+              >
+                {info?.ad}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       <div className="section-title">{muscleInfo?.ad} Hareketleri</div>
 
