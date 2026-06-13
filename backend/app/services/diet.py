@@ -19,13 +19,13 @@ GOAL_ADJUSTMENTS = {
 
 DIET_TEMPLATES = [
     {
-        "baslik": "Dengeli Beslenme Plani",
+        "baslik": "Dengeli Beslenme Planı",
         "protein_oran": 0.30,
         "karbonhidrat_oran": 0.40,
         "yag_oran": 0.30,
     },
     {
-        "baslik": "Yuksek Proteinli Plan",
+        "baslik": "Yüksek Proteinli Plan",
         "protein_oran": 0.40,
         "karbonhidrat_oran": 0.30,
         "yag_oran": 0.30,
@@ -38,27 +38,56 @@ DIET_TEMPLATES = [
     },
 ]
 
+FOOD_DATABASE = {
+    "tavuk_gogsu": {"ad": "Izgara Tavuk Göğsü", "protein": 31, "karbonhidrat": 0, "yag": 3.6},
+    "yumurta": {"ad": "Haşlanmış Yumurta", "protein": 13, "karbonhidrat": 1.1, "yag": 11},
+    "somon": {"ad": "Fırında Somon", "protein": 20, "karbonhidrat": 0, "yag": 13},
+    "kofte": {"ad": "Izgara Köfte", "protein": 26, "karbonhidrat": 0, "yag": 15},
+    "mercimek": {"ad": "Mercimek", "protein": 9, "karbonhidrat": 20, "yag": 0.4},
+    "nohut": {"ad": "Nohut", "protein": 9, "karbonhidrat": 27, "yag": 2.6},
+    "yogurt": {"ad": "Yoğurt", "protein": 3.5, "karbonhidrat": 4.7, "yag": 3.3},
+    "lor_peyniri": {"ad": "Lor Peyniri", "protein": 11, "karbonhidrat": 3.4, "yag": 4.3},
+    "beyaz_peynir": {"ad": "Beyaz Peynir", "protein": 17, "karbonhidrat": 1, "yag": 21},
+    "bulgur": {"ad": "Bulgur Pilavı", "protein": 3.5, "karbonhidrat": 19, "yag": 0.2},
+    "pirinc": {"ad": "Pirinç Pilavı", "protein": 2.7, "karbonhidrat": 28, "yag": 0.3},
+    "kinoa": {"ad": "Kinoa", "protein": 4.4, "karbonhidrat": 21, "yag": 1.9},
+    "tam_tahil_ekmek": {"ad": "Tam Tahıllı Ekmek", "protein": 9, "karbonhidrat": 41, "yag": 3.4},
+    "yulaf": {"ad": "Yulaf Ezmesi", "protein": 13, "karbonhidrat": 67, "yag": 7},
+}
+
+MEAL_SPLIT = {
+    "Kahvalti": 0.25,
+    "Ogle": 0.35,
+    "Aksam": 0.40,
+}
+
+MEAL_LABELS = {
+    "Kahvalti": "Kahvaltı",
+    "Ogle": "Öğle Yemeği",
+    "Aksam": "Akşam Yemeği",
+}
+
 MEAL_POOL = {
     "Kahvalti": [
-        {"metin": "Yulaf ezmesi, sut ve taze meyve", "anahtarlar": ["yulaf", "sut", "meyve"]},
-        {"metin": "Haslanmis yumurta, beyaz peynir, tam tahilli ekmek", "anahtarlar": ["yumurta", "peynir", "ekmek", "sut"]},
-        {"metin": "Yogurt, ceviz ve bal", "anahtarlar": ["yogurt", "sut", "ceviz", "bal"]},
-        {"metin": "Avokadolu tam tahilli tost, domates", "anahtarlar": ["ekmek", "avokado"]},
-        {"metin": "Domates, salatalik, zeytin ve zeytinyagi", "anahtarlar": ["zeytin", "zeytinyagi"]},
+        {"ana": "yumurta", "yan": "tam_tahil_ekmek", "ek": "domates ve salatalık", "anahtarlar": ["yumurta", "ekmek"]},
+        {"ana": "yogurt", "yan": "yulaf", "ek": "ceviz ve bal", "anahtarlar": ["yogurt", "sut", "yulaf", "ceviz", "bal"]},
+        {"ana": "lor_peyniri", "yan": "tam_tahil_ekmek", "ek": "zeytin ve domates", "anahtarlar": ["peynir", "sut", "ekmek", "zeytin"]},
+        {"ana": "yumurta", "yan": "yulaf", "ek": "avokado", "anahtarlar": ["yumurta", "yulaf", "avokado"]},
+        {"ana": "beyaz_peynir", "yan": "tam_tahil_ekmek", "ek": "salatalık, domates ve zeytin", "anahtarlar": ["peynir", "sut", "ekmek", "zeytin", "zeytinyagi"]},
     ],
     "Ogle": [
-        {"metin": "Izgara tavuk gogsu, bulgur pilavi, salata", "anahtarlar": ["tavuk", "et", "bulgur"]},
-        {"metin": "Mercimek corbasi, tam tahilli ekmek, salata", "anahtarlar": ["mercimek", "ekmek"]},
-        {"metin": "Firinda somon, kinoa, sebze", "anahtarlar": ["balik", "kinoa"]},
-        {"metin": "Nohut yemegi, pirinc pilavi, yogurt", "anahtarlar": ["nohut", "pirinc", "yogurt", "sut"]},
-        {"metin": "Sebzeli omlet, salata", "anahtarlar": ["yumurta"]},
+        {"ana": "tavuk_gogsu", "yan": "bulgur", "ek": "yeşil salata (zeytinyağlı)", "anahtarlar": ["tavuk", "et", "bulgur"]},
+        {"ana": "mercimek", "yan": "tam_tahil_ekmek", "ek": "yeşil salata", "anahtarlar": ["mercimek", "ekmek"]},
+        {"ana": "somon", "yan": "kinoa", "ek": "buharda sebze", "anahtarlar": ["balik", "kinoa"]},
+        {"ana": "nohut", "yan": "pirinc", "ek": "yoğurt (1 kase)", "anahtarlar": ["nohut", "pirinc", "yogurt", "sut"]},
+        {"ana": "yumurta", "yan": "tam_tahil_ekmek", "ek": "yeşil salata (omlet şeklinde)", "anahtarlar": ["yumurta", "ekmek"]},
     ],
     "Aksam": [
-        {"metin": "Izgara kofte, bulgur pilavi, yogurt", "anahtarlar": ["et", "bulgur", "yogurt", "sut"]},
-        {"metin": "Firinda tavuk but, sebze garnitur", "anahtarlar": ["tavuk", "et"]},
-        {"metin": "Mercimek koftesi, salata, ayran", "anahtarlar": ["mercimek", "sut"]},
-        {"metin": "Izgara balik, sebzeli bulgur", "anahtarlar": ["balik", "bulgur"]},
-        {"metin": "Sebze yemegi, pirinc pilavi", "anahtarlar": ["pirinc"]},
+        {"ana": "kofte", "yan": "bulgur", "ek": "yoğurt (1 kase)", "anahtarlar": ["et", "bulgur", "yogurt", "sut"]},
+        {"ana": "tavuk_gogsu", "yan": "pirinc", "ek": "sebze garnitür", "anahtarlar": ["tavuk", "et", "pirinc"]},
+        {"ana": "mercimek", "yan": "bulgur", "ek": "salata ve ayran", "anahtarlar": ["mercimek", "bulgur", "sut"]},
+        {"ana": "somon", "yan": "bulgur", "ek": "sebzeli", "anahtarlar": ["balik", "bulgur"]},
+        {"ana": "nohut", "yan": "pirinc", "ek": "sebze yemeği şeklinde", "anahtarlar": ["nohut", "pirinc"]},
     ],
 }
 
@@ -133,6 +162,22 @@ def select_meal(options: List[Dict], hard_excluded: Set[str], soft_excluded: Set
 
     return options[0]
 
+def round_to_5(value: float) -> int:
+    clamped = min(max(value, 30), 400)
+    return int(round(clamped / 5) * 5)
+
+def describe_meal(option: Dict, meal_protein_target: float, meal_carb_target: float) -> str:
+    ana = FOOD_DATABASE[option["ana"]]
+    yan = FOOD_DATABASE[option["yan"]]
+
+    ana_gram = (meal_protein_target / ana["protein"]) * 100 if ana["protein"] > 0 else 100
+    yan_gram = (meal_carb_target / yan["karbonhidrat"]) * 100 if yan["karbonhidrat"] > 0 else 100
+
+    ana_gram = round_to_5(ana_gram)
+    yan_gram = round_to_5(yan_gram)
+
+    return f"{ana_gram}g {ana['ad']}, {yan_gram}g {yan['ad']}, {option['ek']}"
+
 def calculate_bmi(boy_cm: float, kilo_kg: float) -> float:
     boy_m = boy_cm / 100
     return round(kilo_kg / (boy_m ** 2), 1)
@@ -166,15 +211,17 @@ def build_diet_plans(target_calories: int, istek: Optional[str] = None) -> List[
         karbonhidrat_g = round((target_calories * template["karbonhidrat_oran"]) / 4)
         yag_g = round((target_calories * template["yag_oran"]) / 9)
 
-        kahvalti = select_meal(MEAL_POOL["Kahvalti"], hard_excluded, soft_excluded, preferred, index)
-        ogle = select_meal(MEAL_POOL["Ogle"], hard_excluded, soft_excluded, preferred, index)
-        aksam = select_meal(MEAL_POOL["Aksam"], hard_excluded, soft_excluded, preferred, index)
+        ornek_ogunler = []
 
-        ornek_ogunler = [
-            f"Kahvalti: {kahvalti['metin']}",
-            f"Ogle: {ogle['metin']}",
-            f"Aksam: {aksam['metin']}",
-        ]
+        for meal_type in ("Kahvalti", "Ogle", "Aksam"):
+            split = MEAL_SPLIT[meal_type]
+            meal_protein_target = protein_g * split
+            meal_carb_target = karbonhidrat_g * split
+
+            option = select_meal(MEAL_POOL[meal_type], hard_excluded, soft_excluded, preferred, index)
+            aciklama = describe_meal(option, meal_protein_target, meal_carb_target)
+
+            ornek_ogunler.append(f"{MEAL_LABELS[meal_type]}: {aciklama}")
 
         plans.append({
             "baslik": template["baslik"],
