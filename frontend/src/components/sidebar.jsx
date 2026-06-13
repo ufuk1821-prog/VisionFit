@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Menu, Camera, History, User, Salad, Footprints, LogOut } from 'lucide-react';
+import { Menu, Home, Camera, History, User, Salad, Footprints, LogOut } from 'lucide-react';
 
 const NAV_ITEMS = [
+  { path: '/', label: 'Ana Sayfa', icon: Home },
   { path: '/dashboard', label: 'Kamera', icon: Camera },
   { path: '/history', label: 'Geçmiş Antrenmanlar', icon: History },
   { path: '/profile', label: 'Profilim', icon: User },
