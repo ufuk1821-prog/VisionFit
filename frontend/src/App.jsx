@@ -20,13 +20,24 @@ import './App.css';
 function VisionFitLogo() {
   return (
     <Link to="/" className="brand-logo">
-      <svg width="38" height="38" viewBox="0 0 38 38" fill="none">
-        <rect width="38" height="38" rx="10" fill="var(--accent)" opacity="0.15" />
-        <rect x="4" y="17" width="8" height="4" rx="2" fill="var(--accent)" />
-        <rect x="26" y="17" width="8" height="4" rx="2" fill="var(--accent)" />
-        <rect x="11" y="11" width="16" height="16" rx="4" fill="none" stroke="var(--accent)" strokeWidth="2.5" />
-        <rect x="15" y="15" width="8" height="8" rx="2" fill="var(--accent)" />
-        <circle cx="19" cy="19" r="2" fill="#0a0c0f" />
+      <svg width="38" height="38" viewBox="0 0 48 48" fill="none">
+        <circle cx="24" cy="24" r="23" fill="var(--accent)" opacity="0.12" />
+        <circle cx="27" cy="11" r="4.5" fill="var(--accent)" />
+        <path
+          d="M23 16 C19 16 16 19 16 23 L16 30 C16 32 17 33 18.5 33 L20 33 L20 38 C20 39.5 21.5 40.5 23 40.5 C24.5 40.5 26 39.5 26 38 L26 33 L29 33 C30.5 33 31.5 31.5 31.5 30 L31.5 21 C31.5 18.5 29.5 16.5 27 16.5 Z"
+          fill="var(--accent)"
+        />
+        <path
+          d="M16 22 C12.5 22 10 24 9 27 C8.3 29 9 30.5 10.5 31 C12 31.5 13.5 30.5 14 29 L16 23 Z"
+          fill="var(--accent)"
+        />
+        <path
+          d="M12.5 26.5 C10.5 26.5 8.8 27.8 8.2 29.7 C7.7 31.3 8.5 32.5 9.8 32.9"
+          stroke="var(--accent)"
+          strokeWidth="2"
+          strokeLinecap="round"
+          fill="none"
+        />
       </svg>
       <span>VISIONFIT</span>
     </Link>

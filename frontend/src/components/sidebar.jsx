@@ -43,7 +43,8 @@ function Sidebar() {
       {open && <div className="sidebar-overlay" onClick={() => setOpen(false)} />}
 
       <div className={`sidebar ${open ? 'open' : ''}`}>
-        <div className="sidebar-header">VisionFit</div>
+        <div className="sidebar-header">VISIONFIT</div>
+        <div className="sidebar-tagline">En İyi Haline Ulaş</div>
         <nav className="sidebar-nav">
           {NAV_ITEMS.map(({ path, label, icon: Icon }) => (
             <button
