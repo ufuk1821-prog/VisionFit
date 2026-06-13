@@ -1,0 +1,46 @@
+VisionFit Diyet Tercih Modeli - Degerlendirme Raporu
+=======================================================
+
+Model: Lojistik Regresyon
+Dogruluk (Accuracy): 1.0000
+              precision    recall  f1-score   support
+
+      Alerji       1.00      1.00      1.00        60
+    Sevmiyor       1.00      1.00      1.00        60
+     Seviyor       1.00      1.00      1.00        60
+
+    accuracy                           1.00       180
+   macro avg       1.00      1.00      1.00       180
+weighted avg       1.00      1.00      1.00       180
+
+-------------------------------------------------------
+
+Model: Multinomial Naive Bayes
+Dogruluk (Accuracy): 0.9667
+              precision    recall  f1-score   support
+
+      Alerji       1.00      1.00      1.00        60
+    Sevmiyor       0.91      1.00      0.95        60
+     Seviyor       1.00      0.90      0.95        60
+
+    accuracy                           0.97       180
+   macro avg       0.97      0.97      0.97       180
+weighted avg       0.97      0.97      0.97       180
+
+-------------------------------------------------------
+
+Model: Linear SVM
+Dogruluk (Accuracy): 1.0000
+              precision    recall  f1-score   support
+
+      Alerji       1.00      1.00      1.00        60
+    Sevmiyor       1.00      1.00      1.00        60
+     Seviyor       1.00      1.00      1.00        60
+
+    accuracy                           1.00       180
+   macro avg       1.00      1.00      1.00       180
+weighted avg       1.00      1.00      1.00       180
+
+-------------------------------------------------------
+
+Secilen Model: Lojistik Regresyon
