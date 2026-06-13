@@ -1,7 +1,20 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { AnimatePresence, motion } from 'framer-motion';
 import { KeyRound, Trash2, AlertTriangle, Sun, Moon } from 'lucide-react';
 import Sidebar from '../components/sidebar';
+
+const overlayVariants = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1 },
+  exit: { opacity: 0 },
+};
+
+const modalVariants = {
+  initial: { opacity: 0, scale: 0.9, y: 16 },
+  animate: { opacity: 1, scale: 1, y: 0 },
+  exit: { opacity: 0, scale: 0.92, y: 12 },
+};
 
 function Settings() {
   const [mevcutSifre, setMevcutSifre] = useState('');
@@ -135,24 +148,42 @@ function Settings() {
         </button>
       </div>
 
-      {showDeleteModal && (
-        <div className="food-modal-overlay" onClick={() => setShowDeleteModal(false)}>
-          <div className="food-modal" onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ color: 'var(--danger)', marginBottom: '12px' }}>Emin misiniz?</h2>
-            <p style={{ color: 'var(--text)', marginBottom: '20px' }}>
-              Hesabınız ve tüm verileriniz kalıcı olarak silinecek. Bu işlem geri alınamaz.
-            </p>
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <button className="submit-btn" style={{ background: 'var(--surface-2)', color: 'var(--text)' }} onClick={() => setShowDeleteModal(false)}>
-                Vazgeç
-              </button>
-              <button className="submit-btn" style={{ background: 'var(--danger)', color: '#fff' }} onClick={handleDeleteAccount}>
-                Evet, Sil
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {showDeleteModal && (
+          <motion.div
+            className="food-modal-overlay"
+            onClick={() => setShowDeleteModal(false)}
+            variants={overlayVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.2 }}
+          >
+            <motion.div
+              className="food-modal"
+              onClick={(e) => e.stopPropagation()}
+              variants={modalVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={{ duration: 0.25, ease: [0.34, 1.56, 0.64, 1] }}
+            >
+              <h2 style={{ color: 'var(--danger)', marginBottom: '12px' }}>Emin misiniz?</h2>
+              <p style={{ color: 'var(--text)', marginBottom: '20px' }}>
+                Hesabınız ve tüm verileriniz kalıcı olarak silinecek. Bu işlem geri alınamaz.
+              </p>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button className="submit-btn" style={{ background: 'var(--surface-2)', color: 'var(--text)' }} onClick={() => setShowDeleteModal(false)}>
+                  Vazgeç
+                </button>
+                <button className="submit-btn" style={{ background: 'var(--danger)', color: '#fff' }} onClick={handleDeleteAccount}>
+                  Evet, Sil
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

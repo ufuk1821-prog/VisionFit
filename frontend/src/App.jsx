@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import Login from './pages/login';
 import Register from './pages/register';
 import Home from './pages/home';
@@ -27,8 +28,54 @@ function VisionFitLogo() {
         <rect x="15" y="15" width="8" height="8" rx="2" fill="var(--accent)" />
         <circle cx="19" cy="19" r="2" fill="#0a0c0f" />
       </svg>
-      <span>VisionFit</span>
+      <span>VISIONFIT</span>
     </Link>
+  );
+}
+
+const pageVariants = {
+  initial: { opacity: 0, y: 16 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -12 },
+};
+
+function PageWrapper({ children }) {
+  return (
+    <motion.div
+      variants={pageVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+function AnimatedRoutes({ isAuthenticated }) {
+  const location = useLocation();
+
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="/login" element={<PageWrapper><Login /></PageWrapper>} />
+        <Route path="/register" element={<PageWrapper><Register /></PageWrapper>} />
+        <Route path="/" element={isAuthenticated ? <PageWrapper><Home /></PageWrapper> : <Navigate to="/login" />} />
+        <Route path="/dashboard" element={isAuthenticated ? <PageWrapper><Dashboard /></PageWrapper> : <Navigate to="/login" />} />
+        <Route path="/history" element={isAuthenticated ? <PageWrapper><History /></PageWrapper> : <Navigate to="/login" />} />
+        <Route path="/exercises" element={isAuthenticated ? <PageWrapper><Exercises /></PageWrapper> : <Navigate to="/login" />} />
+        <Route path="/timer" element={isAuthenticated ? <PageWrapper><Timer /></PageWrapper> : <Navigate to="/login" />} />
+        <Route path="/workout-notebook" element={isAuthenticated ? <PageWrapper><WorkoutNotebook /></PageWrapper> : <Navigate to="/login" />} />
+        <Route path="/profile" element={isAuthenticated ? <PageWrapper><Profile /></PageWrapper> : <Navigate to="/login" />} />
+        <Route path="/diet" element={isAuthenticated ? <PageWrapper><Diet /></PageWrapper> : <Navigate to="/login" />} />
+        <Route path="/nutrition" element={isAuthenticated ? <PageWrapper><Nutrition /></PageWrapper> : <Navigate to="/login" />} />
+        <Route path="/steps" element={isAuthenticated ? <PageWrapper><Steps /></PageWrapper> : <Navigate to="/login" />} />
+        <Route path="/badges" element={isAuthenticated ? <PageWrapper><Badges /></PageWrapper> : <Navigate to="/login" />} />
+        <Route path="/settings" element={isAuthenticated ? <PageWrapper><Settings /></PageWrapper> : <Navigate to="/login" />} />
+        <Route path="*" element={<Navigate to={isAuthenticated ? "/" : "/login"} />} />
+      </Routes>
+    </AnimatePresence>
   );
 }
 
@@ -44,23 +91,7 @@ function App() {
     <BrowserRouter>
       <div className="app-container">
         <VisionFitLogo />
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/" element={isAuthenticated ? <Home /> : <Navigate to="/login" />} />
-          <Route path="/dashboard" element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" />} />
-          <Route path="/history" element={isAuthenticated ? <History /> : <Navigate to="/login" />} />
-          <Route path="/exercises" element={isAuthenticated ? <Exercises /> : <Navigate to="/login" />} />
-          <Route path="/timer" element={isAuthenticated ? <Timer /> : <Navigate to="/login" />} />
-          <Route path="/workout-notebook" element={isAuthenticated ? <WorkoutNotebook /> : <Navigate to="/login" />} />
-          <Route path="/profile" element={isAuthenticated ? <Profile /> : <Navigate to="/login" />} />
-          <Route path="/diet" element={isAuthenticated ? <Diet /> : <Navigate to="/login" />} />
-          <Route path="/nutrition" element={isAuthenticated ? <Nutrition /> : <Navigate to="/login" />} />
-          <Route path="/steps" element={isAuthenticated ? <Steps /> : <Navigate to="/login" />} />
-          <Route path="/badges" element={isAuthenticated ? <Badges /> : <Navigate to="/login" />} />
-          <Route path="/settings" element={isAuthenticated ? <Settings /> : <Navigate to="/login" />} />
-          <Route path="*" element={<Navigate to={isAuthenticated ? "/" : "/login"} />} />
-        </Routes>
+        <AnimatedRoutes isAuthenticated={isAuthenticated} />
       </div>
     </BrowserRouter>
   );

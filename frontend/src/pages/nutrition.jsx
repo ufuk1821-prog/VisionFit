@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Trash2, Droplet, X, Search } from 'lucide-react';
 import Sidebar from '../components/sidebar';
 
@@ -12,6 +13,18 @@ const OGUN_OPTIONS = [
 
 const WATER_QUICK = [200, 250, 330, 500];
 const WATER_GOAL = 2500;
+
+const overlayVariants = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1 },
+  exit: { opacity: 0 },
+};
+
+const modalVariants = {
+  initial: { opacity: 0, scale: 0.9, y: 16 },
+  animate: { opacity: 1, scale: 1, y: 0 },
+  exit: { opacity: 0, scale: 0.92, y: 12 },
+};
 
 function Nutrition() {
   const [activeTab, setActiveTab] = useState('yemek');
@@ -79,7 +92,6 @@ function Nutrition() {
       handleCloseModal();
       fetchMeals();
     } catch (err) {
-      // sessizce gec
     }
   };
 
@@ -160,30 +172,48 @@ function Nutrition() {
             )}
           </div>
 
-          {selectedFood && (
-            <div className="food-modal-overlay" onClick={handleCloseModal}>
-              <div className="food-modal" onClick={(e) => e.stopPropagation()}>
-                <button className="food-modal-close" onClick={handleCloseModal}>
-                  <X size={20} />
-                </button>
-                <form onSubmit={handleAddMeal}>
-                  <div className="food-modal-row">
-                    <span className="food-modal-name">{selectedFood.ad}</span>
-                    <input
-                      type="number"
-                      value={modalGram}
-                      onChange={(e) => setModalGram(e.target.value)}
-                      placeholder="gram"
-                      autoFocus
-                      required
-                    />
-                  </div>
-                  {previewKcal !== null && <div className="preview-kcal">≈ {previewKcal} kcal</div>}
-                  <button type="submit" className="submit-btn">Ekle</button>
-                </form>
-              </div>
-            </div>
-          )}
+          <AnimatePresence>
+            {selectedFood && (
+              <motion.div
+                className="food-modal-overlay"
+                onClick={handleCloseModal}
+                variants={overlayVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                transition={{ duration: 0.2 }}
+              >
+                <motion.div
+                  className="food-modal"
+                  onClick={(e) => e.stopPropagation()}
+                  variants={modalVariants}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                  transition={{ duration: 0.25, ease: [0.34, 1.56, 0.64, 1] }}
+                >
+                  <button className="food-modal-close" onClick={handleCloseModal}>
+                    <X size={20} />
+                  </button>
+                  <form onSubmit={handleAddMeal}>
+                    <div className="food-modal-row">
+                      <span className="food-modal-name">{selectedFood.ad}</span>
+                      <input
+                        type="number"
+                        value={modalGram}
+                        onChange={(e) => setModalGram(e.target.value)}
+                        placeholder="gram"
+                        autoFocus
+                        required
+                      />
+                    </div>
+                    {previewKcal !== null && <div className="preview-kcal">≈ {previewKcal} kcal</div>}
+                    <button type="submit" className="submit-btn">Ekle</button>
+                  </form>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {OGUN_OPTIONS.map((ogun) => {
             const ogunMeals = meals.filter((m) => m.ogun_tipi === ogun.value);
