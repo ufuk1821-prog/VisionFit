@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Menu, X, Home, Camera, History, Dumbbell, ClipboardList, Salad, Utensils, Footprints, Timer, Award, Settings, User, LogOut } from 'lucide-react';
+import logoImg from '../assets/logo.png';
 
 const NAV_ITEMS = [
   { path: '/', label: 'Ana Sayfa', icon: Home },
@@ -43,8 +44,7 @@ function Sidebar() {
       {open && <div className="sidebar-overlay" onClick={() => setOpen(false)} />}
 
       <div className={`sidebar ${open ? 'open' : ''}`}>
-        <div className="sidebar-header">VISIONFIT</div>
-        <div className="sidebar-tagline">En İyi Haline Ulaş</div>
+        <img src={logoImg} alt="VisionFit" className="sidebar-logo-img" />
         <nav className="sidebar-nav">
           {NAV_ITEMS.map(({ path, label, icon: Icon }) => (
             <button

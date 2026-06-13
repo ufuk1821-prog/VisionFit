@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
+import logoImg from './assets/logo.png';
 import Login from './pages/login';
 import Register from './pages/register';
 import Home from './pages/home';
@@ -17,29 +18,11 @@ import Timer from './pages/timer';
 import WorkoutNotebook from './pages/workout-notebook';
 import './App.css';
 
+
 function VisionFitLogo() {
   return (
     <Link to="/" className="brand-logo">
-      <svg width="38" height="38" viewBox="0 0 48 48" fill="none">
-        <circle cx="24" cy="24" r="23" fill="var(--accent)" opacity="0.12" />
-        <circle cx="27" cy="11" r="4.5" fill="var(--accent)" />
-        <path
-          d="M23 16 C19 16 16 19 16 23 L16 30 C16 32 17 33 18.5 33 L20 33 L20 38 C20 39.5 21.5 40.5 23 40.5 C24.5 40.5 26 39.5 26 38 L26 33 L29 33 C30.5 33 31.5 31.5 31.5 30 L31.5 21 C31.5 18.5 29.5 16.5 27 16.5 Z"
-          fill="var(--accent)"
-        />
-        <path
-          d="M16 22 C12.5 22 10 24 9 27 C8.3 29 9 30.5 10.5 31 C12 31.5 13.5 30.5 14 29 L16 23 Z"
-          fill="var(--accent)"
-        />
-        <path
-          d="M12.5 26.5 C10.5 26.5 8.8 27.8 8.2 29.7 C7.7 31.3 8.5 32.5 9.8 32.9"
-          stroke="var(--accent)"
-          strokeWidth="2"
-          strokeLinecap="round"
-          fill="none"
-        />
-      </svg>
-      <span>VISIONFIT</span>
+      <img src={logoImg} alt="VisionFit" className="brand-logo-img" />
     </Link>
   );
 }
