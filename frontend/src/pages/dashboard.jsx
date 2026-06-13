@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { PoseLandmarker, FilesetResolver, DrawingUtils } from '@mediapipe/tasks-vision';
 import axios from 'axios';
-import Sidebar from '../components/sidebar';
+import Sidebar from '../components/Sidebar';
 
 function Dashboard() {
   const videoRef = useRef(null);
@@ -117,7 +117,7 @@ function Dashboard() {
             <div className="card-value">{angle}°</div>
           </div>
           <div className="card confidence-card">
-            <div className="card-title">Eminlik Skoru</div>
+            <div className="card-title">Guven Skoru</div>
             <div className="card-value">%{confidence}</div>
           </div>
         </div>

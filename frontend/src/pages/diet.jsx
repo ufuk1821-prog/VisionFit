@@ -1,6 +1,19 @@
 import { useState } from 'react';
 import axios from 'axios';
-import Sidebar from '../components/sidebar';
+import Sidebar from '../components/Sidebar';
+
+const BMI_LABELS = {
+  Zayif: 'Zayıf',
+  Normal: 'Normal',
+  Kilolu: 'Kilolu',
+  Obez: 'Obez',
+};
+
+const HEDEF_LABELS = {
+  kilo_verme: 'Kilo Verme',
+  kilo_koruma: 'Kilo Koruma',
+  kilo_alma: 'Kilo Alma',
+};
 
 function Diet() {
   const [confirmed, setConfirmed] = useState(false);
@@ -21,7 +34,7 @@ function Diet() {
       );
       setDiet(response.data);
     } catch (err) {
-      setError('Profil bilgileriniz eksik. Once Profilim sayfasindan boy, kilo, yas, cinsiyet, aktiflik seviyesi ve hedef bilgilerini doldurun.');
+      setError('Profil bilgileriniz eksik. Önce Profilim sayfasından boy, kilo, yaş, cinsiyet, aktiflik seviyesi ve hedef bilgilerinizi doldurun.');
       setDiet(null);
     } finally {
       setLoading(false);
@@ -31,7 +44,7 @@ function Diet() {
   return (
     <div>
       <Sidebar />
-      <div className="section-title">Diyet Onerisi</div>
+      <div className="section-title">Diyet Önerisi</div>
 
       <div className="auth-box">
         <div className="checkbox-row">
@@ -40,20 +53,20 @@ function Diet() {
             checked={confirmed}
             onChange={(e) => setConfirmed(e.target.checked)}
           />
-          <label>Boy, kilo, yas, cinsiyet, aktiflik ve hedef bilgilerim guncel</label>
+          <label>Boy, kilo, yaş, cinsiyet, aktiflik seviyesi ve hedef bilgilerim güncel</label>
         </div>
 
         <div className="form-group">
-          <label>Ozel istek / alerji / tercih (opsiyonel)</label>
+          <label>Özel istek, alerji veya tercih (opsiyonel)</label>
           <textarea
             value={istek}
             onChange={(e) => setIstek(e.target.value)}
-            placeholder="Ornek: Yumurtaya alerjim var, kirmizi et seviyorum"
+            placeholder="Örnek: Yumurtaya alerjim var, kırmızı et seviyorum"
           />
         </div>
 
         <button className="submit-btn" disabled={!confirmed || loading} onClick={handleGenerate}>
-          {loading ? 'Hesaplaniyor...' : 'Diyet Onerisi Al'}
+          {loading ? 'Hesaplanıyor...' : 'Diyet Önerisi Al'}
         </button>
       </div>
 
@@ -64,7 +77,9 @@ function Diet() {
           <div className="main-wrapper" style={{ marginTop: '24px' }}>
             <div className="bmi-card">
               <div className="bmi-value">{diet.bmi}</div>
-              <span className={`bmi-badge ${diet.bmi_kategori.toLowerCase()}`}>{diet.bmi_kategori}</span>
+              <span className={`bmi-badge ${diet.bmi_kategori.toLowerCase()}`}>
+                {BMI_LABELS[diet.bmi_kategori] ?? diet.bmi_kategori}
+              </span>
             </div>
             <div className="dashboard">
               <div className="card status-card">
@@ -72,17 +87,17 @@ function Diet() {
                 <div className="card-value">{diet.bmr} kcal</div>
               </div>
               <div className="card angle-card">
-                <div className="card-title">Toplam Gunluk Harcama (TDEE)</div>
+                <div className="card-title">Toplam Günlük Harcama (TDEE)</div>
                 <div className="card-value">{diet.tdee} kcal</div>
               </div>
               <div className="card confidence-card">
-                <div className="card-title">Hedef Gunluk Kalori</div>
+                <div className="card-title">Hedef Günlük Kalori</div>
                 <div className="card-value">{diet.hedef_kalori} kcal</div>
               </div>
             </div>
           </div>
 
-          <div className="section-title">Onerilen Planlar</div>
+          <div className="section-title">Önerilen Planlar ({HEDEF_LABELS[diet.hedef] ?? diet.hedef})</div>
 
           <div className="diet-panel">
             {diet.planlar.map((plan, index) => (
@@ -90,9 +105,9 @@ function Diet() {
                 <h3>{plan.baslik}</h3>
                 <div className="plan-macros">
                   <span>{plan.kalori} kcal</span>
-                  <span>Protein: {plan.protein_g}g</span>
-                  <span>Karbonhidrat: {plan.karbonhidrat_g}g</span>
-                  <span>Yag: {plan.yag_g}g</span>
+                  <span>Protein: {plan.protein_g} g</span>
+                  <span>Karbonhidrat: {plan.karbonhidrat_g} g</span>
+                  <span>Yağ: {plan.yag_g} g</span>
                 </div>
                 <ul className="plan-meals">
                   {plan.ornek_ogunler.map((ogun, i) => (

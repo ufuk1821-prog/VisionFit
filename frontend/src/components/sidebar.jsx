@@ -30,6 +30,7 @@ function Sidebar() {
           <button onClick={() => go('/history')}>Gecmis Antrenmanlar</button>
           <button onClick={() => go('/profile')}>Profilim</button>
           <button onClick={() => go('/diet')}>Diyet Onerisi</button>
+          <button onClick={() => go('/steps')}>Adim Sayaci</button>
         </nav>
         <button className="sidebar-logout" onClick={handleLogout}>Cikis Yap</button>
       </div>

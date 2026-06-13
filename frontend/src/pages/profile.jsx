@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import Sidebar from '../components/sidebar';
+import Sidebar from '../components/Sidebar';
 
 const AKTIFLIK_OPTIONS = [
-  { value: 'sedanter', label: 'Sedanter (nerdeyse hic hareket etmiyorum)' },
-  { value: 'az_hareketli', label: 'Az hareketli (haftada 1-3 gun hafif egzersiz)' },
-  { value: 'orta_hareketli', label: 'Orta derece hareketli (haftada 3-5 gun egzersiz)' },
-  { value: 'cok_hareketli', label: 'Cok hareketli (haftada 6-7 gun yogun egzersiz)' },
-  { value: 'asiri_hareketli', label: 'Asiri hareketli (gunde 2 kez antrenman / fiziksel is)' },
+  { value: 'sedanter', label: 'Sedanter (Hareket etmiyorum veya çok az hareket ediyorum.)' },
+  { value: 'az_hareketli', label: 'Az hareketli (Hafif hareketli bir yaşam, haftada 1-3 gün egzersiz yapıyorum.)' },
+  { value: 'orta_hareketli', label: 'Orta derece hareketli (Hareketli bir yaşam, haftada 3-5 gün egzersiz yapıyorum.)' },
+  { value: 'cok_hareketli', label: 'Çok hareketli (Çok hareketli bir yaşam, haftada 6-7 gün egzersiz yapıyorum.)' },
+  { value: 'asiri_hareketli', label: 'Aşırı hareketli (Profesyonel sporcu veya atlet seviyesinde aktivite.)' },
 ];
 
 const HEDEF_OPTIONS = [
@@ -65,14 +65,14 @@ function Profile() {
       }, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setMessage('Profil basariyla guncellendi.');
+      setMessage('Profil başarıyla güncellendi.');
     } catch (err) {
-      setMessage('Guncelleme basarisiz oldu.');
+      setMessage('Güncelleme başarısız oldu.');
     }
   };
 
   if (loading) {
-    return <p className="loading-text">Yukleniyor...</p>;
+    return <p className="loading-text">Yükleniyor...</p>;
   }
 
   return (
@@ -92,7 +92,7 @@ function Profile() {
             <input type="text" value={soyad} onChange={(e) => setSoyad(e.target.value)} required />
           </div>
           <div className="form-group">
-            <label>Email</label>
+            <label>E-posta</label>
             <input type="email" value={email} disabled />
           </div>
           <div className="form-group">
@@ -104,21 +104,21 @@ function Profile() {
             <input type="number" step="0.1" value={kilo} onChange={(e) => setKilo(e.target.value)} />
           </div>
           <div className="form-group">
-            <label>Yas</label>
+            <label>Yaş</label>
             <input type="number" value={yas} onChange={(e) => setYas(e.target.value)} />
           </div>
           <div className="form-group">
             <label>Cinsiyet</label>
             <select value={cinsiyet} onChange={(e) => setCinsiyet(e.target.value)}>
-              <option value="">Seciniz</option>
+              <option value="">Seçiniz</option>
               <option value="Erkek">Erkek</option>
-              <option value="Kadin">Kadin</option>
+              <option value="Kadin">Kadın</option>
             </select>
           </div>
           <div className="form-group">
             <label>Aktiflik Seviyesi</label>
             <select value={aktiflikSeviyesi} onChange={(e) => setAktiflikSeviyesi(e.target.value)}>
-              <option value="">Seciniz</option>
+              <option value="">Seçiniz</option>
               {AKTIFLIK_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
@@ -127,7 +127,7 @@ function Profile() {
           <div className="form-group">
             <label>Hedef</label>
             <select value={hedef} onChange={(e) => setHedef(e.target.value)}>
-              <option value="">Seciniz</option>
+              <option value="">Seçiniz</option>
               {HEDEF_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}

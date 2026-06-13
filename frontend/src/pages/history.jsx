@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import Sidebar from '../components/sidebar';
+import Sidebar from '../components/Sidebar';
 
 function History() {
   const [kayitlar, setKayitlar] = useState([]);
@@ -29,7 +29,7 @@ function History() {
       {error && <p className="error-text">{error}</p>}
 
       {!loading && !error && kayitlar.length === 0 && (
-        <p className="loading-text">Henuz antrenman kaydı yok.</p>
+        <p className="loading-text">Henuz antrenman kaydi yok.</p>
       )}
 
       {!loading && kayitlar.length > 0 && (
@@ -39,7 +39,7 @@ function History() {
               <th>Hareket</th>
               <th>Antrenor Notu</th>
               <th>Diz Acisi</th>
-              <th>Eminlik</th>
+              <th>Guven</th>
               <th>Tarih</th>
             </tr>
           </thead>
