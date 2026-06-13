@@ -987,3 +987,23 @@ body {
 .food-modal-close:hover {
   color: var(--text);
 }
+.comparison-delta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  margin-top: 6px;
+}
+
+.comparison-delta.up {
+  color: var(--accent);
+}
+
+.comparison-delta.down {
+  color: var(--accent-2);
+}
+
+.comparison-delta.same {
+  color: var(--text-muted);
+}
