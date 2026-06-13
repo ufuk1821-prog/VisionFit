@@ -34,3 +34,7 @@ class UserProfileUpdate(BaseModel):
     cinsiyet: Optional[str] = None
     aktiflik_seviyesi: Optional[str] = None
     hedef: Optional[str] = None
+
+class PasswordChangeRequest(BaseModel):
+    mevcut_sifre: str
+    yeni_sifre: str

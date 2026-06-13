@@ -9,6 +9,8 @@ import Diet from './pages/diet';
 import Nutrition from './pages/nutrition';
 import Steps from './pages/steps';
 import Badges from './pages/badges';
+import Settings from './pages/settings';
+import Exercises from './pages/exercises';
 import './App.css';
 
 function App() {
@@ -24,11 +26,13 @@ function App() {
           <Route path="/" element={isAuthenticated ? <Home /> : <Navigate to="/login" />} />
           <Route path="/dashboard" element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" />} />
           <Route path="/history" element={isAuthenticated ? <History /> : <Navigate to="/login" />} />
+          <Route path="/exercises" element={isAuthenticated ? <Exercises /> : <Navigate to="/login" />} />
           <Route path="/profile" element={isAuthenticated ? <Profile /> : <Navigate to="/login" />} />
           <Route path="/diet" element={isAuthenticated ? <Diet /> : <Navigate to="/login" />} />
           <Route path="/nutrition" element={isAuthenticated ? <Nutrition /> : <Navigate to="/login" />} />
           <Route path="/steps" element={isAuthenticated ? <Steps /> : <Navigate to="/login" />} />
           <Route path="/badges" element={isAuthenticated ? <Badges /> : <Navigate to="/login" />} />
+          <Route path="/settings" element={isAuthenticated ? <Settings /> : <Navigate to="/login" />} />
           <Route path="*" element={<Navigate to={isAuthenticated ? "/" : "/login"} />} />
         </Routes>
       </div>

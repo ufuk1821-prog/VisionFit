@@ -1019,3 +1019,101 @@ body {
 .comparison-delta.same {
   color: var(--text-muted);
 }
+.danger-zone {
+  border-color: var(--danger);
+}
+
+.danger-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--danger);
+  font-weight: 700;
+  border: 1px solid var(--danger);
+  cursor: pointer;
+  font-size: 1rem;
+  font-family: var(--font-display);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 0.2s;
+}
+
+.danger-btn:hover {
+  background: rgba(239, 68, 68, 0.12);
+}
+.exercise-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.exercise-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.exercise-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.exercise-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--text);
+  font-size: 1.05rem;
+}
+
+.exercise-desc {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.exercise-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+}
+
+.exercise-tag {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.exercise-muscle {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.exercise-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 8px;
+  width: fit-content;
+}
+
+.exercise-badge.ai-active {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.exercise-badge.ai-soon {
+  background: var(--surface-2);
+  color: var(--text-muted);
+}
