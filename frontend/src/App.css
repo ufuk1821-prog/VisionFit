@@ -1811,10 +1811,6 @@ body {
   animation: fadeIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-.app-container > *:not(.brand-logo) {
-  animation: fadeIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
 .card,
 .auth-box,
 .plan-card,
