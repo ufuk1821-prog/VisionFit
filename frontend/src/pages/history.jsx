@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import Sidebar from '../components/Sidebar';
+import Sidebar from '../components/sidebar';
 
 function History() {
   const [kayitlar, setKayitlar] = useState([]);
