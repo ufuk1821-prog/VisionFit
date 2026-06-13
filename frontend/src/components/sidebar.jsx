@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Menu, Home, Camera, History, Dumbbell, ClipboardList, Salad, Utensils, Footprints, Timer, Award, Settings, User, LogOut } from 'lucide-react';
+import { Menu, X, Home, Camera, History, Dumbbell, ClipboardList, Salad, Utensils, Footprints, Timer, Award, Settings, User, LogOut } from 'lucide-react';
 
 const NAV_ITEMS = [
   { path: '/', label: 'Ana Sayfa', icon: Home },
@@ -32,10 +32,12 @@ function Sidebar() {
     navigate(path);
   };
 
+  const toggleOpen = () => setOpen((prev) => !prev);
+
   return (
     <>
-      <button className="menu-btn" onClick={() => setOpen(true)}>
-        <Menu size={20} color="var(--accent)" />
+      <button className="menu-btn" onClick={toggleOpen}>
+        {open ? <X size={20} color="var(--accent)" /> : <Menu size={20} color="var(--accent)" />}
       </button>
 
       {open && <div className="sidebar-overlay" onClick={() => setOpen(false)} />}
