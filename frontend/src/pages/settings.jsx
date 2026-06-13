@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { KeyRound, Trash2, AlertTriangle } from 'lucide-react';
+import { KeyRound, Trash2, AlertTriangle, Sun, Moon } from 'lucide-react';
 import Sidebar from '../components/sidebar';
 
 function Settings() {
@@ -11,9 +11,21 @@ function Settings() {
   const [sifreHata, setSifreHata] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteHata, setDeleteHata] = useState('');
+  const [theme, setTheme] = useState('dark');
   const token = localStorage.getItem('token');
   const headers = { Authorization: `Bearer ${token}` };
   const apiUrl = import.meta.env.VITE_API_URL;
+
+  useEffect(() => {
+    const saved = localStorage.getItem('theme') || 'dark';
+    setTheme(saved);
+  }, []);
+
+  const handleThemeChange = (value) => {
+    setTheme(value);
+    localStorage.setItem('theme', value);
+    document.documentElement.setAttribute('data-theme', value);
+  };
 
   const handlePasswordChange = async (e) => {
     e.preventDefault();
@@ -60,6 +72,33 @@ function Settings() {
     <div>
       <Sidebar />
       <div className="section-title">Ayarlar</div>
+
+      <div className="auth-box">
+        <h2>Görünüm</h2>
+
+        <div className="theme-toggle-row">
+          <div
+            className={`theme-option ${theme === 'dark' ? 'active' : ''}`}
+            onClick={() => handleThemeChange('dark')}
+          >
+            <div className="theme-preview dark" />
+            <span>
+              <Moon size={16} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
+              Koyu Tema
+            </span>
+          </div>
+          <div
+            className={`theme-option ${theme === 'light' ? 'active' : ''}`}
+            onClick={() => handleThemeChange('light')}
+          >
+            <div className="theme-preview light" />
+            <span>
+              <Sun size={16} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
+              Açık Tema
+            </span>
+          </div>
+        </div>
+      </div>
 
       <div className="auth-box">
         <h2><KeyRound size={20} style={{ verticalAlign: 'middle', marginRight: '8px' }} />Şifre Değiştir</h2>

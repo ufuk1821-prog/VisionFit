@@ -1,4 +1,6 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom';
+import { Dumbbell } from 'lucide-react';
 import Login from './pages/login';
 import Register from './pages/register';
 import Home from './pages/home';
@@ -18,10 +20,18 @@ import './App.css';
 function App() {
   const isAuthenticated = !!localStorage.getItem('token');
 
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+  }, []);
+
   return (
     <BrowserRouter>
       <div className="app-container">
-        <h1 className="title-text">VisionFit</h1>
+        <Link to="/" className="brand-logo">
+          <Dumbbell size={28} />
+          <span>VisionFit</span>
+        </Link>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />

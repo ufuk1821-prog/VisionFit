@@ -111,19 +111,25 @@ function Home() {
   const guvenDelta = formatDelta(thisWeekAvgConfidence, prevWeekAvgConfidence);
   const antrenmanDelta = formatDelta(thisWeekWorkouts.length, prevWeekWorkouts.length);
 
+  const bugunTarih = now.toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
   return (
     <div>
       <Sidebar />
-      <div className="welcome-text">Merhaba, {profile?.ad ?? 'Sporcu'}</div>
 
-      {!profileComplete && (
-        <div className="info-banner">
-          Profilinizi tamamlayarak diyet önerisi ve kalori hesaplamalarından yararlanabilirsiniz.
-          <button className="nav-btn" onClick={() => navigate('/profile')}>
-            Profilimi Tamamla <ArrowRight size={16} />
-          </button>
-        </div>
-      )}
+      <div className="home-hero">
+        <div className="welcome-text">Merhaba, {profile?.ad ?? 'Sporcu'}</div>
+        <p className="home-hero-subtitle">{bugunTarih}</p>
+
+        {!profileComplete && (
+          <div className="info-banner" style={{ marginTop: '16px', marginBottom: 0 }}>
+            Profilinizi tamamlayarak diyet önerisi ve kalori hesaplamalarından yararlanabilirsiniz.
+            <button className="banner-btn" onClick={() => navigate('/profile')}>
+              Profilimi Tamamla <ArrowRight size={16} />
+            </button>
+          </div>
+        )}
+      </div>
 
       <div className="dashboard-grid">
         <div className="card status-card">
@@ -214,6 +220,10 @@ function Home() {
         <button className="quick-action-btn" onClick={() => navigate('/steps')}>
           <Footprints size={20} />
           Adım Ekle
+        </button>
+        <button className="quick-action-btn" onClick={() => navigate('/timer')}>
+          <Flame size={20} />
+          Antrenmana Başla
         </button>
       </div>
     </div>

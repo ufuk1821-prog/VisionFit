@@ -17,7 +17,7 @@ function Login() {
         sifre: password,
       });
       localStorage.setItem('token', response.data.token);
-      window.location.href = '/dashboard';
+      window.location.href = '/';
     } catch (err) {
       setError('Giriş başarısız. Email veya şifre hatalı.');
     }
