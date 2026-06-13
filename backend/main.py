@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
 from app.core.database import engine, Base
-from app.api import auth, news, users
+from app.api import auth, news, users, steps
 from app.api.analyze import router as analyze_router
 
 @asynccontextmanager
@@ -52,6 +52,7 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(news.router)
 app.include_router(users.router)
+app.include_router(steps.router)
 app.include_router(analyze_router, prefix="/api/analyze", tags=["Analyze"])
 
 @app.get("/")

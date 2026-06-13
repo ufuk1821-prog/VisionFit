@@ -69,7 +69,7 @@ async def analyze_squat(
         if len(data.landmarks) < 132:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Eksik landmark verisi gönderildi."
+                detail="Eksik landmark verisi gonderildi."
             )
 
         if IS_TESTING:
@@ -91,16 +91,16 @@ async def analyze_squat(
 
         if hareket_sinifi == "dogru_squat":
             if angle > 160:
-                durum = "AYAKTA BEKLIYOR"
+                durum = "Ayakta Bekliyor"
             elif angle < 100:
-                durum = "HARIKA FORM"
+                durum = "Harika Form"
             else:
-                durum = "YARIM SQUAT"
+                durum = "Yarim Squat"
         else:
             if angle < 90:
-                durum = "UYARI: DIZLERINI KONTROL ET"
+                durum = "Uyari: Dizlerini Kontrol Et"
             else:
-                durum = "UYARI: BELINI BUKUYORSUN"
+                durum = "Uyari: Belini Bukuyorsun"
 
         yeni_kayit = WorkoutHistory(
             user_id=current_user.id,

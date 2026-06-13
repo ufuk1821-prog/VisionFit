@@ -1,5 +1,7 @@
+import os
 import re
-from typing import List, Dict, Set, Optional
+import pickle
+from typing import List, Dict, Set, Optional, Tuple
 
 ACTIVITY_MULTIPLIERS = {
     "sedanter": 1.2,
@@ -62,15 +64,24 @@ MEAL_POOL = {
 
 FOOD_KEYWORDS = ["yumurta", "et", "tavuk", "balik", "sut", "peynir", "yogurt", "ekmek", "seker", "mercimek", "nohut"]
 
-NEGATIVE_TRIGGERS = ["alerjim var", "alerjisi var", "sevmiyorum", "istemiyorum", "olmasin", "yemiyorum", "tuketemiyorum"]
-POSITIVE_TRIGGERS = ["seviyorum", "bayilirim", "bol olsun", "fazla olsun", "tercih ederim", "istiyorum"]
-
 TR_MAP = str.maketrans("çğıöşü", "cgiosu")
 
 def normalize(text: str) -> str:
     return text.lower().translate(TR_MAP)
 
-def extract_preferences(istek: Optional[str]) -> tuple[Set[str], Set[str]]:
+def _load_preference_model():
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    model_path = os.path.join(current_dir, "diet_preference_model.pkl")
+
+    if os.path.exists(model_path):
+        with open(model_path, "rb") as f:
+            return pickle.load(f)
+
+    return None
+
+PREFERENCE_MODEL = _load_preference_model()
+
+def extract_preferences(istek: Optional[str]) -> Tuple[Set[str], Set[str]]:
     if not istek:
         return set(), set()
 
@@ -81,15 +92,18 @@ def extract_preferences(istek: Optional[str]) -> tuple[Set[str], Set[str]]:
     preferred = set()
 
     for clause in clauses:
-        is_negative = any(trigger in clause for trigger in NEGATIVE_TRIGGERS)
-        is_positive = any(trigger in clause for trigger in POSITIVE_TRIGGERS)
-
         for food in FOOD_KEYWORDS:
-            if food in clause:
-                if is_negative:
-                    excluded.add(food)
-                elif is_positive:
+            if food not in clause:
+                continue
+
+            if PREFERENCE_MODEL is not None:
+                prediction = PREFERENCE_MODEL.predict([clause])[0]
+                if prediction == 1:
                     preferred.add(food)
+                else:
+                    excluded.add(food)
+            else:
+                excluded.add(food)
 
     return excluded, preferred
 
