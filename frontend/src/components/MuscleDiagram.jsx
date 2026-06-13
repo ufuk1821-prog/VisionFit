@@ -46,8 +46,18 @@ function MuscleDiagram({ selectedMuscle, onSelectMuscle }) {
   const handleClick = ({ muscle }) => {
     const groups = SLUG_TO_GROUPS[muscle];
     if (!groups) return;
-    if (groups.includes(selectedMuscle)) return;
     onSelectMuscle(groups[0]);
+  };
+
+  const modelStyle = {
+    width: '200px',
+    padding: '0',
+    cursor: 'pointer',
+  };
+
+  const svgStyle = {
+    width: '200px',
+    height: 'auto',
   };
 
   return (
@@ -57,9 +67,10 @@ function MuscleDiagram({ selectedMuscle, onSelectMuscle }) {
           type="anterior"
           data={data}
           onClick={handleClick}
-          bodyColor="var(--surface-2)"
-          highlightedColors={['var(--accent)']}
-          style={{ width: '13rem', padding: '0' }}
+          bodyColor="#c4956a"
+          highlightedColors={['#39ff88']}
+          style={modelStyle}
+          svgStyle={svgStyle}
         />
         <div className="muscle-diagram-label">Ön</div>
       </div>
@@ -68,9 +79,10 @@ function MuscleDiagram({ selectedMuscle, onSelectMuscle }) {
           type="posterior"
           data={data}
           onClick={handleClick}
-          bodyColor="var(--surface-2)"
-          highlightedColors={['var(--accent)']}
-          style={{ width: '13rem', padding: '0' }}
+          bodyColor="#c4956a"
+          highlightedColors={['#39ff88']}
+          style={modelStyle}
+          svgStyle={svgStyle}
         />
         <div className="muscle-diagram-label">Arka</div>
       </div>
