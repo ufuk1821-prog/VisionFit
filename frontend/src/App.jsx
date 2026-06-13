@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom';
-import { Dumbbell } from 'lucide-react';
 import Login from './pages/login';
 import Register from './pages/register';
 import Home from './pages/home';
@@ -17,6 +16,22 @@ import Timer from './pages/timer';
 import WorkoutNotebook from './pages/workout-notebook';
 import './App.css';
 
+function VisionFitLogo() {
+  return (
+    <Link to="/" className="brand-logo">
+      <svg width="38" height="38" viewBox="0 0 38 38" fill="none">
+        <rect width="38" height="38" rx="10" fill="var(--accent)" opacity="0.15" />
+        <rect x="4" y="17" width="8" height="4" rx="2" fill="var(--accent)" />
+        <rect x="26" y="17" width="8" height="4" rx="2" fill="var(--accent)" />
+        <rect x="11" y="11" width="16" height="16" rx="4" fill="none" stroke="var(--accent)" strokeWidth="2.5" />
+        <rect x="15" y="15" width="8" height="8" rx="2" fill="var(--accent)" />
+        <circle cx="19" cy="19" r="2" fill="#0a0c0f" />
+      </svg>
+      <span>VisionFit</span>
+    </Link>
+  );
+}
+
 function App() {
   const isAuthenticated = !!localStorage.getItem('token');
 
@@ -28,10 +43,7 @@ function App() {
   return (
     <BrowserRouter>
       <div className="app-container">
-        <Link to="/" className="brand-logo">
-          <Dumbbell size={28} />
-          <span>VisionFit</span>
-        </Link>
+        <VisionFitLogo />
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />

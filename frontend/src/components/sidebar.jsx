@@ -1,20 +1,20 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Menu, Home, Camera, History, User, Salad, Footprints, Award, Utensils, Settings, Dumbbell, Timer, ClipboardList, LogOut } from 'lucide-react';
+import { Menu, Home, Camera, History, Dumbbell, ClipboardList, Salad, Utensils, Footprints, Timer, Award, Settings, User, LogOut } from 'lucide-react';
 
 const NAV_ITEMS = [
   { path: '/', label: 'Ana Sayfa', icon: Home },
   { path: '/dashboard', label: 'Kamera', icon: Camera },
   { path: '/history', label: 'Geçmiş Antrenmanlar', icon: History },
   { path: '/exercises', label: 'Egzersiz Kütüphanesi', icon: Dumbbell },
-  { path: '/timer', label: 'Kronometre & Zamanlayıcı', icon: Timer },
   { path: '/workout-notebook', label: 'Antrenman Defteri', icon: ClipboardList },
-  { path: '/profile', label: 'Profilim', icon: User },
   { path: '/diet', label: 'Diyet Önerisi', icon: Salad },
   { path: '/nutrition', label: 'Beslenme Takibi', icon: Utensils },
   { path: '/steps', label: 'Adım Sayacı', icon: Footprints },
+  { path: '/timer', label: 'Kronometre & Zamanlayıcı', icon: Timer },
   { path: '/badges', label: 'Rozetlerim', icon: Award },
   { path: '/settings', label: 'Ayarlar', icon: Settings },
+  { path: '/profile', label: 'Profilim', icon: User },
 ];
 
 function Sidebar() {

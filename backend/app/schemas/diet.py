@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 
 class DietPlan(BaseModel):
     baslik: str
@@ -20,3 +20,12 @@ class DietRecommendation(BaseModel):
 
 class DietCustomRequest(BaseModel):
     istek: str
+
+class DietCalculateRequest(BaseModel):
+    boy: float
+    kilo: float
+    yas: int
+    cinsiyet: str
+    aktiflik_seviyesi: str
+    hedef: str
+    istek: Optional[str] = ""
