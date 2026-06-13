@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Sidebar from '../components/sidebar';
 
 function History() {
@@ -15,21 +16,46 @@ function History() {
       setKayitlar(res.data);
       setLoading(false);
     }).catch(() => {
-      setError('Veriler yuklenemedi.');
+      setError('Veriler yüklenemedi.');
       setLoading(false);
     });
   }, []);
 
+  const grafikVerisi = [...kayitlar]
+    .reverse()
+    .map((k) => ({
+      tarih: new Date(k.tarih).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit' }),
+      guven: k.eminlik_skoru,
+    }));
+
   return (
     <div>
       <Sidebar />
-      <div className="section-title">Gecmis Antrenmanlar</div>
+      <div className="section-title">Geçmiş Antrenmanlar</div>
 
-      {loading && <p className="loading-text">Yukleniyor...</p>}
+      {loading && <p className="loading-text">Yükleniyor...</p>}
       {error && <p className="error-text">{error}</p>}
 
       {!loading && !error && kayitlar.length === 0 && (
-        <p className="loading-text">Henuz antrenman kaydi yok.</p>
+        <p className="loading-text">Henüz antrenman kaydı yok.</p>
+      )}
+
+      {!loading && kayitlar.length > 1 && (
+        <div className="chart-card">
+          <div className="card-title" style={{ marginBottom: '16px' }}>Güven Skoru Gelişimi</div>
+          <ResponsiveContainer width="100%" height={250}>
+            <LineChart data={grafikVerisi}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+              <XAxis dataKey="tarih" stroke="var(--text-muted)" fontSize={12} />
+              <YAxis stroke="var(--text-muted)" fontSize={12} domain={[0, 100]} />
+              <Tooltip
+                contentStyle={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: '8px' }}
+                labelStyle={{ color: 'var(--text)' }}
+              />
+              <Line type="monotone" dataKey="guven" stroke="var(--accent)" strokeWidth={2} dot={{ fill: 'var(--accent)' }} name="Güven Skoru (%)" />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
       )}
 
       {!loading && kayitlar.length > 0 && (
@@ -37,9 +63,9 @@ function History() {
           <thead>
             <tr>
               <th>Hareket</th>
-              <th>Antrenor Notu</th>
-              <th>Diz Acisi</th>
-              <th>Guven</th>
+              <th>Antrenör Notu</th>
+              <th>Diz Açısı</th>
+              <th>Güven</th>
               <th>Tarih</th>
             </tr>
           </thead>

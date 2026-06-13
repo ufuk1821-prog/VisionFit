@@ -638,3 +638,10 @@ body {
   border-color: var(--accent);
   color: var(--accent);
 }
+.chart-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
