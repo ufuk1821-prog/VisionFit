@@ -1787,3 +1787,133 @@ body {
 .muscle-diagram svg > g > ellipse:first-child {
   fill: #c4a07a !important;
 }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 0.35s ease-out;
+}
+
+.card,
+.auth-box,
+.plan-card,
+.badge-card,
+.chart-card,
+.timer-card,
+.exercise-row,
+.meal-item,
+.notebook-table-wrapper,
+.home-hero {
+  animation: fadeIn 0.35s ease-out;
+}
+
+.success-text {
+  text-align: center;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 10px 16px;
+  margin-bottom: 16px;
+  font-size: 0.9rem;
+}
+
+.password-rules {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.password-rule {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  transition: color 0.2s;
+}
+
+.password-rule.valid {
+  color: var(--accent);
+}
+
+.submit-btn,
+.quick-action-btn,
+.timer-btn,
+.tab-btn,
+.delete-btn,
+.danger-btn,
+.banner-btn,
+.quick-add-btn,
+.theme-option,
+.exercise-row,
+.notebook-save-btn,
+.sidebar-nav button,
+.sidebar-logout,
+.food-modal-close,
+.brand-logo,
+.menu-btn {
+  transition: transform 0.15s ease, opacity 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.submit-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px -6px var(--accent);
+}
+
+.submit-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.quick-action-btn:hover,
+.timer-btn:hover,
+.quick-add-btn:hover {
+  transform: translateY(-2px);
+}
+
+.quick-action-btn:active,
+.timer-btn:active,
+.quick-add-btn:active {
+  transform: translateY(0);
+}
+
+.tab-btn:hover {
+  transform: translateY(-1px);
+}
+
+.badge-card,
+.plan-card,
+.exercise-row,
+.meal-item,
+.notebook-table tr,
+.history-table tr {
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.badge-card:hover:not(.locked),
+.plan-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px -10px rgba(0, 0, 0, 0.4);
+}
+
+.food-modal {
+  animation: modalPop 0.2s ease-out;
+}
+
+@keyframes modalPop {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.food-modal-overlay {
+  animation: fadeIn 0.2s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

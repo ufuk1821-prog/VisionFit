@@ -23,6 +23,7 @@ function Profile() {
   const [boy, setBoy] = useState('');
   const [kilo, setKilo] = useState('');
   const [yas, setYas] = useState('');
+  const [yasHata, setYasHata] = useState('');
   const [cinsiyet, setCinsiyet] = useState('');
   const [aktiflikSeviyesi, setAktiflikSeviyesi] = useState('');
   const [hedef, setHedef] = useState('');
@@ -49,8 +50,20 @@ function Profile() {
     });
   }, []);
 
+  const handleYasChange = (e) => {
+    const val = e.target.value;
+    setYas(val);
+    const num = parseInt(val, 10);
+    if (val !== '' && (isNaN(num) || num < 1 || num > 120)) {
+      setYasHata('Yaş 1 ile 120 arasında olmalıdır.');
+    } else {
+      setYasHata('');
+    }
+  };
+
   const handleSave = async (e) => {
     e.preventDefault();
+    if (yasHata) return;
     setMessage('');
     try {
       await axios.put(`${import.meta.env.VITE_API_URL}/api/users/me`, {
@@ -97,15 +110,23 @@ function Profile() {
           </div>
           <div className="form-group">
             <label>Boy (cm)</label>
-            <input type="number" step="0.1" value={boy} onChange={(e) => setBoy(e.target.value)} />
+            <input type="number" step="0.1" min="50" max="300" value={boy} onChange={(e) => setBoy(e.target.value)} />
           </div>
           <div className="form-group">
             <label>Kilo (kg)</label>
-            <input type="number" step="0.1" value={kilo} onChange={(e) => setKilo(e.target.value)} />
+            <input type="number" step="0.1" min="20" max="500" value={kilo} onChange={(e) => setKilo(e.target.value)} />
           </div>
           <div className="form-group">
             <label>Yaş</label>
-            <input type="number" value={yas} onChange={(e) => setYas(e.target.value)} />
+            <input
+              type="number"
+              min="1"
+              max="120"
+              value={yas}
+              onChange={handleYasChange}
+              style={{ borderColor: yasHata ? 'var(--danger)' : undefined }}
+            />
+            {yasHata && <span style={{ color: 'var(--danger)', fontSize: '0.82rem', marginTop: '4px' }}>{yasHata}</span>}
           </div>
           <div className="form-group">
             <label>Cinsiyet</label>
@@ -133,7 +154,7 @@ function Profile() {
               ))}
             </select>
           </div>
-          <button type="submit" className="submit-btn">Kaydet</button>
+          <button type="submit" className="submit-btn" disabled={!!yasHata}>Kaydet</button>
         </form>
       </div>
     </div>
