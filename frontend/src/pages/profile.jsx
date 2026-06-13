@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import Sidebar from '../components/Sidebar';
+import Sidebar from '../components/sidebar';
 
 const AKTIFLIK_OPTIONS = [
   { value: 'sedanter', label: 'Sedanter (Hareket etmiyorum veya çok az hareket ediyorum.)' },
