@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Menu, Home, Camera, History, User, Salad, Footprints, Award, Utensils, Settings, Dumbbell, LogOut } from 'lucide-react';
+import { Menu, Home, Camera, History, User, Salad, Footprints, Award, Utensils, Settings, Dumbbell, Timer, LogOut } from 'lucide-react';
 
 const NAV_ITEMS = [
   { path: '/', label: 'Ana Sayfa', icon: Home },
   { path: '/dashboard', label: 'Kamera', icon: Camera },
   { path: '/history', label: 'Geçmiş Antrenmanlar', icon: History },
   { path: '/exercises', label: 'Egzersiz Kütüphanesi', icon: Dumbbell },
+  { path: '/timer', label: 'Kronometre & Zamanlayıcı', icon: Timer },
   { path: '/profile', label: 'Profilim', icon: User },
   { path: '/diet', label: 'Diyet Önerisi', icon: Salad },
   { path: '/nutrition', label: 'Beslenme Takibi', icon: Utensils },

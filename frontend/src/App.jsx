@@ -11,6 +11,7 @@ import Steps from './pages/steps';
 import Badges from './pages/badges';
 import Settings from './pages/settings';
 import Exercises from './pages/exercises';
+import Timer from './pages/timer';
 import './App.css';
 
 function App() {
@@ -27,6 +28,7 @@ function App() {
           <Route path="/dashboard" element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" />} />
           <Route path="/history" element={isAuthenticated ? <History /> : <Navigate to="/login" />} />
           <Route path="/exercises" element={isAuthenticated ? <Exercises /> : <Navigate to="/login" />} />
+          <Route path="/timer" element={isAuthenticated ? <Timer /> : <Navigate to="/login" />} />
           <Route path="/profile" element={isAuthenticated ? <Profile /> : <Navigate to="/login" />} />
           <Route path="/diet" element={isAuthenticated ? <Diet /> : <Navigate to="/login" />} />
           <Route path="/nutrition" element={isAuthenticated ? <Nutrition /> : <Navigate to="/login" />} />
