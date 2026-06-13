@@ -3,6 +3,7 @@ import axios from 'axios';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Trash2, Droplet, X, Search } from 'lucide-react';
 import Sidebar from '../components/sidebar';
+import EmptyState from '../components/EmptyState';
 
 const OGUN_OPTIONS = [
   { value: 'kahvalti', label: 'Kahvaltı' },
@@ -238,7 +239,13 @@ function Nutrition() {
             );
           })}
 
-          {meals.length === 0 && <p className="loading-text">Bugün için kayıt yok.</p>}
+          {meals.length === 0 && (
+            <EmptyState
+              type="plate"
+              title="Bugün için öğün kaydı yok"
+              description="Yukarıdaki arama kutusundan bir besin seçerek öğün eklemeye başla."
+            />
+          )}
         </>
       )}
 

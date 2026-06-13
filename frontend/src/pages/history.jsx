@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Sidebar from '../components/sidebar';
+import EmptyState from '../components/EmptyState';
 
 function History() {
   const [kayitlar, setKayitlar] = useState([]);
@@ -37,7 +38,11 @@ function History() {
       {error && <p className="error-text">{error}</p>}
 
       {!loading && !error && kayitlar.length === 0 && (
-        <p className="loading-text">Henüz antrenman kaydı yok.</p>
+        <EmptyState
+          type="camera"
+          title="Henüz antrenman kaydı yok"
+          description="Kamera sayfasından bir antrenman analizi yaparak ilk kaydını oluştur."
+        />
       )}
 
       {!loading && kayitlar.length > 1 && (

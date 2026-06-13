@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import Sidebar from '../components/sidebar';
+import EmptyState from '../components/EmptyState';
 
 const AKTIVITE_OPTIONS = [
   { value: 'yuruyus', label: 'Yürüyüş' },
@@ -87,7 +88,13 @@ function Steps() {
 
       <div className="section-title">Geçmiş Kayıtlar</div>
 
-      {kayitlar.length === 0 && <p className="loading-text">Henüz kayıt yok.</p>}
+      {kayitlar.length === 0 && (
+        <EmptyState
+          type="footprint"
+          title="Henüz adım kaydı yok"
+          description="Yukarıdaki formdan günlük adım sayını ekleyerek takibe başla."
+        />
+      )}
 
       {kayitlar.length > 0 && (
         <table className="history-table">
