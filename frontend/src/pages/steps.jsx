@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import Sidebar from '../components/sidebar';
+import Sidebar from '../components/Sidebar';
 
 const AKTIVITE_OPTIONS = [
   { value: 'yuruyus', label: 'Yürüyüş' },
