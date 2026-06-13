@@ -1852,22 +1852,6 @@ body {
 .exercise-list > *:nth-child(4) { animation-delay: 0.14s; }
 .exercise-list > *:nth-child(5) { animation-delay: 0.18s; }
 
-.sidebar.open .sidebar-nav button {
-  animation: fadeInLeft 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-.sidebar.open .sidebar-nav button:nth-child(1)  { animation-delay: 0.02s; }
-.sidebar.open .sidebar-nav button:nth-child(2)  { animation-delay: 0.05s; }
-.sidebar.open .sidebar-nav button:nth-child(3)  { animation-delay: 0.08s; }
-.sidebar.open .sidebar-nav button:nth-child(4)  { animation-delay: 0.11s; }
-.sidebar.open .sidebar-nav button:nth-child(5)  { animation-delay: 0.14s; }
-.sidebar.open .sidebar-nav button:nth-child(6)  { animation-delay: 0.17s; }
-.sidebar.open .sidebar-nav button:nth-child(7)  { animation-delay: 0.20s; }
-.sidebar.open .sidebar-nav button:nth-child(8)  { animation-delay: 0.23s; }
-.sidebar.open .sidebar-nav button:nth-child(9)  { animation-delay: 0.26s; }
-.sidebar.open .sidebar-nav button:nth-child(10) { animation-delay: 0.29s; }
-.sidebar.open .sidebar-nav button:nth-child(11) { animation-delay: 0.32s; }
-.sidebar.open .sidebar-nav button:nth-child(12) { animation-delay: 0.35s; }
 
 .success-text {
   text-align: center;
