@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Ruler, Flame, Target, Footprints, Activity, ArrowRight, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import Sidebar from '../components/sidebar';
+import useCountUp from '../hooks/useCountUp';
 
 const BMI_LABELS = {
   Zayif: 'Zayıf',
@@ -84,13 +85,6 @@ function Home() {
     });
   }, []);
 
-  if (loading) {
-    return <p className="loading-text">Yükleniyor...</p>;
-  }
-
-  const profileComplete = profile && profile.boy && profile.kilo && profile.yas && profile.cinsiyet && profile.aktiflik_seviyesi && profile.hedef;
-  const lastWorkout = workouts.length > 0 ? workouts[0] : null;
-
   const now = new Date();
   const weekStart = new Date(now);
   weekStart.setDate(now.getDate() - 7);
@@ -110,6 +104,21 @@ function Home() {
   const adimDelta = formatDelta(thisWeekSteps, prevWeekSteps);
   const guvenDelta = formatDelta(thisWeekAvgConfidence, prevWeekAvgConfidence);
   const antrenmanDelta = formatDelta(thisWeekWorkouts.length, prevWeekWorkouts.length);
+
+  const bmiCount = useCountUp(diet ? diet.bmi : 0, 900, 1);
+  const kcalCount = useCountUp(diet ? diet.hedef_kalori : 0, 900);
+  const stepsCount = useCountUp(todaySteps, 900);
+  const stepsKcalCount = useCountUp(todayCalories, 900);
+  const weekStepsCount = useCountUp(thisWeekSteps, 900);
+  const weekConfidenceCount = useCountUp(thisWeekAvgConfidence, 900);
+  const weekWorkoutsCount = useCountUp(thisWeekWorkouts.length, 900);
+
+  if (loading) {
+    return <p className="loading-text">Yükleniyor...</p>;
+  }
+
+  const profileComplete = profile && profile.boy && profile.kilo && profile.yas && profile.cinsiyet && profile.aktiflik_seviyesi && profile.hedef;
+  const lastWorkout = workouts.length > 0 ? workouts[0] : null;
 
   const bugunTarih = now.toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
@@ -137,7 +146,7 @@ function Home() {
             <div className="card-icon"><Ruler size={18} /></div>
             <div className="card-title">Vücut Kitle Endeksi</div>
           </div>
-          <div className="card-value">{diet ? diet.bmi : '—'}</div>
+          <div className="card-value">{diet ? bmiCount : '—'}</div>
           {diet && (
             <span className={`bmi-badge ${diet.bmi_kategori.toLowerCase()}`}>
               {BMI_LABELS[diet.bmi_kategori] ?? diet.bmi_kategori}
@@ -150,7 +159,7 @@ function Home() {
             <div className="card-icon"><Target size={18} /></div>
             <div className="card-title">Hedef Günlük Kalori</div>
           </div>
-          <div className="card-value">{diet ? `${diet.hedef_kalori} kcal` : '—'}</div>
+          <div className="card-value">{diet ? `${kcalCount} kcal` : '—'}</div>
         </div>
 
         <div className="card confidence-card">
@@ -158,8 +167,8 @@ function Home() {
             <div className="card-icon"><Footprints size={18} /></div>
             <div className="card-title">Bugünkü Adım</div>
           </div>
-          <div className="card-value">{todaySteps}</div>
-          <span className="card-subtext">{todayCalories} kcal yakıldı</span>
+          <div className="card-value">{stepsCount}</div>
+          <span className="card-subtext">{stepsKcalCount} kcal yakıldı</span>
         </div>
 
         <div className="card status-card">
@@ -183,7 +192,7 @@ function Home() {
       <div className="dashboard-grid">
         <div className="card">
           <div className="card-title">Toplam Adım (Bu Hafta)</div>
-          <div className="card-value">{thisWeekSteps}</div>
+          <div className="card-value">{weekStepsCount}</div>
           <span className={`comparison-delta ${adimDelta.trend}`}>
             <TrendIcon trend={adimDelta.trend} /> {adimDelta.text} (geçen hafta: {prevWeekSteps})
           </span>
@@ -191,7 +200,7 @@ function Home() {
 
         <div className="card">
           <div className="card-title">Ortalama Güven Skoru</div>
-          <div className="card-value">%{thisWeekAvgConfidence}</div>
+          <div className="card-value">%{weekConfidenceCount}</div>
           <span className={`comparison-delta ${guvenDelta.trend}`}>
             <TrendIcon trend={guvenDelta.trend} /> {guvenDelta.text} (geçen hafta: %{prevWeekAvgConfidence})
           </span>
@@ -199,7 +208,7 @@ function Home() {
 
         <div className="card">
           <div className="card-title">Antrenman Sayısı</div>
-          <div className="card-value">{thisWeekWorkouts.length}</div>
+          <div className="card-value">{weekWorkoutsCount}</div>
           <span className={`comparison-delta ${antrenmanDelta.trend}`}>
             <TrendIcon trend={antrenmanDelta.trend} /> {antrenmanDelta.text} (geçen hafta: {prevWeekWorkouts.length})
           </span>
