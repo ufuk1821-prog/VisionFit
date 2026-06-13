@@ -1019,6 +1019,7 @@ body {
 .comparison-delta.same {
   color: var(--text-muted);
 }
+
 .danger-zone {
   border-color: var(--danger);
 }
@@ -1044,6 +1045,7 @@ body {
 .danger-btn:hover {
   background: rgba(239, 68, 68, 0.12);
 }
+
 .exercise-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -1117,31 +1119,7 @@ body {
   background: var(--surface-2);
   color: var(--text-muted);
 }
-.danger-zone {
-  border-color: var(--danger);
-}
 
-.danger-btn {
-  width: 100%;
-  padding: 12px;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--danger);
-  font-weight: 700;
-  border: 1px solid var(--danger);
-  cursor: pointer;
-  font-size: 1rem;
-  font-family: var(--font-display);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: background 0.2s;
-}
-
-.danger-btn:hover {
-  background: rgba(239, 68, 68, 0.12);
-}
 .muscle-diagram-wrapper {
   display: flex;
   gap: 24px;
@@ -1159,8 +1137,8 @@ body {
 }
 
 .muscle-diagram svg {
-  width: 180px;
-  height: 380px;
+  width: 210px;
+  height: 400px;
 }
 
 .muscle-diagram-label {
@@ -1180,6 +1158,10 @@ body {
   fill: var(--accent-2) !important;
 }
 
+.muscle-decor {
+  pointer-events: none;
+}
+
 .exercise-list {
   display: flex;
   flex-direction: column;
@@ -1189,7 +1171,7 @@ body {
 
 .exercise-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 16px;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -1209,8 +1191,10 @@ body {
   font-size: 1.3rem;
   color: var(--accent);
   width: 28px;
+  flex-shrink: 0;
   text-align: center;
   font-variant-numeric: tabular-nums;
+  padding-top: 2px;
 }
 
 .exercise-row-info {
