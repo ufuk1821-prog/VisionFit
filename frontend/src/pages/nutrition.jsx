@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Trash2, Droplet } from 'lucide-react';
+import { Trash2, Droplet, X, Search } from 'lucide-react';
 import Sidebar from '../components/sidebar';
 
 const OGUN_OPTIONS = [
@@ -17,12 +17,12 @@ function Nutrition() {
   const [activeTab, setActiveTab] = useState('yemek');
   const [foods, setFoods] = useState([]);
   const [ogunTipi, setOgunTipi] = useState('kahvalti');
-  const [besinAnahtari, setBesinAnahtari] = useState('');
-  const [gram, setGram] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedFood, setSelectedFood] = useState(null);
+  const [modalGram, setModalGram] = useState('');
   const [meals, setMeals] = useState([]);
   const [waterLogs, setWaterLogs] = useState([]);
   const [customWater, setCustomWater] = useState('');
-  const [error, setError] = useState('');
   const token = localStorage.getItem('token');
   const headers = { Authorization: `Bearer ${token}` };
   const apiUrl = import.meta.env.VITE_API_URL;
@@ -47,25 +47,39 @@ function Nutrition() {
     fetchWater();
   }, []);
 
-  const selectedFood = foods.find((f) => f.anahtar === besinAnahtari);
-  const previewKcal = selectedFood && gram
-    ? Math.round(((selectedFood.protein * 4 + selectedFood.karbonhidrat * 4 + selectedFood.yag * 9) * parseFloat(gram)) / 100)
+  const filteredFoods = searchTerm.length > 0
+    ? foods.filter((f) => f.ad.toLocaleLowerCase('tr-TR').includes(searchTerm.toLocaleLowerCase('tr-TR'))).slice(0, 8)
+    : [];
+
+  const previewKcal = selectedFood && modalGram
+    ? Math.round(((selectedFood.protein * 4 + selectedFood.karbonhidrat * 4 + selectedFood.yag * 9) * parseFloat(modalGram)) / 100)
     : null;
+
+  const handleSelectFood = (food) => {
+    setSelectedFood(food);
+    setSearchTerm('');
+    setModalGram('');
+  };
+
+  const handleCloseModal = () => {
+    setSelectedFood(null);
+    setModalGram('');
+  };
 
   const handleAddMeal = async (e) => {
     e.preventDefault();
-    setError('');
+    if (!selectedFood || !modalGram) return;
+
     try {
       await axios.post(`${apiUrl}/api/nutrition/meals`, {
         ogun_tipi: ogunTipi,
-        besin_anahtari: besinAnahtari,
-        gram: parseFloat(gram),
+        besin_anahtari: selectedFood.anahtar,
+        gram: parseFloat(modalGram),
       }, { headers });
-      setGram('');
-      setBesinAnahtari('');
+      handleCloseModal();
       fetchMeals();
     } catch (err) {
-      setError('Kayıt eklenemedi.');
+      // sessizce gec
     }
   };
 
@@ -112,34 +126,64 @@ function Nutrition() {
             <span className="card-value">{Math.round(toplamKalori)} kcal</span>
           </div>
 
-          <div className="auth-box">
-            {error && <p className="error-text">{error}</p>}
-            <form onSubmit={handleAddMeal}>
-              <div className="form-group">
-                <label>Öğün</label>
-                <select value={ogunTipi} onChange={(e) => setOgunTipi(e.target.value)}>
-                  {OGUN_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Besin</label>
-                <select value={besinAnahtari} onChange={(e) => setBesinAnahtari(e.target.value)} required>
-                  <option value="">Seçiniz</option>
-                  {foods.map((f) => (
-                    <option key={f.anahtar} value={f.anahtar}>{f.ad}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Miktar (gram)</label>
-                <input type="number" value={gram} onChange={(e) => setGram(e.target.value)} required />
-              </div>
-              {previewKcal !== null && <div className="preview-kcal">≈ {previewKcal} kcal</div>}
-              <button type="submit" className="submit-btn">Ekle</button>
-            </form>
+          <div className="form-group">
+            <label>Öğün</label>
+            <select value={ogunTipi} onChange={(e) => setOgunTipi(e.target.value)}>
+              {OGUN_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
           </div>
+
+          <div className="food-search-wrapper">
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label>Besin Ara</label>
+              <div className="search-input-row">
+                <Search size={18} color="var(--text-muted)" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Örnek: soğan, tavuk, yoğurt..."
+                />
+              </div>
+            </div>
+
+            {filteredFoods.length > 0 && (
+              <div className="food-search-results">
+                {filteredFoods.map((f) => (
+                  <div key={f.anahtar} className="food-search-result" onClick={() => handleSelectFood(f)}>
+                    {f.ad}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {selectedFood && (
+            <div className="food-modal-overlay" onClick={handleCloseModal}>
+              <div className="food-modal" onClick={(e) => e.stopPropagation()}>
+                <button className="food-modal-close" onClick={handleCloseModal}>
+                  <X size={20} />
+                </button>
+                <form onSubmit={handleAddMeal}>
+                  <div className="food-modal-row">
+                    <span className="food-modal-name">{selectedFood.ad}</span>
+                    <input
+                      type="number"
+                      value={modalGram}
+                      onChange={(e) => setModalGram(e.target.value)}
+                      placeholder="gram"
+                      autoFocus
+                      required
+                    />
+                  </div>
+                  {previewKcal !== null && <div className="preview-kcal">≈ {previewKcal} kcal</div>}
+                  <button type="submit" className="submit-btn">Ekle</button>
+                </form>
+              </div>
+            </div>
+          )}
 
           {OGUN_OPTIONS.map((ogun) => {
             const ogunMeals = meals.filter((m) => m.ogun_tipi === ogun.value);
