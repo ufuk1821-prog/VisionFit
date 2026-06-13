@@ -1,9 +1,19 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Menu, Camera, History, User, Salad, Footprints, LogOut } from 'lucide-react';
+
+const NAV_ITEMS = [
+  { path: '/dashboard', label: 'Kamera', icon: Camera },
+  { path: '/history', label: 'Geçmiş Antrenmanlar', icon: History },
+  { path: '/profile', label: 'Profilim', icon: User },
+  { path: '/diet', label: 'Diyet Önerisi', icon: Salad },
+  { path: '/steps', label: 'Adım Sayacı', icon: Footprints },
+];
 
 function Sidebar() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -18,7 +28,7 @@ function Sidebar() {
   return (
     <>
       <button className="menu-btn" onClick={() => setOpen(true)}>
-        <span></span><span></span><span></span>
+        <Menu size={20} color="var(--accent)" />
       </button>
 
       {open && <div className="sidebar-overlay" onClick={() => setOpen(false)} />}
@@ -26,13 +36,21 @@ function Sidebar() {
       <div className={`sidebar ${open ? 'open' : ''}`}>
         <div className="sidebar-header">VisionFit</div>
         <nav className="sidebar-nav">
-          <button onClick={() => go('/dashboard')}>Kamera</button>
-          <button onClick={() => go('/history')}>Geçmis Antrenmanlar</button>
-          <button onClick={() => go('/profile')}>Profilim</button>
-          <button onClick={() => go('/diet')}>Diyet Önerisi</button>
-          <button onClick={() => go('/steps')}>Adım Sayacı</button>
+          {NAV_ITEMS.map(({ path, label, icon: Icon }) => (
+            <button
+              key={path}
+              className={location.pathname === path ? 'active' : ''}
+              onClick={() => go(path)}
+            >
+              <Icon size={18} />
+              {label}
+            </button>
+          ))}
         </nav>
-        <button className="sidebar-logout" onClick={handleLogout}>Çıkış Yap</button>
+        <button className="sidebar-logout" onClick={handleLogout}>
+          <LogOut size={18} />
+          Çıkış Yap
+        </button>
       </div>
     </>
   );

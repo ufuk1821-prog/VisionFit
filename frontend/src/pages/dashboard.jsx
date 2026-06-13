@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { PoseLandmarker, FilesetResolver, DrawingUtils } from '@mediapipe/tasks-vision';
 import axios from 'axios';
+import { Activity, RotateCw, Gauge } from 'lucide-react';
 import Sidebar from '../components/sidebar';
 
 function Dashboard() {
@@ -8,7 +9,7 @@ function Dashboard() {
   const canvasRef = useRef(null);
   const poseLandmarkerRef = useRef(null);
   const animFrameRef = useRef(null);
-  const [statusText, setStatusText] = useState('Model Yukleniyor...');
+  const [statusText, setStatusText] = useState('Model Yükleniyor...');
   const [angle, setAngle] = useState(0);
   const [confidence, setConfidence] = useState(0);
 
@@ -35,7 +36,7 @@ function Dashboard() {
       stream = await navigator.mediaDevices.getUserMedia({ video: true });
       videoRef.current.srcObject = stream;
       videoRef.current.onloadeddata = () => {
-        setStatusText('Harekete Basla');
+        setStatusText('Harekete Başla');
         detectLoop();
       };
     };
@@ -58,8 +59,8 @@ function Dashboard() {
         ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
 
         if (results.landmarks && results.landmarks.length > 0) {
-          drawingUtils.drawConnectors(results.landmarks[0], PoseLandmarker.POSE_CONNECTIONS, { color: '#3b82f6', lineWidth: 3 });
-          drawingUtils.drawLandmarks(results.landmarks[0], { color: '#10b981', lineWidth: 1, radius: 3 });
+          drawingUtils.drawConnectors(results.landmarks[0], PoseLandmarker.POSE_CONNECTIONS, { color: '#39ff88', lineWidth: 3 });
+          drawingUtils.drawLandmarks(results.landmarks[0], { color: '#ff8c42', lineWidth: 1, radius: 3 });
 
           if (now - lastSentTime > 500) {
             lastSentTime = now;
@@ -77,7 +78,7 @@ function Dashboard() {
               setAngle(res.data.aci);
               setConfidence(res.data.eminlik);
             }).catch(() => {
-              setStatusText('Sunucu Baglantisi Kesildi');
+              setStatusText('Sunucu Bağlantısı Kesildi');
             });
           }
         }
@@ -89,7 +90,7 @@ function Dashboard() {
       animFrameRef.current = requestAnimationFrame(detect);
     };
 
-    init().catch(() => setStatusText('Kamera erisimi reddedildi.'));
+    init().catch(() => setStatusText('Kamera erişimi reddedildi.'));
 
     return () => {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
@@ -109,15 +110,24 @@ function Dashboard() {
 
         <div className="dashboard">
           <div className="card status-card">
-            <div className="card-title">Antrenor Notu</div>
-            <div className="card-value" style={{ fontSize: '1.2rem' }}>{statusText}</div>
+            <div className="card-header">
+              <div className="card-icon"><Activity size={18} /></div>
+              <div className="card-title">Antrenör Notu</div>
+            </div>
+            <div className="card-value" style={{ fontFamily: 'var(--font-body)', fontSize: '1.2rem' }}>{statusText}</div>
           </div>
           <div className="card angle-card">
-            <div className="card-title">Eklem Acisi</div>
+            <div className="card-header">
+              <div className="card-icon"><RotateCw size={18} /></div>
+              <div className="card-title">Eklem Açısı</div>
+            </div>
             <div className="card-value">{angle}°</div>
           </div>
           <div className="card confidence-card">
-            <div className="card-title">Guven Skoru</div>
+            <div className="card-header">
+              <div className="card-icon"><Gauge size={18} /></div>
+              <div className="card-title">Güven Skoru</div>
+            </div>
             <div className="card-value">%{confidence}</div>
           </div>
         </div>
