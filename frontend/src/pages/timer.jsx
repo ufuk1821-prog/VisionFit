@@ -27,6 +27,34 @@ function playBeep() {
   }
 }
 
+function ProgressRing({ progress, color, finished }) {
+  const size = 280;
+  const stroke = 12;
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const safeProgress = Math.min(Math.max(progress, 0), 1);
+  const offset = circumference * (1 - safeProgress);
+
+  return (
+    <svg width={size} height={size} className="timer-ring-svg">
+      <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="var(--surface-2)" strokeWidth={stroke} />
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        fill="none"
+        stroke={finished ? 'var(--accent-2)' : color}
+        strokeWidth={stroke}
+        strokeDasharray={circumference}
+        strokeDashoffset={offset}
+        strokeLinecap="round"
+        transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        className="timer-ring-progress"
+      />
+    </svg>
+  );
+}
+
 function Stopwatch() {
   const [elapsed, setElapsed] = useState(0);
   const [running, setRunning] = useState(false);
@@ -57,20 +85,26 @@ function Stopwatch() {
 
   const handleLap = () => setLaps((prev) => [elapsed, ...prev]);
 
+  const progress = (elapsed % 60000) / 60000;
+
   return (
     <div>
-      <div className="timer-display">{formatStopwatch(elapsed)}</div>
+      <div className="timer-ring-wrapper">
+        <ProgressRing progress={progress} color="var(--accent)" />
+        <div className="timer-ring-display">{formatStopwatch(elapsed)}</div>
+      </div>
+
       <div className="timer-controls">
         <button className="timer-btn primary" onClick={handleStartPause}>
-          {running ? <Pause size={20} /> : <Play size={20} />}
+          {running ? <Pause size={22} /> : <Play size={22} />}
           {running ? 'Duraklat' : 'Başlat'}
         </button>
         <button className="timer-btn" onClick={handleLap} disabled={!running}>
-          <Flag size={20} />
+          <Flag size={22} />
           Tur
         </button>
         <button className="timer-btn" onClick={handleReset}>
-          <RotateCcw size={20} />
+          <RotateCcw size={22} />
           Sıfırla
         </button>
       </div>
@@ -89,11 +123,12 @@ function Stopwatch() {
   );
 }
 
-const PRESETS = [30, 60, 90, 120, 180];
+const PRESETS = [30, 60, 90, 120, 180, 300];
 
 function CountdownTimer() {
   const [inputMinutes, setInputMinutes] = useState(1);
   const [inputSeconds, setInputSeconds] = useState(0);
+  const [totalDuration, setTotalDuration] = useState(60);
   const [remaining, setRemaining] = useState(60);
   const [running, setRunning] = useState(false);
   const [finished, setFinished] = useState(false);
@@ -123,6 +158,7 @@ function CountdownTimer() {
     setRunning(false);
     setFinished(false);
     setRemaining(seconds);
+    setTotalDuration(seconds);
     setInputMinutes(Math.floor(seconds / 60));
     setInputSeconds(seconds % 60);
   };
@@ -132,6 +168,7 @@ function CountdownTimer() {
     setRunning(false);
     setFinished(false);
     setRemaining(total);
+    setTotalDuration(total);
   };
 
   const handleStartPause = () => {
@@ -143,17 +180,20 @@ function CountdownTimer() {
   const handleReset = () => {
     setRunning(false);
     setFinished(false);
-    const total = Math.max(1, inputMinutes * 60 + inputSeconds);
-    setRemaining(total);
+    setRemaining(totalDuration);
   };
 
   const minutes = Math.floor(remaining / 60);
   const seconds = remaining % 60;
+  const progress = totalDuration > 0 ? remaining / totalDuration : 0;
 
   return (
     <div>
-      <div className={`timer-display ${finished ? 'finished' : ''}`}>
-        {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+      <div className="timer-ring-wrapper">
+        <ProgressRing progress={progress} color="var(--accent-blue)" finished={finished} />
+        <div className={`timer-ring-display ${finished ? 'finished' : ''}`}>
+          {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+        </div>
       </div>
 
       <div className="quick-add-row">
@@ -191,11 +231,11 @@ function CountdownTimer() {
 
       <div className="timer-controls">
         <button className="timer-btn primary" onClick={handleStartPause}>
-          {running ? <Pause size={20} /> : <Play size={20} />}
+          {running ? <Pause size={22} /> : <Play size={22} />}
           {running ? 'Duraklat' : 'Başlat'}
         </button>
         <button className="timer-btn" onClick={handleReset}>
-          <RotateCcw size={20} />
+          <RotateCcw size={22} />
           Sıfırla
         </button>
       </div>
@@ -205,6 +245,13 @@ function CountdownTimer() {
   );
 }
 
+const REST_TIPS = [
+  { hedef: 'Maksimal Güç (1-5 Tekrar)', sure: '3 - 5 dakika' },
+  { hedef: 'Kas Kütlesi / Hipertrofi (6-12 Tekrar)', sure: '60 - 90 saniye' },
+  { hedef: 'Kas Dayanıklılığı (12+ Tekrar)', sure: '30 - 45 saniye' },
+  { hedef: 'Süper Set / Devre Antrenmanı', sure: '15 - 30 saniye' },
+];
+
 function TimerPage() {
   const [tab, setTab] = useState('kronometre');
 
@@ -212,6 +259,9 @@ function TimerPage() {
     <div>
       <Sidebar />
       <div className="section-title">Kronometre &amp; Zamanlayıcı</div>
+      <p style={{ color: 'var(--text-muted)', marginBottom: '20px' }}>
+        Setler arası dinlenme süresini takip edin veya antrenmanınızın toplam süresini ölçün.
+      </p>
 
       <div className="tab-switcher">
         <button className={`tab-btn ${tab === 'kronometre' ? 'active' : ''}`} onClick={() => setTab('kronometre')}>
@@ -224,6 +274,18 @@ function TimerPage() {
 
       <div className="timer-card">
         {tab === 'kronometre' ? <Stopwatch /> : <CountdownTimer />}
+      </div>
+
+      <div className="chart-card">
+        <div className="section-title" style={{ marginTop: 0 }}>Önerilen Dinlenme Süreleri</div>
+        <div className="rest-tip-grid">
+          {REST_TIPS.map((tip) => (
+            <div className="rest-tip-card" key={tip.hedef}>
+              <span className="rest-tip-label">{tip.hedef}</span>
+              <span className="rest-tip-value">{tip.sure}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
