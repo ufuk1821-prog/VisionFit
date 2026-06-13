@@ -2,6 +2,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from app.models.history import WorkoutHistory
 from app.models.steps import StepLog
+from app.models.nutrition import MealLog, WaterLog
+from app.models.workout_note import WorkoutNote
 from app.models.user import User
 
 REQUIRED_DIET_FIELDS = ["boy", "kilo", "yas", "cinsiyet", "aktiflik_seviyesi", "hedef"]
@@ -12,16 +14,21 @@ SEVIYE_ETIKET = {
     "Altin": "Altın",
 }
 
+WATER_GOAL_ML = 2500
+
+
 def to_iso(value):
     if value is None:
         return None
-    return value.isoformat()
+    if hasattr(value, "isoformat"):
+        return value.isoformat()
+    return str(value)
+
 
 def get_badge_status(db: Session, user: User):
     badges = []
 
     workouts = db.query(WorkoutHistory).filter(WorkoutHistory.user_id == user.id).order_by(WorkoutHistory.tarih.asc()).all()
-    correct_squats = [w for w in workouts if w.hareket_adi == "dogru_squat"]
 
     badges.append({
         "key": "ilk_antrenman",
@@ -32,15 +39,21 @@ def get_badge_status(db: Session, user: User):
         "kazanilma_tarihi": to_iso(workouts[0].tarih) if len(workouts) >= 1 else None,
     })
 
-    for esik, seviye, key in [(10, "Bronz", "squat_10"), (50, "Gumus", "squat_50"), (100, "Altin", "squat_100")]:
-        kazanildi = len(correct_squats) >= esik
+    iyi_seanslar = [
+        w for w in workouts
+        if (w.hareket_adi == "squat_session" and w.eminlik_skoru >= 75)
+        or (w.hareket_adi == "dogru_squat")
+    ]
+
+    for esik, seviye, key in [(5, "Bronz", "form_5"), (20, "Gumus", "form_20"), (50, "Altin", "form_50")]:
+        kazanildi = len(iyi_seanslar) >= esik
         badges.append({
             "key": key,
-            "baslik": f"Squat Ustası ({SEVIYE_ETIKET[seviye]})",
-            "aciklama": f"Toplam {esik} dogru squat tamamla",
+            "baslik": f"Form Ustası ({SEVIYE_ETIKET[seviye]})",
+            "aciklama": f"%75 ve uzeri skorla {esik} antrenman tamamla",
             "seviye": seviye,
             "kazanildi": kazanildi,
-            "kazanilma_tarihi": to_iso(correct_squats[esik - 1].tarih) if kazanildi else None,
+            "kazanilma_tarihi": to_iso(iyi_seanslar[esik - 1].tarih) if kazanildi else None,
         })
 
     gunluk_adimlar = (
@@ -62,6 +75,63 @@ def get_badge_status(db: Session, user: User):
             "kazanilma_tarihi": to_iso(min(g.gun for g in eligible)) if kazanildi else None,
         })
 
+    gunluk_su = (
+        db.query(func.date(WaterLog.tarih).label("gun"), func.sum(WaterLog.miktar_ml).label("toplam"))
+        .filter(WaterLog.user_id == user.id)
+        .group_by(func.date(WaterLog.tarih))
+        .all()
+    )
+    su_gunleri = sorted([g.gun for g in gunluk_su if g.toplam >= WATER_GOAL_ML])
+
+    for esik, seviye, key in [(1, "Bronz", "su_1"), (7, "Gumus", "su_7"), (30, "Altin", "su_30")]:
+        kazanildi = len(su_gunleri) >= esik
+        badges.append({
+            "key": key,
+            "baslik": f"Su İçme Şampiyonu ({SEVIYE_ETIKET[seviye]})",
+            "aciklama": f"Gunluk {WATER_GOAL_ML}ml su hedefine {esik} gun ulas",
+            "seviye": seviye,
+            "kazanildi": kazanildi,
+            "kazanilma_tarihi": to_iso(su_gunleri[esik - 1]) if kazanildi else None,
+        })
+
+    ogun_gunleri = sorted(set(
+        g[0] for g in
+        db.query(func.date(MealLog.tarih))
+        .filter(MealLog.user_id == user.id)
+        .distinct()
+        .all()
+    ))
+
+    for esik, seviye, key in [(1, "Bronz", "ogun_1"), (7, "Gumus", "ogun_7"), (30, "Altin", "ogun_30")]:
+        kazanildi = len(ogun_gunleri) >= esik
+        badges.append({
+            "key": key,
+            "baslik": f"Beslenme Takipçisi ({SEVIYE_ETIKET[seviye]})",
+            "aciklama": f"{esik} farkli gun ogun kaydet",
+            "seviye": seviye,
+            "kazanildi": kazanildi,
+            "kazanilma_tarihi": to_iso(ogun_gunleri[esik - 1]) if kazanildi else None,
+        })
+
+    defter_gunleri = sorted(set(
+        g[0] for g in
+        db.query(WorkoutNote.tarih)
+        .filter(WorkoutNote.user_id == user.id)
+        .distinct()
+        .all()
+    ))
+
+    for esik, seviye, key in [(1, "Bronz", "defter_1"), (5, "Gumus", "defter_5"), (15, "Altin", "defter_15")]:
+        kazanildi = len(defter_gunleri) >= esik
+        badges.append({
+            "key": key,
+            "baslik": f"Antrenman Defteri Tutkunu ({SEVIYE_ETIKET[seviye]})",
+            "aciklama": f"{esik} farkli gun antrenman defterine kayit gir",
+            "seviye": seviye,
+            "kazanildi": kazanildi,
+            "kazanilma_tarihi": to_iso(defter_gunleri[esik - 1]) if kazanildi else None,
+        })
+
     profil_tamam = all(getattr(user, field) is not None for field in REQUIRED_DIET_FIELDS)
     badges.append({
         "key": "beslenme_bilinci",
@@ -69,7 +139,7 @@ def get_badge_status(db: Session, user: User):
         "aciklama": "Profil bilgilerini tamamlayarak diyet onerisi al",
         "seviye": "Bronz",
         "kazanildi": profil_tamam,
-        "kazanilma_tarihi": to_iso(user.updatedAt) if profil_tamam else None,
+        "kazanilma_tarihi": None,
     })
 
     return badges

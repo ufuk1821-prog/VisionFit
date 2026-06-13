@@ -42,17 +42,26 @@ function Badges() {
 
       <div className="badge-grid">
         {rozetler.map((rozet) => (
-          <div key={rozet.key} className={`badge-card ${rozet.kazanildi ? '' : 'locked'}`}>
+          <div key={rozet.key} className={`badge-card ${rozet.kazanildi ? '' : 'locked'}`} style={{ '--i': rozetler.indexOf(rozet) }}>
+            {!rozet.kazanildi && (
+              <div className="badge-lock-overlay">
+                <Lock size={20} />
+              </div>
+            )}
             <div className="badge-icon" style={{ background: `${SEVIYE_RENK[rozet.seviye]}22`, color: SEVIYE_RENK[rozet.seviye] }}>
-              {rozet.kazanildi ? <Award size={28} /> : <Lock size={24} />}
+              <Award size={28} />
             </div>
             <div className="badge-title">{rozet.baslik}</div>
             <div className="badge-desc">{rozet.aciklama}</div>
-            {rozet.kazanildi && (
-              <span className="badge-seviye" style={{ color: SEVIYE_RENK[rozet.seviye] }}>{SEVIYE_ETIKET[rozet.seviye]}</span>
-            )}
-            {rozet.kazanildi && rozet.kazanilma_tarihi && (
-              <div className="badge-date">{new Date(rozet.kazanilma_tarihi).toLocaleDateString('tr-TR')}</div>
+            {rozet.kazanildi ? (
+              <>
+                <span className="badge-seviye" style={{ color: SEVIYE_RENK[rozet.seviye] }}>{SEVIYE_ETIKET[rozet.seviye]}</span>
+                {rozet.kazanilma_tarihi && (
+                  <div className="badge-date">{new Date(rozet.kazanilma_tarihi).toLocaleDateString('tr-TR')}</div>
+                )}
+              </>
+            ) : (
+              <span className="badge-seviye badge-seviye-locked">Kilitli</span>
             )}
           </div>
         ))}
