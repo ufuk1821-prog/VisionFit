@@ -1,4 +1,5 @@
 import os
+import socket
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -38,7 +39,13 @@ def send_verification_email(to_email: str, ad: str, token: str) -> bool:
     msg["To"] = to_email
     msg.attach(MIMEText(html, "html"))
 
+    original_getaddrinfo = socket.getaddrinfo
+
+    def ipv4_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
+        return original_getaddrinfo(host, port, socket.AF_INET, type, proto, flags)
+
     try:
+        socket.getaddrinfo = ipv4_getaddrinfo
         with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
             server.starttls()
             server.login(SMTP_USER, SMTP_PASSWORD)
@@ -48,3 +55,5 @@ def send_verification_email(to_email: str, ad: str, token: str) -> bool:
     except Exception as e:
         print(f"[EMAIL HATA] {to_email} için mail gönderilemedi: {repr(e)}")
         return False
+    finally:
+        socket.getaddrinfo = original_getaddrinfo
