@@ -41,12 +41,10 @@ def get_token(email="token@test.com", sifre="sifre123"):
     res = client.post("/api/auth/login", json={"email": email, "sifre": sifre})
     return res.json().get("token")
 
-# --- GENEL ---
 def test_1_sunucu_ayakta_mi():
     response = client.get("/")
     assert response.status_code == 200
 
-# --- AUTH ---
 def test_2_kullanici_kaydi():
     response = client.post("/api/auth/register", json={
         "ad": "Ufuk", "soyad": "Test",
@@ -98,32 +96,21 @@ def test_7_olmayan_email_ile_login_engelle():
     })
     assert response.status_code == 400
 
-# --- HABERLER ---
-def test_8_token_ile_haber_listele():
-    token = get_token("haber@test.com")
-    response = client.get("/api/data/news", headers={"Authorization": f"Bearer {token}"})
+def test_8_token_ile_rozet_listele():
+    token = get_token("rozet@test.com")
+    response = client.get("/api/badges", headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 200
     assert isinstance(response.json(), list)
 
-def test_9_token_olmadan_haber_erisimi_engelle():
-    response = client.get("/api/data/news")
+def test_9_token_olmadan_rozet_erisimi_engelle():
+    response = client.get("/api/badges")
     assert response.status_code == 401
 
 def test_10_gecersiz_token_engelle():
-    response = client.get("/api/data/news", headers={"Authorization": "Bearer yanlis_token"})
+    response = client.get("/api/badges", headers={"Authorization": "Bearer yanlis_token"})
     assert response.status_code == 401
 
-def test_11_haber_history_token_gerekli():
-    response = client.get("/api/data/history/1")
-    assert response.status_code == 401
-
-def test_12_haber_history_bulunamadi():
-    token = get_token("history@test.com")
-    response = client.get("/api/data/history/99999", headers={"Authorization": f"Bearer {token}"})
-    assert response.status_code == 404
-
-# --- ANALİZ ---
-def test_13_squat_eksik_landmark_hatasi():
+def test_11_squat_eksik_landmark_hatasi():
     token = get_token("squat1@test.com")
     response = client.post("/api/analyze/squat",
         json={"landmarks": [0.1] * 10},
@@ -131,11 +118,11 @@ def test_13_squat_eksik_landmark_hatasi():
     )
     assert response.status_code == 400
 
-def test_14_squat_token_olmadan_engelle():
+def test_12_squat_token_olmadan_engelle():
     response = client.post("/api/analyze/squat", json={"landmarks": [0.5] * 132})
     assert response.status_code == 401
 
-def test_15_squat_basarili_analiz():
+def test_13_squat_basarili_analiz():
     token = get_token("squat2@test.com")
     response = client.post("/api/analyze/squat",
         json={"landmarks": [0.5] * 132},
@@ -145,9 +132,9 @@ def test_15_squat_basarili_analiz():
     data = response.json()
     assert "kayit_id" in data
     assert data["hareket"] == "dogru_squat"
-    assert data["mesaj"] == "Veritabanina basariyla kaydedildi!"
+    assert data["mesaj"] == "Veritabanına başarıyla kaydedildi!"
 
-def test_16_squat_sonuc_alanlari_tam_mi():
+def test_14_squat_sonuc_alanlari_tam_mi():
     token = get_token("squat3@test.com")
     response = client.post("/api/analyze/squat",
         json={"landmarks": [0.5] * 132},
@@ -159,7 +146,7 @@ def test_16_squat_sonuc_alanlari_tam_mi():
     assert "eminlik" in data
     assert "antrenor_mesaji" in data
 
-def test_17_history_sadece_kendi_verisi():
+def test_15_history_sadece_kendi_verisi():
     token = get_token("hist1@test.com")
     client.post("/api/analyze/squat",
         json={"landmarks": [0.5] * 132},
@@ -171,11 +158,11 @@ def test_17_history_sadece_kendi_verisi():
     assert isinstance(data, list)
     assert len(data) >= 1
 
-def test_18_history_token_olmadan_engelle():
+def test_16_history_token_olmadan_engelle():
     response = client.get("/api/analyze/history")
     assert response.status_code == 401
 
-def test_19_history_alanlari_tam_mi():
+def test_17_history_alanlari_tam_mi():
     token = get_token("hist2@test.com")
     client.post("/api/analyze/squat",
         json={"landmarks": [0.5] * 132},

@@ -1,16 +1,45 @@
-# React + Vite
+# VisionFit - Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+VisionFit'in React + Vite tabanlı web arayüzü. Kamera üzerinden squat analizi, diyet önerisi, beslenme/su/adım takibi, antrenman geçmişi, rozetler ve antrenman defteri sayfalarını içerir.
 
-Currently, two official plugins are available:
+## Kullanılan Teknolojiler
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- React 19 + Vite
+- React Router
+- Axios (API istekleri)
+- Recharts (grafikler)
+- Framer Motion (sayfa/modal animasyonları)
+- MediaPipe Tasks Vision (kamera üzerinden iskelet takibi)
+- Lucide React (ikonlar)
 
-## React Compiler
+## Kurulum
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+    npm install
 
-## Expanding the ESLint configuration
+`.env.example` dosyasını `.env` olarak kopyalayın ve `VITE_API_URL` değerini backend adresinize göre ayarlayın:
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+    cp .env.example .env
+
+## Komutlar
+
+| Komut | Açıklama |
+|-------|----------|
+| `npm run dev` | Geliştirme sunucusunu başlatır |
+| `npm run build` | Production build oluşturur (`dist/`) |
+| `npm run preview` | Production build'i yerelde önizler |
+| `npm run lint` | ESLint ile kod kontrolü yapar |
+| `npm run test` | Vitest ile birim testlerini çalıştırır |
+
+## Klasör Yapısı
+
+    src/
+      assets/        Logo ve statik görseller
+      components/    Sidebar, MuscleDiagram, EmptyState gibi paylaşılan bileşenler
+      data/          Egzersiz kütüphanesi verisi
+      hooks/         useCountUp gibi özel React hook'ları
+      pages/         Her route için sayfa bileşenleri
+      test/          Vitest setup dosyası
+
+## Deployment
+
+Bu proje Vercel üzerinde, `main` branch'ine yapılan her push'ta otomatik olarak build edilip deploy edilir (`vercel.json` rewrite kurallarını içerir, SPA routing için tüm yollar `index.html`'e yönlendirilir).

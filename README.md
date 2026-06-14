@@ -1,19 +1,20 @@
 # VisionFit - Yapay Zeka Destekli Antrenör
 
-VisionFit, kullanıcıların bilgisayar kameraları veya mobil cihazları üzerinden anlık vücut iskelet takibini (MediaPipe) yaparak egzersiz formlarını analiz eden ve PostgreSQL veritabanına kaydeden yapay zeka destekli bir sistemdir.
+VisionFit, kullanıcıların bilgisayar kameraları üzerinden anlık vücut iskelet takibini (MediaPipe) yaparak squat formunu analiz eden, kişiselleştirilmiş diyet önerileri sunan, beslenme/su/adım takibi yapan ve antrenman geçmişine göre rozet kazandıran yapay zeka destekli bir fitness platformudur.
 
 ## Kullanılan Teknolojiler
 
 - **Backend:** Python, FastAPI, SQLAlchemy, Scikit-learn, Pandas
-- **Frontend:** React, Vite, MediaPipe
+- **Frontend:** React, Vite, MediaPipe Tasks Vision, Recharts, Framer Motion
 - **Veritabanı:** PostgreSQL
-- **DevOps:** Docker, Docker Compose, GitHub Actions (CI/CD), Render
+- **E-posta:** Brevo API (transactional email)
+- **DevOps:** Docker, Docker Compose, GitHub Actions (CI), Render (backend), Vercel (frontend)
 
-## Canlı API
+## Canlı Adresler
 
-**Base URL:** https://visionfit-backend.onrender.com
-
-**Swagger Dokümantasyonu:** https://visionfit-backend.onrender.com/docs
+- **Frontend:** https://vision-fit-ashy.vercel.app
+- **Backend Base URL:** https://visionfit-backend-docker.onrender.com
+- **Swagger Dokümantasyonu:** https://visionfit-backend-docker.onrender.com/docs
 
 ## API Endpoint'leri
 
@@ -22,57 +23,120 @@ VisionFit, kullanıcıların bilgisayar kameraları veya mobil cihazları üzeri
 |--------|-----|----------|
 | GET | `/` | Sunucu durumu |
 
-### Kimlik Doğrulama
+### Kimlik Doğrulama (`/api/auth`)
 | Method | URL | Açıklama |
 |--------|-----|----------|
-| POST | `/api/auth/register` | Yeni kullanıcı kaydı |
-| POST | `/api/auth/login` | Giriş yap, JWT token al |
+| POST | `/api/auth/register` | Yeni kullanıcı kaydı, doğrulama e-postası gönderir |
+| POST | `/api/auth/login` | Giriş yap, JWT token al (e-posta doğrulanmamışsa 403) |
+| GET | `/api/auth/verify-email/{token}` | E-posta adresini doğrular |
+| POST | `/api/auth/resend-verification` | Doğrulama e-postasını yeniden gönderir |
 
-### Haberler
+### Kullanıcı Profili (`/api/users`)
 | Method | URL | Açıklama |
 |--------|-----|----------|
-| GET | `/api/data/news` | Haberleri listele (token gerekli) |
-| GET | `/api/data/history/{user_id}` | Kullanıcı geçmişi (token gerekli) |
+| GET | `/api/users/me` | Profil bilgilerini getirir |
+| PUT | `/api/users/me` | Profil bilgilerini günceller (boy, kilo, yaş, cinsiyet, aktiflik, hedef) |
+| PUT | `/api/users/me/password` | Şifre değiştirir |
+| DELETE | `/api/users/me` | Hesabı siler |
+| GET | `/api/users/me/diet` | Profile göre kayıtlı diyet önerisini getirir |
+| POST | `/api/users/me/diet/custom` | Profil bilgileriyle özel istek metnine göre diyet önerisi üretir |
+| POST | `/api/users/diet/calculate` | Verilen bilgilere göre diyet önerisi hesaplar |
 
-### Yapay Zeka Analiz
+### Adım Sayacı (`/api/steps`)
 | Method | URL | Açıklama |
 |--------|-----|----------|
-| POST | `/api/analyze/squat` | Squat analizi yap |
-| GET | `/api/analyze/history` | Analiz geçmişini getir |
+| POST | `/api/steps` | Günlük adım kaydı ekler |
+| GET | `/api/steps` | Adım geçmişini getirir |
+
+### Rozetler (`/api/badges`)
+| Method | URL | Açıklama |
+|--------|-----|----------|
+| GET | `/api/badges` | Kullanıcının rozet durumunu (kazanılan/kilitli) listeler |
+
+### Beslenme Takibi (`/api/nutrition`)
+| Method | URL | Açıklama |
+|--------|-----|----------|
+| GET | `/api/nutrition/foods` | Besin veritabanını listeler |
+| POST | `/api/nutrition/meals` | Öğün kaydı ekler |
+| GET | `/api/nutrition/meals/today` | Bugünün öğünlerini getirir |
+| DELETE | `/api/nutrition/meals/{meal_id}` | Öğün kaydını siler |
+| POST | `/api/nutrition/water` | Su tüketimi kaydı ekler |
+| GET | `/api/nutrition/water/today` | Bugünün su tüketimini getirir |
+| DELETE | `/api/nutrition/water/{water_id}` | Su kaydını siler |
+
+### Antrenman Defteri (`/api/workout-notes`)
+| Method | URL | Açıklama |
+|--------|-----|----------|
+| GET | `/api/workout-notes/dates` | Kayıt bulunan tarihleri listeler |
+| GET | `/api/workout-notes/{tarih}` | Belirli bir tarihteki antrenman notlarını getirir |
+| PUT | `/api/workout-notes/{tarih}` | Belirli bir tarih için antrenman notlarını kaydeder |
+
+### Yapay Zeka Analiz (`/api/analyze`)
+| Method | URL | Açıklama |
+|--------|-----|----------|
+| POST | `/api/analyze/squat` | Tek kare squat analizi (ML modeli ile doğru/yanlış squat sınıflandırması) |
+| POST | `/api/analyze/session` | Tüm antrenman oturumunun kare dizisi üzerinden 6 kategoride form analizi |
+| GET | `/api/analyze/history` | Kullanıcının antrenman geçmişini getirir |
+
+Tüm endpoint'ler (`/`, `/docs` hariç) JWT tabanlı kimlik doğrulama gerektirir (`Authorization: Bearer <token>`).
 
 ## Projeyi Yerel Ortamda Çalıştırma
 
+### Docker ile (önerilen)
+
 1. Projeyi klonlayın
 
-        git clone https://github.com/ufuk1821-prog/VisionFit.git
-        cd VisionFit
+       git clone https://github.com/ufuk1821-prog/VisionFit.git
+       cd VisionFit
 
-2. Ana dizinde `.env` dosyası oluşturun
+2. Ana dizinde `.env.example` dosyasını `.env` olarak kopyalayıp değerleri kendinize göre düzenleyin
 
-        POSTGRES_USER=visionfit_user
-        POSTGRES_PASSWORD=visionfit_secure_pass_2026
-        POSTGRES_DB=visionfit_db
-        DATABASE_URL=postgresql+psycopg2://visionfit_user:visionfit_secure_pass_2026@db:5432/visionfit_db
-        JWT_SECRET=super_secret_crypto_key_998877
+       cp .env.example .env
 
 3. Docker ile başlatın
 
-        docker-compose up --build
+       docker-compose up --build
 
 4. API'ye erişin
 
-        Swagger: http://localhost:8000/docs
-        Base URL: http://localhost:8000
+       Swagger: http://localhost:8000/docs
+       Base URL: http://localhost:8000
+
+### Frontend'i yerel çalıştırma
+
+1. `frontend/.env.example` dosyasını `frontend/.env` olarak kopyalayın, `VITE_API_URL` değerini backend adresinize göre ayarlayın
+2. Bağımlılıkları kurun ve geliştirme sunucusunu başlatın
+
+       cd frontend
+       npm install
+       npm run dev
+
+## Ortam Değişkenleri
+
+| Değişken | Açıklama |
+|----------|----------|
+| `DATABASE_URL` | PostgreSQL bağlantı adresi |
+| `JWT_SECRET` | JWT imzalama anahtarı (production'da zorunlu, varsayılan değer yoktur) |
+| `BREVO_API_KEY` | Brevo transactional email API anahtarı |
+| `EMAIL_FROM` | Brevo'da doğrulanmış gönderici e-posta adresi |
+| `FRONTEND_URL` | E-posta doğrulama linklerinde kullanılan frontend adresi |
+| `TESTING` | `True` ise email gönderimi ve ML modeli devre dışı kalır (CI ortamı için) |
+| `VITE_API_URL` | (frontend) Backend API base URL'i |
 
 ## Testleri Çalıştırma
 
-        cd backend
-        pytest -v --cov=app
+### Backend
 
-## CI/CD
+    cd backend
+    pytest -v --cov=app --cov=main
 
-Her main branch'e push'ta GitHub Actions otomatik olarak:
-- Bağımlılıkları yükler
-- 15 test senaryosunu çalıştırır
-- Coverage raporu üretir
-- Render'a otomatik deploy eder
+### Frontend
+
+    cd frontend
+    npm run test
+
+## Deployment
+
+- **Backend:** Render üzerinde, `backend/Dockerfile` kullanılarak Docker container olarak deploy edilir. `main` branch'ine yapılan her push, Render tarafından otomatik olarak algılanır ve yeniden deploy tetiklenir.
+- **Frontend:** Vercel üzerinde, `main` branch'ine yapılan her push'ta otomatik olarak build edilip deploy edilir.
+- **CI:** GitHub Actions (`.github/workflows/ci.yml`), her push ve pull request'te backend testlerini PostgreSQL servis container'ı ile çalıştırır ve coverage raporu üretir.
