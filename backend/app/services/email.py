@@ -13,6 +13,7 @@ FRONTEND_URL = os.getenv("FRONTEND_URL", "https://vision-fit-ashy.vercel.app")
 
 def send_verification_email(to_email: str, ad: str, token: str) -> bool:
     if not SMTP_USER or not SMTP_PASSWORD:
+        print(f"[EMAIL HATA] SMTP_USER veya SMTP_PASSWORD tanımlı değil. SMTP_USER={'var' if SMTP_USER else 'yok'}, SMTP_PASSWORD={'var' if SMTP_PASSWORD else 'yok'}")
         return False
 
     verify_link = f"{FRONTEND_URL}/verify-email?token={token}"
