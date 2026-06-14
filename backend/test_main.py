@@ -34,7 +34,7 @@ app.dependency_overrides[analyze_get_db] = override_get_db
 
 client = TestClient(app)
 
-def get_token(email="token@test.com", sifre="sifre123"):
+def get_token(email="token@test.com", sifre="Sifre123!"):
     client.post("/api/auth/register", json={
         "ad": "Test", "soyad": "User",
         "email": email, "sifre": sifre
@@ -49,18 +49,18 @@ def test_1_sunucu_ayakta_mi():
 def test_2_kullanici_kaydi():
     response = client.post("/api/auth/register", json={
         "ad": "Ufuk", "soyad": "Test",
-        "email": "ufuk@test.com", "sifre": "sifre123"
+        "email": "ufuk@test.com", "sifre": "Sifre123!"
     })
     assert response.status_code == 201
 
 def test_3_ayni_email_tekrar_kayit_engelle():
     client.post("/api/auth/register", json={
         "ad": "Ufuk", "soyad": "Test",
-        "email": "dupli@test.com", "sifre": "sifre123"
+        "email": "dupli@test.com", "sifre": "Sifre123!"
     })
     response = client.post("/api/auth/register", json={
         "ad": "Ufuk2", "soyad": "Test2",
-        "email": "dupli@test.com", "sifre": "sifre456"
+        "email": "dupli@test.com", "sifre": "Sifre456!"
     })
     assert response.status_code == 400
 
@@ -73,10 +73,10 @@ def test_4_eksik_alan_ile_kayit_engelle():
 def test_5_dogru_bilgilerle_login():
     client.post("/api/auth/register", json={
         "ad": "Login", "soyad": "Test",
-        "email": "login@test.com", "sifre": "sifre123"
+        "email": "login@test.com", "sifre": "Sifre123!"
     })
     response = client.post("/api/auth/login", json={
-        "email": "login@test.com", "sifre": "sifre123"
+        "email": "login@test.com", "sifre": "Sifre123!"
     })
     assert response.status_code == 200
     assert "token" in response.json()
@@ -84,16 +84,16 @@ def test_5_dogru_bilgilerle_login():
 def test_6_yanlis_sifre_ile_login_engelle():
     client.post("/api/auth/register", json={
         "ad": "Wrong", "soyad": "Pass",
-        "email": "wrong@test.com", "sifre": "dogru123"
+        "email": "wrong@test.com", "sifre": "Dogru123!"
     })
     response = client.post("/api/auth/login", json={
-        "email": "wrong@test.com", "sifre": "yanlis123"
+        "email": "wrong@test.com", "sifre": "Yanlis123!"
     })
     assert response.status_code == 400
 
 def test_7_olmayan_email_ile_login_engelle():
     response = client.post("/api/auth/login", json={
-        "email": "yok@test.com", "sifre": "sifre123"
+        "email": "yok@test.com", "sifre": "Sifre123!"
     })
     assert response.status_code == 400
 
@@ -177,6 +177,7 @@ def test_17_history_alanlari_tam_mi():
     assert "diz_acisi" in kayit
     assert "antrenor_notu" in kayit
 
+# --- DİYET ---
 def test_18_diet_calculate_basarili():
     token = get_token("diet1@test.com")
     response = client.post("/api/users/diet/calculate", json={
@@ -209,6 +210,7 @@ def test_20_diet_calculate_gecersiz_deger():
     }, headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 400
 
+# --- BESLENME ---
 def test_21_besin_listesi():
     token = get_token("nutrition1@test.com")
     response = client.get("/api/nutrition/foods", headers={"Authorization": f"Bearer {token}"})
@@ -280,6 +282,7 @@ def test_26_olmayan_kayit_silme_404():
     assert client.delete("/api/nutrition/meals/999999", headers=headers).status_code == 404
     assert client.delete("/api/nutrition/water/999999", headers=headers).status_code == 404
 
+# --- PROFİL ---
 def test_27_profil_getir_ve_guncelle():
     token = get_token("profil1@test.com")
     headers = {"Authorization": f"Bearer {token}"}
@@ -314,7 +317,7 @@ def test_28_diet_me_basarili_ve_eksik_bilgi():
     assert response.status_code == 200
 
 def test_29_sifre_degistir():
-    token = get_token("profil4@test.com", "eskisifre123")
+    token = get_token("profil4@test.com", "EskiSifre123!")
     headers = {"Authorization": f"Bearer {token}"}
 
     response = client.put("/api/users/me/password", json={
@@ -323,12 +326,12 @@ def test_29_sifre_degistir():
     assert response.status_code == 400
 
     response = client.put("/api/users/me/password", json={
-        "mevcut_sifre": "eskisifre123", "yeni_sifre": "kisa"
+        "mevcut_sifre": "EskiSifre123!", "yeni_sifre": "kisa"
     }, headers=headers)
     assert response.status_code == 400
 
     response = client.put("/api/users/me/password", json={
-        "mevcut_sifre": "eskisifre123", "yeni_sifre": "yenisifre123"
+        "mevcut_sifre": "EskiSifre123!", "yeni_sifre": "YeniSifre123!"
     }, headers=headers)
     assert response.status_code == 200
 
@@ -337,6 +340,7 @@ def test_30_hesap_sil():
     response = client.delete("/api/users/me", headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 204
 
+# --- ANTRENMAN DEFTERİ ---
 def test_31_antrenman_notu_kaydet_ve_getir():
     token = get_token("defter1@test.com")
     headers = {"Authorization": f"Bearer {token}"}
@@ -376,6 +380,7 @@ def test_32_adim_kaydet_ve_getir():
     assert response.status_code == 200
     assert len(response.json()) >= 1
 
+# --- E-POSTA DOĞRULAMA ---
 def test_33_email_dogrulama_gecersiz_token():
     response = client.get("/api/auth/verify-email/gecersiz_token")
     assert response.status_code == 400
@@ -412,6 +417,7 @@ def test_36_gecersiz_kullanici_ile_token_engelle():
     response = client.get("/api/users/me", headers={"Authorization": f"Bearer {sahte_token}"})
     assert response.status_code == 401
 
+# --- OTURUM ANALİZİ ---
 def build_squat_frame():
     frame = [0.0] * 132
     points = {
@@ -472,3 +478,25 @@ def test_40_session_squat_tespit_edilemedi():
     response = client.post("/api/analyze/session", json={"frames": [duz_frame]},
         headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 400
+
+# --- ŞİFRE GÜVENLİĞİ ---
+def test_41_zayif_sifre_ile_kayit_engelle():
+    response = client.post("/api/auth/register", json={
+        "ad": "Zayif", "soyad": "Sifre", "email": "zayif1@test.com", "sifre": "kisa1!"
+    })
+    assert response.status_code == 422
+
+    response = client.post("/api/auth/register", json={
+        "ad": "Zayif", "soyad": "Sifre", "email": "zayif2@test.com", "sifre": "uzunsifre1"
+    })
+    assert response.status_code == 422
+
+    response = client.post("/api/auth/register", json={
+        "ad": "Zayif", "soyad": "Sifre", "email": "zayif3@test.com", "sifre": "UzunSifre1"
+    })
+    assert response.status_code == 422
+
+    response = client.post("/api/auth/register", json={
+        "ad": "Guclu", "soyad": "Sifre", "email": "guclu1@test.com", "sifre": "GucluSifre1!"
+    })
+    assert response.status_code == 201

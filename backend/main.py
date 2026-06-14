@@ -4,7 +4,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 from app.core.database import engine, Base
+from app.core.limiter import limiter
 from app.api import auth, users, steps, badges, nutrition, workout_notes
 from app.api.analyze import router as analyze_router
 
@@ -35,6 +38,9 @@ app = FastAPI(
     version="2.0.0",
     lifespan=lifespan
 )
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 ALLOWED_ORIGINS = [
     "http://localhost:5173",

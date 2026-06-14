@@ -11,7 +11,15 @@ from app.models.user import User
 
 load_dotenv()
 
-SECRET_KEY = os.getenv("JWT_SECRET", "VISIONFIT_SECRET_KEY")
+IS_TESTING = os.getenv("TESTING") == "True"
+SECRET_KEY = os.getenv("JWT_SECRET")
+
+if not SECRET_KEY:
+    if IS_TESTING:
+        SECRET_KEY = "test_only_secret_key"
+    else:
+        raise RuntimeError("JWT_SECRET ortam degiskeni tanimlanmamis.")
+
 ALGORITHM = "HS256"
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
 
@@ -30,7 +38,7 @@ def create_access_token(data: dict):
 async def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Kimlik dogrulanamadi",
+        detail="Kimlik doğrulanamadı",
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:

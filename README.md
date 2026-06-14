@@ -137,6 +137,6 @@ Tüm endpoint'ler (`/`, `/docs` hariç) JWT tabanlı kimlik doğrulama gerektiri
 
 ## Deployment
 
-- **Backend:** Render üzerinde, `backend/Dockerfile` kullanılarak Docker container olarak deploy edilir. `main` branch'ine yapılan her push, Render tarafından otomatik olarak algılanır ve yeniden deploy tetiklenir.
+- **Backend:** Render üzerinde, `backend/Dockerfile` kullanılarak Docker container olarak deploy edilir.
 - **Frontend:** Vercel üzerinde, `main` branch'ine yapılan her push'ta otomatik olarak build edilip deploy edilir.
-- **CI:** GitHub Actions (`.github/workflows/ci.yml`), her push ve pull request'te backend testlerini PostgreSQL servis container'ı ile çalıştırır ve coverage raporu üretir.
+- **CI/CD:** GitHub Actions (`.github/workflows/ci.yml`), her push ve pull request'te backend testlerini PostgreSQL servis container'ı ile çalıştırır ve coverage raporu üretir. Testler `main` branch'inde başarılı olursa, pipeline'ın `deploy` job'ı Render'ın deploy hook'unu tetikleyerek backend'in yeniden deploy edilmesini sağlar (`RENDER_DEPLOY_HOOK_URL` repository secret'ı olarak tanımlıdır).

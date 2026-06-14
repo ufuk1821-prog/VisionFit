@@ -1,4 +1,5 @@
-from pydantic import BaseModel, EmailStr, ConfigDict
+import re
+from pydantic import BaseModel, EmailStr, ConfigDict, field_validator
 from typing import Optional
 
 class UserCreate(BaseModel):
@@ -6,6 +7,17 @@ class UserCreate(BaseModel):
     soyad: str
     email: EmailStr
     sifre: str
+
+    @field_validator("sifre")
+    @classmethod
+    def sifre_kontrol(cls, v):
+        if len(v) < 8:
+            raise ValueError("Şifre en az 8 karakter olmalıdır.")
+        if not re.search(r"[A-Z]", v):
+            raise ValueError("Şifre en az 1 büyük harf içermelidir.")
+        if not re.search(r'[!@#$%^&*(),.?":{}|<>_\-+=]', v):
+            raise ValueError("Şifre en az 1 özel karakter içermelidir.")
+        return v
 
 class UserLogin(BaseModel):
     email: EmailStr
