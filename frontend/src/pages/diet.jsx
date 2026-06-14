@@ -8,10 +8,10 @@ const HEDEF_LABELS = { kilo_verme: 'Kilo Verme', kilo_koruma: 'Kilo Koruma', kil
 
 const AKTIFLIK_OPTIONS = [
   { value: 'sedanter', label: 'Hareketsiz (ofis işi, az egzersiz)' },
-  { value: 'az_hareketli', label: 'Az Hareketli (haftada 1-3 gün)' },
-  { value: 'orta_hareketli', label: 'Orta Hareketli (haftada 3-5 gün)' },
-  { value: 'cok_hareketli', label: 'Çok Hareketli (haftada 6-7 gün)' },
-  { value: 'asiri_hareketli', label: 'Aşırı Hareketli (günde 2 kez antrenman)' },
+  { value: 'hafif_aktif', label: 'Hafif Aktif (haftada 1-3 gün)' },
+  { value: 'orta_aktif', label: 'Orta Aktif (haftada 3-5 gün)' },
+  { value: 'cok_aktif', label: 'Çok Aktif (haftada 6-7 gün)' },
+  { value: 'ekstra_aktif', label: 'Ekstra Aktif (günde 2 kez antrenman)' },
 ];
 
 const HEDEF_OPTIONS = [
@@ -155,8 +155,8 @@ function Diet() {
             <label>Cinsiyet</label>
             <select value={cinsiyet} onChange={(e) => setCinsiyet(e.target.value)}>
               <option value="">Seçin</option>
-              <option value="Erkek">Erkek</option>
-              <option value="Kadin">Kadın</option>
+              <option value="erkek">Erkek</option>
+              <option value="kadin">Kadın</option>
             </select>
           </div>
         </div>
@@ -197,6 +197,7 @@ function Diet() {
         <>
           <div className="main-wrapper" style={{ marginTop: '24px' }}>
             <div className="bmi-card">
+              <div className="bmi-card-title">Vücut Kitle Endeksi</div>
               <div className="bmi-value">{diet.bmi}</div>
               <span className={`bmi-badge ${diet.bmi_kategori.toLowerCase()}`}>
                 {BMI_LABELS[diet.bmi_kategori] ?? diet.bmi_kategori}

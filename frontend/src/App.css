@@ -487,6 +487,16 @@ body {
   box-shadow: 0 0 24px -8px var(--accent);
 }
 
+.bmi-card-title {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
 .bmi-value {
   font-family: var(--font-mono);
   font-size: 3rem;
