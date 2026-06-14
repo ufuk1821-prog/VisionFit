@@ -42,6 +42,8 @@ def send_verification_email(to_email: str, ad: str, token: str) -> bool:
             server.starttls()
             server.login(SMTP_USER, SMTP_PASSWORD)
             server.sendmail(SMTP_FROM, to_email, msg.as_string())
+        print(f"[EMAIL] Dogrulama maili gonderildi: {to_email}")
         return True
-    except Exception:
+    except Exception as e:
+        print(f"[EMAIL HATA] {to_email} icin mail gonderilemedi: {repr(e)}")
         return False
