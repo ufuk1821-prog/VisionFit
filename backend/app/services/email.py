@@ -1,14 +1,14 @@
 import os
 import requests
 
-RESEND_API_KEY = os.getenv("RESEND_API_KEY")
-EMAIL_FROM = os.getenv("EMAIL_FROM", "VisionFit <onboarding@resend.dev>")
+BREVO_API_KEY = os.getenv("BREVO_API_KEY")
+EMAIL_FROM = os.getenv("EMAIL_FROM")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "https://vision-fit-ashy.vercel.app")
 
 
 def send_verification_email(to_email: str, ad: str, token: str) -> bool:
-    if not RESEND_API_KEY:
-        print("[EMAIL HATA] RESEND_API_KEY tanımlı değil.")
+    if not BREVO_API_KEY or not EMAIL_FROM:
+        print(f"[EMAIL HATA] BREVO_API_KEY veya EMAIL_FROM tanımlı değil. BREVO_API_KEY={'var' if BREVO_API_KEY else 'yok'}, EMAIL_FROM={'var' if EMAIL_FROM else 'yok'}")
         return False
 
     verify_link = f"{FRONTEND_URL}/verify-email?token={token}"
@@ -29,16 +29,17 @@ def send_verification_email(to_email: str, ad: str, token: str) -> bool:
 
     try:
         response = requests.post(
-            "https://api.resend.com/emails",
+            "https://api.brevo.com/v3/smtp/email",
             headers={
-                "Authorization": f"Bearer {RESEND_API_KEY}",
+                "api-key": BREVO_API_KEY,
                 "Content-Type": "application/json",
+                "Accept": "application/json",
             },
             json={
-                "from": EMAIL_FROM,
-                "to": [to_email],
+                "sender": {"name": "VisionFit", "email": EMAIL_FROM},
+                "to": [{"email": to_email}],
                 "subject": "VisionFit - E-posta Doğrulama",
-                "html": html,
+                "htmlContent": html,
             },
             timeout=10,
         )
