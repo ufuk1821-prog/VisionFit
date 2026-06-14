@@ -50,7 +50,7 @@ def get_badge_status(db: Session, user: User):
         badges.append({
             "key": key,
             "baslik": f"Form Ustası ({SEVIYE_ETIKET[seviye]})",
-            "aciklama": f"%75 ve uzeri skorla {esik} antrenman tamamla",
+            "aciklama": f"%75 ve üzeri skorla {esik} antrenman tamamla",
             "seviye": seviye,
             "kazanildi": kazanildi,
             "kazanilma_tarihi": to_iso(iyi_seanslar[esik - 1].tarih) if kazanildi else None,
@@ -69,7 +69,7 @@ def get_badge_status(db: Session, user: User):
         badges.append({
             "key": key,
             "baslik": f"Adım Avcısı ({SEVIYE_ETIKET[seviye]})",
-            "aciklama": f"Bir gunde en az {esik} adim at",
+            "aciklama": f"Bir günde en az {esik} adım at",
             "seviye": seviye,
             "kazanildi": kazanildi,
             "kazanilma_tarihi": to_iso(min(g.gun for g in eligible)) if kazanildi else None,
@@ -88,7 +88,7 @@ def get_badge_status(db: Session, user: User):
         badges.append({
             "key": key,
             "baslik": f"Su İçme Şampiyonu ({SEVIYE_ETIKET[seviye]})",
-            "aciklama": f"Gunluk {WATER_GOAL_ML}ml su hedefine {esik} gun ulas",
+            "aciklama": f"Günlük {WATER_GOAL_ML}ml su hedefine {esik} gün ulaş",
             "seviye": seviye,
             "kazanildi": kazanildi,
             "kazanilma_tarihi": to_iso(su_gunleri[esik - 1]) if kazanildi else None,
@@ -107,7 +107,7 @@ def get_badge_status(db: Session, user: User):
         badges.append({
             "key": key,
             "baslik": f"Beslenme Takipçisi ({SEVIYE_ETIKET[seviye]})",
-            "aciklama": f"{esik} farkli gun ogun kaydet",
+            "aciklama": f"{esik} farklı gün öğün kaydet",
             "seviye": seviye,
             "kazanildi": kazanildi,
             "kazanilma_tarihi": to_iso(ogun_gunleri[esik - 1]) if kazanildi else None,
@@ -126,7 +126,7 @@ def get_badge_status(db: Session, user: User):
         badges.append({
             "key": key,
             "baslik": f"Antrenman Defteri Tutkunu ({SEVIYE_ETIKET[seviye]})",
-            "aciklama": f"{esik} farkli gun antrenman defterine kayit gir",
+            "aciklama": f"{esik} farklı gün antrenman defterine kayıt gir",
             "seviye": seviye,
             "kazanildi": kazanildi,
             "kazanilma_tarihi": to_iso(defter_gunleri[esik - 1]) if kazanildi else None,
@@ -136,7 +136,7 @@ def get_badge_status(db: Session, user: User):
     badges.append({
         "key": "beslenme_bilinci",
         "baslik": "Beslenme Bilinci",
-        "aciklama": "Profil bilgilerini tamamlayarak diyet onerisi al",
+        "aciklama": "Profil bilgilerini tamamlayarak diyet önerisi al",
         "seviye": "Bronz",
         "kazanildi": profil_tamam,
         "kazanilma_tarihi": None,

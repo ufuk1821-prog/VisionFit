@@ -21,18 +21,18 @@ def send_verification_email(to_email: str, ad: str, token: str) -> bool:
     <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
       <h2 style="color: #e8313f;">VisionFit</h2>
       <p>Merhaba {ad},</p>
-      <p>VisionFit hesabini olusturdugun icin tesekkurler. Hesabini aktiflestirmek icin asagidaki butona tikla.</p>
+      <p>VisionFit hesabını oluşturduğun için teşekkürler. Hesabını aktifleştirmek için aşağıdaki butona tıkla.</p>
       <p style="text-align: center; margin: 32px 0;">
-        <a href="{verify_link}" style="background: #e8313f; color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: bold;">E-postami Dogrula</a>
+        <a href="{verify_link}" style="background: #e8313f; color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: bold;">E-postamı Doğrula</a>
       </p>
-      <p>Eger butona tiklayamiyorsan bu baglantiyi tarayicina yapistir:</p>
+      <p>Eğer butona tıklayamıyorsan bu bağlantıyı tarayıcına yapıştır:</p>
       <p style="word-break: break-all; color: #666;">{verify_link}</p>
-      <p>Bu islemi sen yapmadiysan bu e-postayi yok sayabilirsin.</p>
+      <p>Bu işlemi sen yapmadıysan bu e-postayı yok sayabilirsin.</p>
     </div>
     """
 
     msg = MIMEMultipart("alternative")
-    msg["Subject"] = "VisionFit - E-posta Dogrulama"
+    msg["Subject"] = "VisionFit - E-posta Doğrulama"
     msg["From"] = SMTP_FROM
     msg["To"] = to_email
     msg.attach(MIMEText(html, "html"))
@@ -42,8 +42,8 @@ def send_verification_email(to_email: str, ad: str, token: str) -> bool:
             server.starttls()
             server.login(SMTP_USER, SMTP_PASSWORD)
             server.sendmail(SMTP_FROM, to_email, msg.as_string())
-        print(f"[EMAIL] Dogrulama maili gonderildi: {to_email}")
+        print(f"[EMAIL] Doğrulama maili gönderildi: {to_email}")
         return True
     except Exception as e:
-        print(f"[EMAIL HATA] {to_email} icin mail gonderilemedi: {repr(e)}")
+        print(f"[EMAIL HATA] {to_email} için mail gönderilemedi: {repr(e)}")
         return False

@@ -19,7 +19,7 @@ IS_TESTING = os.getenv("TESTING") == "True"
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Kimlik dogrulanamadi",
+        detail="Kimlik doğrulanamadı",
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
@@ -41,7 +41,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
 def register(user_data: UserCreate, db: Session = Depends(get_db)):
     db_user = db.query(User).filter(User.email == user_data.email).first()
     if db_user:
-        raise HTTPException(status_code=400, detail="Bu email zaten kayitli.")
+        raise HTTPException(status_code=400, detail="Bu email zaten kayıtlı.")
 
     if IS_TESTING:
         email_dogrulandi = True
@@ -66,7 +66,7 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
         send_verification_email(new_user.email, new_user.ad, dogrulama_token)
 
     return {
-        "mesaj": "Kayit basarili",
+        "mesaj": "Kayıt başarılı",
         "user": new_user.email,
         "email_dogrulama_gerekli": not email_dogrulandi,
     }
@@ -76,25 +76,25 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
 def login(user_data: UserLogin, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == user_data.email).first()
     if not user or not verify_password(user_data.sifre, user.sifre):
-        raise HTTPException(status_code=400, detail="Gecersiz email veya sifre")
+        raise HTTPException(status_code=400, detail="Geçersiz email veya şifre")
 
     if not user.email_dogrulandi:
-        raise HTTPException(status_code=403, detail="E-posta adresiniz dogrulanmamis. Lutfen gelen kutunuzu kontrol edin.")
+        raise HTTPException(status_code=403, detail="E-posta adresiniz doğrulanmamış. Lütfen gelen kutunuzu kontrol edin.")
 
     token = create_access_token(data={"sub": user.email})
-    return {"mesaj": "Giris basarili", "token": token}
+    return {"mesaj": "Giriş başarılı", "token": token}
 
 
 @router.get("/verify-email/{token}")
 def verify_email(token: str, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.dogrulama_token == token).first()
     if not user:
-        raise HTTPException(status_code=400, detail="Gecersiz veya suresi dolmus dogrulama baglantisi.")
+        raise HTTPException(status_code=400, detail="Geçersiz veya süresi dolmuş doğrulama bağlantısı.")
 
     user.email_dogrulandi = True
     user.dogrulama_token = None
     db.commit()
-    return {"mesaj": "E-posta adresiniz basariyla dogrulandi."}
+    return {"mesaj": "E-posta adresiniz başarıyla doğrulandı."}
 
 
 @router.post("/resend-verification")
@@ -108,4 +108,4 @@ def resend_verification(data: ResendVerificationRequest, db: Session = Depends(g
         if not IS_TESTING:
             send_verification_email(user.email, user.ad, token)
 
-    return {"mesaj": "Eger bu e-posta kayitliysa ve dogrulanmamissa, yeni bir dogrulama baglantisi gonderildi."}
+    return {"mesaj": "Eğer bu e-posta kayıtlıysa ve doğrulanmamışsa, yeni bir doğrulama bağlantısı gönderildi."}
