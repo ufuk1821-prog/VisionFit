@@ -154,7 +154,7 @@ async def analyze_squat(
     if len(data.landmarks) < 132:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Eksik landmark verisi gonderildi."
+            detail="Eksik landmark verisi gönderildi."
         )
 
     if IS_TESTING:
@@ -171,7 +171,7 @@ async def analyze_squat(
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Model hatasi: {str(e)}"
+                detail=f"Model hatası: {str(e)}"
             )
 
     hip_x, hip_y = data.landmarks[24 * 4], data.landmarks[24 * 4 + 1]
@@ -209,7 +209,7 @@ async def analyze_squat(
         "eminlik": confidence,
         "aci": angle,
         "antrenor_mesaji": durum,
-        "mesaj": "Veritabanina basariyla kaydedildi!"
+        "mesaj": "Veritabanına başarıyla kaydedildi!"
     }
 
 
@@ -220,7 +220,7 @@ async def analyze_session(
     current_user=Depends(get_current_user)
 ):
     if not data.frames:
-        raise HTTPException(status_code=400, detail="Kare verisi bos.")
+        raise HTTPException(status_code=400, detail="Kare verisi boş.")
 
     results = []
     for frame in data.frames:
@@ -231,12 +231,12 @@ async def analyze_session(
             results.append(r)
 
     if not results:
-        raise HTTPException(status_code=400, detail="Analiz edilecek yeterli vucut verisi bulunamadi.")
+        raise HTTPException(status_code=400, detail="Analiz edilecek yeterli vücut verisi bulunamadı.")
 
     squat_frames = [r for r in results if r["in_squat"]]
 
     if not squat_frames:
-        raise HTTPException(status_code=400, detail="Squat hareketi tespit edilemedi. Lutfen tam vuudunuzun gorundugunden emin olun.")
+        raise HTTPException(status_code=400, detail="Squat hareketi tespit edilemedi. Lütfen tüm vücudunuzun göründüğünden emin olun.")
 
     total = len(squat_frames)
 
@@ -262,43 +262,43 @@ async def analyze_session(
     olumlu = []
 
     genel = kategori(genel_skor_pct,
-        "Genel form iyi, squat hareketini dogru yapiyorsunuz.",
+        "Genel form iyi, squat hareketini doğru yapıyorsunuz.",
         "Squat formunda genel hatalar tespit edildi.")
     (olumlu if genel_skor_pct >= 75 else sorunlar).append("genel form")
 
     omurga = kategori(spine_pct,
-        "Omurga notrluğu korunuyor, sirtiniz duz.",
-        "One asiri egilme var. Gogsunuzu dik tutun ve omurgayi notr konumda tutun.")
-    (olumlu if spine_pct >= 75 else sorunlar).append("omurga notrluğu")
+        "Omurga nötrlüğü korunuyor, sırtınız düz.",
+        "Öne aşırı eğilme var. Göğsünüzü dik tutun ve omurgayı nötr konumda tutun.")
+    (olumlu if spine_pct >= 75 else sorunlar).append("omurga nötrlüğü")
 
     kalca = kategori(depth_pct,
-        "Kalca derinligi yeterli, diz seviyesine iniliyor.",
-        "Squat derinligi yetersiz. Kalcanizi diz seviyesine veya altina indirin.")
-    (olumlu if depth_pct >= 75 else sorunlar).append("kalca derinligi")
+        "Kalça derinliği yeterli, diz seviyesine iniliyor.",
+        "Squat derinliği yetersiz. Kalçanızı diz seviyesine veya altına indirin.")
+    (olumlu if depth_pct >= 75 else sorunlar).append("kalça derinliği")
 
     diz_hiza = kategori(knee_align_pct,
-        "Diz hizasi iyi, dizler ayak uclariyla hizali.",
-        "Dizler ayak ucunun onune geciyor. Agirligi topuklara alin.")
-    (olumlu if knee_align_pct >= 75 else sorunlar).append("diz hizasi")
+        "Diz hizası iyi, dizler ayak uçlarıyla hizalı.",
+        "Dizler ayak ucunun önüne geçiyor. Ağırlığı topuklara alın.")
+    (olumlu if knee_align_pct >= 75 else sorunlar).append("diz hizası")
 
     valgus = kategori(no_valgus_pct,
-        "Diz cokusu yok, dizler stabil.",
-        "Diz ice cokusu (valgus) var. Dizleri disa dogru itin.")
-    (olumlu if no_valgus_pct >= 75 else sorunlar).append("diz cokusu")
+        "Diz çöküşü yok, dizler stabil.",
+        "Diz içe çöküşü (valgus) var. Dizleri dışa doğru itin.")
+    (olumlu if no_valgus_pct >= 75 else sorunlar).append("diz çöküşü")
 
     agirlik = kategori(weight_center_pct,
-        "Agirlik merkezi dengeli, topuklar yerde.",
-        "Agirlik merkezi one kayiyor. Topuklarinizi yere basin.")
-    (olumlu if weight_center_pct >= 75 else sorunlar).append("agirlik merkezi")
+        "Ağırlık merkezi dengeli, topuklar yerde.",
+        "Ağırlık merkezi öne kayıyor. Topuklarınızı yere basın.")
+    (olumlu if weight_center_pct >= 75 else sorunlar).append("ağırlık merkezi")
 
     genel_skor = round(
         (genel_skor_pct + spine_pct + depth_pct + knee_align_pct + no_valgus_pct + weight_center_pct) / 6, 1
     )
 
-    olumlu_mesaj = ("Tebrikler! " + ", ".join(olumlu).capitalize() + " kategorilerinde basarilydiniz.") if olumlu else "Antrenman tamamlandi."
-    gelistir_mesaj = ("Gelistirilecek alanlar: " + ", ".join(sorunlar) + ".") if sorunlar else "Harika antrenman! Tum kategorilerde formunuz iyiydi."
+    olumlu_mesaj = ("Tebrikler! " + ", ".join(olumlu).capitalize() + " kategorilerinde başarılıydınız.") if olumlu else "Antrenman tamamlandı."
+    gelistir_mesaj = ("Geliştirilecek alanlar: " + ", ".join(sorunlar) + ".") if sorunlar else "Harika antrenman! Tüm kategorilerde formunuz iyiydi."
 
-    antrenor_notu = f"Skor: %{genel_skor} | " + (", ".join(sorunlar) if sorunlar else "Tum kategoriler iyi")
+    antrenor_notu = f"Skor: %{genel_skor} | " + (", ".join(sorunlar) if sorunlar else "Tüm kategoriler iyi")
 
     yeni_kayit = WorkoutHistory(
         user_id=current_user.id,

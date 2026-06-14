@@ -2346,3 +2346,95 @@ textarea,
     padding: 32px 20px;
   }
 }
+.history-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.history-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 20px;
+}
+
+.history-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.history-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-family: var(--font-display);
+}
+
+.history-badge.oturum {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.history-badge.anlik {
+  background: var(--accent-blue-soft);
+  color: var(--accent-blue);
+}
+
+.history-date {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.history-card-body {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.history-score {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 800;
+  flex-shrink: 0;
+  min-width: 80px;
+}
+
+.history-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.history-angle {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.history-note {
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.history-note.good {
+  color: var(--accent);
+}
+
+@media (max-width: 600px) {
+  .history-card-body {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
