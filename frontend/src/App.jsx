@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import logoImg from './assets/logo.png';
 import Login from './pages/login';
 import Register from './pages/register';
+import VerifyEmail from './pages/verify-email';
 import Home from './pages/home';
 import Dashboard from './pages/dashboard';
 import History from './pages/history';
@@ -55,6 +56,7 @@ function AnimatedRoutes({ isAuthenticated }) {
       <Routes location={location} key={location.pathname}>
         <Route path="/login" element={<PageWrapper><Login /></PageWrapper>} />
         <Route path="/register" element={<PageWrapper><Register /></PageWrapper>} />
+        <Route path="/verify-email" element={<PageWrapper><VerifyEmail /></PageWrapper>} />
         <Route path="/" element={isAuthenticated ? <PageWrapper><Home /></PageWrapper> : <Navigate to="/login" />} />
         <Route path="/dashboard" element={isAuthenticated ? <PageWrapper><Dashboard /></PageWrapper> : <Navigate to="/login" />} />
         <Route path="/history" element={isAuthenticated ? <PageWrapper><History /></PageWrapper> : <Navigate to="/login" />} />

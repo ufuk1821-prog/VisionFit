@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, Float
+from sqlalchemy import Column, Integer, String, DateTime, Float, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.core.database import Base
@@ -16,6 +16,8 @@ class User(Base):
     cinsiyet = Column(String(20), nullable=True)
     aktiflik_seviyesi = Column(String(30), nullable=True)
     hedef = Column(String(30), nullable=True)
+    email_dogrulandi = Column(Boolean, default=False, nullable=False)
+    dogrulama_token = Column(String(100), nullable=True)
     createdAt = Column(DateTime(timezone=True), server_default=func.now())
     updatedAt = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 

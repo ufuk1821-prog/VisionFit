@@ -2214,3 +2214,135 @@ textarea,
   font-size: 0.85rem;
   max-width: 320px;
 }
+.auth-layout {
+  display: flex;
+  min-height: 600px;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  max-width: 920px;
+  margin: 20px auto;
+}
+
+.auth-side-panel {
+  flex: 1;
+  background: linear-gradient(160deg, var(--accent) 0%, #5a0d12 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 40px;
+  color: #ffffff;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-side-panel::before {
+  content: '';
+  position: absolute;
+  top: -80px;
+  right: -80px;
+  width: 220px;
+  height: 220px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 50%;
+}
+
+.auth-side-panel::after {
+  content: '';
+  position: absolute;
+  bottom: -100px;
+  left: -100px;
+  width: 260px;
+  height: 260px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 50%;
+}
+
+.auth-side-logo {
+  width: 120px;
+  height: auto;
+  margin-bottom: 16px;
+  filter: brightness(0) invert(1);
+  position: relative;
+}
+
+.auth-side-panel h2 {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  margin-bottom: 12px;
+  position: relative;
+}
+
+.auth-side-panel p {
+  font-size: 0.9rem;
+  opacity: 0.9;
+  max-width: 320px;
+  margin-bottom: 28px;
+  position: relative;
+}
+
+.auth-feature-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  width: 100%;
+  max-width: 280px;
+}
+
+.auth-feature-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.auth-form-panel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  padding: 40px 24px;
+}
+
+.auth-form-panel .auth-box {
+  margin: 0;
+  box-shadow: none;
+  border: none;
+  width: 100%;
+  max-width: 380px;
+  padding: 0;
+}
+
+@media (max-width: 768px) {
+  .auth-layout {
+    flex-direction: column;
+    margin: 0;
+    border-radius: 0;
+    border: none;
+    min-height: auto;
+  }
+
+  .auth-side-panel {
+    padding: 32px 24px;
+  }
+
+  .auth-side-logo {
+    width: 90px;
+  }
+
+  .auth-feature-list {
+    display: none;
+  }
+
+  .auth-form-panel {
+    padding: 32px 20px;
+  }
+}

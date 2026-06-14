@@ -11,6 +11,9 @@ class UserLogin(BaseModel):
     email: EmailStr
     sifre: str
 
+class ResendVerificationRequest(BaseModel):
+    email: EmailStr
+
 class UserProfileRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
