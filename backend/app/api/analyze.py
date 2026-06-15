@@ -212,58 +212,54 @@ async def analyze_squat(
         "mesaj": "Veritabanına başarıyla kaydedildi!"
     }
 
-@router.post("/plank")
-async def analyze_plank(
-    data: PoseData,
-    db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
-):
+def _hat_sapmasi(landmarks, ust, orta, alt):
+    ux = (landmarks[ust[0] * 4] + landmarks[ust[1] * 4]) / 2
+    uy = (landmarks[ust[0] * 4 + 1] + landmarks[ust[1] * 4 + 1]) / 2
+    ox = (landmarks[orta[0] * 4] + landmarks[orta[1] * 4]) / 2
+    oy = (landmarks[orta[0] * 4 + 1] + landmarks[orta[1] * 4 + 1]) / 2
+    ax = (landmarks[alt[0] * 4] + landmarks[alt[1] * 4]) / 2
+    ay = (landmarks[alt[0] * 4 + 1] + landmarks[alt[1] * 4 + 1]) / 2
+
+    if abs(ax - ux) < 0.05:
+        return None
+
+    oran = (ox - ux) / (ax - ux)
+    beklenen_oy = uy + oran * (ay - uy)
+    return oy - beklenen_oy
+
+
+def _hat_analizi_kaydet(db, current_user, data, gerekli_noktalar, ust, orta, alt, hareket_adi, ust_mesaj, alt_mesaj, iyi_mesaj, esik=0.05, ideal_fark=0.0):
     if len(data.landmarks) < 132:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Eksik landmark verisi gönderildi."
         )
 
-    gerekli_noktalar = [11, 12, 23, 24, 27, 28]
     if not landmarks_visible(data.landmarks, gerekli_noktalar):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Vücudunuz net görünmüyor. Lütfen yandan, tüm vücudunuz kadraja girecek şekilde durun."
         )
 
-    omuz_x = (data.landmarks[11 * 4] + data.landmarks[12 * 4]) / 2
-    omuz_y = (data.landmarks[11 * 4 + 1] + data.landmarks[12 * 4 + 1]) / 2
-    kalca_x = (data.landmarks[23 * 4] + data.landmarks[24 * 4]) / 2
-    kalca_y = (data.landmarks[23 * 4 + 1] + data.landmarks[24 * 4 + 1]) / 2
-    ayak_x = (data.landmarks[27 * 4] + data.landmarks[28 * 4]) / 2
-    ayak_y = (data.landmarks[27 * 4 + 1] + data.landmarks[28 * 4 + 1]) / 2
-
-    if abs(ayak_x - omuz_x) < 0.05:
+    fark = _hat_sapmasi(data.landmarks, ust, orta, alt)
+    if fark is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Plank pozisyonunuz tespit edilemedi. Lütfen kameraya yandan durun."
+            detail="Pozisyonunuz tespit edilemedi. Lütfen kameraya yandan durun."
         )
 
-    oran = (kalca_x - omuz_x) / (ayak_x - omuz_x)
-    beklenen_kalca_y = omuz_y + oran * (ayak_y - omuz_y)
-    fark = kalca_y - beklenen_kalca_y
-
-    ESIK = 0.05
-    if fark < -ESIK:
-        durum = "Kalça Çok Yukarıda"
-        antrenor_mesaji = "Kalçanız omuz-ayak çizgisinin üzerinde, vücudunuzu düz bir hat haline getirin."
-    elif fark > ESIK:
-        durum = "Bel Çökmüş"
-        antrenor_mesaji = "Belinizde çökme var, karın kaslarınızı sıkarak belinizi düzleştirin."
+    if fark < -esik:
+        durum, antrenor_mesaji = ust_mesaj
+    elif fark > esik:
+        durum, antrenor_mesaji = alt_mesaj
     else:
-        durum = "İyi Form"
-        antrenor_mesaji = "Vücudunuz düz bir hat halinde, harika bir plank formu!"
+        durum, antrenor_mesaji = iyi_mesaj
 
-    form_skoru = max(0.0, round(100 - abs(fark) * 1000, 1))
+    form_skoru = max(0.0, round(100 - abs(fark - ideal_fark) * 1000, 1))
 
     yeni_kayit = WorkoutHistory(
         user_id=current_user.id,
-        hareket_adi="plank",
+        hareket_adi=hareket_adi,
         eminlik_skoru=form_skoru,
         diz_acisi=0,
         antrenor_notu=f"{durum}: {antrenor_mesaji}"
@@ -276,6 +272,124 @@ async def analyze_plank(
         "kayit_id": yeni_kayit.id,
         "durum": durum,
         "fark": round(float(fark), 4),
+        "antrenor_mesaji": antrenor_mesaji
+    }
+
+
+@router.post("/plank")
+async def analyze_plank(data: PoseData, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    return _hat_analizi_kaydet(
+        db, current_user, data,
+        gerekli_noktalar=[11, 12, 23, 24, 27, 28],
+        ust=(11, 12), orta=(23, 24), alt=(27, 28),
+        hareket_adi="plank",
+        ust_mesaj=("Kalça Çok Yukarıda", "Kalçanız omuz-ayak çizgisinin üzerinde, vücudunuzu düz bir hat haline getirin."),
+        alt_mesaj=("Bel Çökmüş", "Belinizde çökme var, karın kaslarınızı sıkarak belinizi düzleştirin."),
+        iyi_mesaj=("İyi Form", "Vücudunuz düz bir hat halinde, harika bir plank formu!"),
+    )
+
+
+@router.post("/sinav")
+async def analyze_sinav(data: PoseData, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    return _hat_analizi_kaydet(
+        db, current_user, data,
+        gerekli_noktalar=[11, 12, 23, 24, 27, 28],
+        ust=(11, 12), orta=(23, 24), alt=(27, 28),
+        hareket_adi="sinav",
+        ust_mesaj=("Kalça Çok Yukarıda", "Kalçanız yukarıda kalmış, vücudunuzu omuzdan ayak bileğine düz bir hat haline getirin."),
+        alt_mesaj=("Bel Çökmüş", "Beliniz çökmüş, karın ve kalça kaslarınızı sıkarak belinizi düzleştirin."),
+        iyi_mesaj=("İyi Form", "Sırtınız düz bir hat halinde, harika bir şınav formu!"),
+    )
+
+
+@router.post("/yan-plank")
+async def analyze_yan_plank(data: PoseData, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    return _hat_analizi_kaydet(
+        db, current_user, data,
+        gerekli_noktalar=[11, 12, 23, 24, 27, 28],
+        ust=(11, 12), orta=(23, 24), alt=(27, 28),
+        hareket_adi="yan_plank",
+        ust_mesaj=("Kalça Çok Yukarıda", "Kalçanız omuz-ayak hattının üzerinde, vücudunuzu düz bir çizgi haline getirin."),
+        alt_mesaj=("Kalça Düşük", "Kalçanız düşmüş, kalçanızı kaldırarak vücudunuzu düz bir çizgi haline getirin."),
+        iyi_mesaj=("İyi Form", "Vücudunuz düz bir hat halinde, harika bir yan plank formu!"),
+    )
+
+
+@router.post("/kopru")
+async def analyze_kopru(data: PoseData, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    return _hat_analizi_kaydet(
+        db, current_user, data,
+        gerekli_noktalar=[11, 12, 23, 24, 25, 26],
+        ust=(11, 12), orta=(23, 24), alt=(25, 26),
+        hareket_adi="kopru",
+        ust_mesaj=("Kalça Aşırı Yükselmiş", "Kalçanızı aşırı yükseltmişsiniz, belinizi esnetmemek için biraz indirin."),
+        alt_mesaj=("Kalça Yeterince Yükseltilmemiş", "Kalçanızı omuz-diz hattına gelecek şekilde daha yukarı kaldırın."),
+        iyi_mesaj=("İyi Form", "Kalçanız omuz-diz hattıyla aynı seviyede, harika bir köprü formu!"),
+    )
+
+
+@router.post("/supermen")
+async def analyze_supermen(data: PoseData, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    return _hat_analizi_kaydet(
+        db, current_user, data,
+        gerekli_noktalar=[11, 12, 23, 24, 27, 28],
+        ust=(11, 12), orta=(23, 24), alt=(27, 28),
+        esik=0.03, ideal_fark=0.05,
+        hareket_adi="supermen",
+        ust_mesaj=("Yetersiz Kaldırma", "Kol ve bacaklarınızı kalçanızdan daha yukarıya kaldırmaya çalışın."),
+        alt_mesaj=("İyi Form", "Kol ve bacaklarınız güzelce yukarı kaldırılmış, harika bir süpermen formu!"),
+        iyi_mesaj=("Yetersiz Kaldırma", "Kol ve bacaklarınızı biraz daha yukarı kaldırarak gövdenizi gerin."),
+    )
+
+
+@router.post("/duvar-squat")
+async def analyze_duvar_squat(data: PoseData, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    if len(data.landmarks) < 132:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Eksik landmark verisi gönderildi."
+        )
+
+    gerekli_noktalar = [23, 24, 25, 26, 27, 28]
+    if not landmarks_visible(data.landmarks, gerekli_noktalar):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Vücudunuz net görünmüyor. Lütfen yandan, tüm vücudunuz kadraja girecek şekilde durun."
+        )
+
+    kalca = ((data.landmarks[23 * 4] + data.landmarks[24 * 4]) / 2, (data.landmarks[23 * 4 + 1] + data.landmarks[24 * 4 + 1]) / 2)
+    diz = ((data.landmarks[25 * 4] + data.landmarks[26 * 4]) / 2, (data.landmarks[25 * 4 + 1] + data.landmarks[26 * 4 + 1]) / 2)
+    ayak = ((data.landmarks[27 * 4] + data.landmarks[28 * 4]) / 2, (data.landmarks[27 * 4 + 1] + data.landmarks[28 * 4 + 1]) / 2)
+
+    aci = calculate_angle(kalca, diz, ayak)
+
+    if aci < 80:
+        durum = "Çok Derin Çömelmiş"
+        antrenor_mesaji = "Diz açınız çok dar, biraz yukarı kalkarak dizinizi yaklaşık 90 dereceye getirin."
+    elif aci > 100:
+        durum = "Yeterince Çömelmemiş"
+        antrenor_mesaji = "Diz açınız çok geniş, biraz daha aşağı inerek dizinizi yaklaşık 90 dereceye getirin."
+    else:
+        durum = "İyi Form"
+        antrenor_mesaji = "Diz açınız yaklaşık 90 derece, harika bir duvar squat formu!"
+
+    form_skoru = max(0.0, round(100 - abs(aci - 90) * 2, 1))
+
+    yeni_kayit = WorkoutHistory(
+        user_id=current_user.id,
+        hareket_adi="duvar_squat",
+        eminlik_skoru=form_skoru,
+        diz_acisi=int(round(aci)),
+        antrenor_notu=f"{durum}: {antrenor_mesaji}"
+    )
+    db.add(yeni_kayit)
+    db.commit()
+    db.refresh(yeni_kayit)
+
+    return {
+        "kayit_id": yeni_kayit.id,
+        "durum": durum,
+        "aci": round(aci, 1),
         "antrenor_mesaji": antrenor_mesaji
     }
 

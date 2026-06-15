@@ -19,6 +19,8 @@ function Register() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [resendMessage, setResendMessage] = useState('');
+  const [resending, setResending] = useState(false);
 
   const passwordValid = PASSWORD_RULES.every((rule) => rule.test(password));
 
@@ -54,6 +56,19 @@ function Register() {
     }
   };
 
+  const handleResend = async () => {
+    setResending(true);
+    setResendMessage('');
+    try {
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/resend-verification`, { email });
+      setResendMessage(res.data.mesaj);
+    } catch {
+      setResendMessage('Bir hata oluştu, tekrar deneyin.');
+    } finally {
+      setResending(false);
+    }
+  };
+
   return (
     <div className="auth-layout">
       <div className="auth-side-panel">
@@ -79,6 +94,14 @@ function Register() {
                 e-postandaki bağlantıya tıkla, ardından giriş yapabilirsin.
               </p>
               <Link to="/login" className="submit-btn" style={{ display: 'block', textDecoration: 'none' }}>Giriş Sayfasına Git</Link>
+              <button
+                style={{ marginTop: '16px', background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: '0.9rem' }}
+                onClick={handleResend}
+                disabled={resending}
+              >
+                {resending ? 'Gönderiliyor...' : 'E-postayı Tekrar Gönder'}
+              </button>
+              {resendMessage && <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '8px' }}>{resendMessage}</p>}
             </div>
           ) : (
             <>
