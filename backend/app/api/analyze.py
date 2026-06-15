@@ -215,6 +215,7 @@ async def analyze_squat(
 @router.post("/plank")
 async def analyze_plank(
     data: PoseData,
+    db: Session = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
     if len(data.landmarks) < 132:
@@ -258,7 +259,21 @@ async def analyze_plank(
         durum = "İyi Form"
         antrenor_mesaji = "Vücudunuz düz bir hat halinde, harika bir plank formu!"
 
+    form_skoru = max(0.0, round(100 - abs(fark) * 1000, 1))
+
+    yeni_kayit = WorkoutHistory(
+        user_id=current_user.id,
+        hareket_adi="plank",
+        eminlik_skoru=form_skoru,
+        diz_acisi=0,
+        antrenor_notu=f"{durum}: {antrenor_mesaji}"
+    )
+    db.add(yeni_kayit)
+    db.commit()
+    db.refresh(yeni_kayit)
+
     return {
+        "kayit_id": yeni_kayit.id,
         "durum": durum,
         "fark": round(float(fark), 4),
         "antrenor_mesaji": antrenor_mesaji

@@ -17,6 +17,7 @@ import Settings from './pages/settings';
 import Exercises from './pages/exercises';
 import Timer from './pages/timer';
 import WorkoutNotebook from './pages/workout-notebook';
+import Plank from './pages/plank';
 import './App.css';
 
 
@@ -63,6 +64,7 @@ function AnimatedRoutes({ isAuthenticated }) {
         <Route path="/exercises" element={isAuthenticated ? <PageWrapper><Exercises /></PageWrapper> : <Navigate to="/login" />} />
         <Route path="/timer" element={isAuthenticated ? <PageWrapper><Timer /></PageWrapper> : <Navigate to="/login" />} />
         <Route path="/workout-notebook" element={isAuthenticated ? <PageWrapper><WorkoutNotebook /></PageWrapper> : <Navigate to="/login" />} />
+        <Route path="/plank" element={isAuthenticated ? <PageWrapper><Plank /></PageWrapper> : <Navigate to="/login" />} />
         <Route path="/profile" element={isAuthenticated ? <PageWrapper><Profile /></PageWrapper> : <Navigate to="/login" />} />
         <Route path="/diet" element={isAuthenticated ? <PageWrapper><Diet /></PageWrapper> : <Navigate to="/login" />} />
         <Route path="/nutrition" element={isAuthenticated ? <PageWrapper><Nutrition /></PageWrapper> : <Navigate to="/login" />} />

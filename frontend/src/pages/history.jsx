@@ -9,6 +9,7 @@ const HAREKET_BILGI = {
   squat_session: { etiket: 'Squat - Tüm Vücut Analizi', tip: 'oturum' },
   dogru_squat: { etiket: 'Squat - Anlık Kayıt', tip: 'anlik' },
   yanlis_squat: { etiket: 'Squat - Anlık Kayıt', tip: 'anlik' },
+  plank: { etiket: 'Plank Analizi', tip: 'anlik' },
 };
 
 const FILTRE_OPTIONS = [
@@ -171,7 +172,7 @@ function History() {
                       %{k.eminlik_skoru}
                     </div>
                     <div className="history-detail">
-                      <div className="history-angle">Diz Açısı: {k.diz_acisi}°</div>
+                      {k.hareket_adi !== 'plank' && <div className="history-angle">Diz Açısı: {k.diz_acisi}°</div>}
                       <div className="history-note">{k.antrenor_notu}</div>
                     </div>
                   </div>
