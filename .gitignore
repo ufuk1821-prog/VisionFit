@@ -10,3 +10,4 @@ build/
 htmlcov/
 coverage.xml
 ai_training/visionfit_llm/
+*.db

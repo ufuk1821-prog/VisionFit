@@ -13,3 +13,4 @@ scikit-learn
 asyncpg
 requests
 slowapi
+alembic

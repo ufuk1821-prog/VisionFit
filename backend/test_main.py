@@ -10,6 +10,7 @@ from main import app
 from app.core.database import Base, get_db
 from app.api.analyze import get_db as analyze_get_db
 from app.models.user import User
+from unittest.mock import patch
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 
@@ -500,3 +501,32 @@ def test_41_zayif_sifre_ile_kayit_engelle():
         "ad": "Guclu", "soyad": "Sifre", "email": "guclu1@test.com", "sifre": "GucluSifre1!"
     })
     assert response.status_code == 201
+    
+    # --- YEREL AI ---
+def test_42_yerel_ai_model_yoksa_503():
+    token = get_token("yerelai@test.com")
+    headers = {"Authorization": f"Bearer {token}"}
+
+    with patch("app.services.local_llm.llm_kullanilabilir_mi", return_value=False):
+        response = client.post("/api/yerel-ai/antrenor-yorumu", json={
+            "skorlar": {"Genel Form": 80}
+        }, headers=headers)
+        assert response.status_code == 503
+
+        response = client.post("/api/yerel-ai/diyet-onerisi", json={
+            "bmi": 22.5,
+            "bmi_kategori": "Normal",
+            "hedef": "kilo_koruma",
+            "hedef_kalori": 2200,
+            "protein_g": 120,
+            "karbonhidrat_g": 220,
+            "yag_g": 70,
+            "istek": "test",
+        }, headers=headers)
+        assert response.status_code == 503
+
+        response = client.post("/api/yerel-ai/defter-analizi", json={
+            "hareket": "Bench Press",
+            "agirliklar": [40, 42.5],
+        }, headers=headers)
+        assert response.status_code == 503
