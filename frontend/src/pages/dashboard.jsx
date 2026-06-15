@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { PoseLandmarker, FilesetResolver, DrawingUtils } from '@mediapipe/tasks-vision';
 import axios from 'axios';
-import { Play, Square, CheckCircle, XCircle } from 'lucide-react';
+import { Play, Square, CheckCircle, XCircle, SwitchCamera } from 'lucide-react';
 import Sidebar from '../components/sidebar';
 
 const KATEGORI_LABELS = {
@@ -37,13 +37,38 @@ function Dashboard() {
   const [countdown, setCountdown] = useState(3);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
+  const [onKamera, setOnKamera] = useState(true);
+
+  const streamRef = useRef(null);
+  const detectStartedRef = useRef(false);
 
   const token = localStorage.getItem('token');
   const apiUrl = import.meta.env.VITE_API_URL;
 
+  const kamerayiAc = async (onMu) => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+    }
+    const yeniStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: onMu ? 'user' : 'environment' },
+    });
+    streamRef.current = yeniStream;
+    videoRef.current.srcObject = yeniStream;
+  };
+
+  const kameraDegistir = async () => {
+    const yeni = !onKamera;
+    setOnKamera(yeni);
+    try {
+      await kamerayiAc(yeni);
+    } catch {
+      setError('Seçilen kameraya erişilemedi.');
+      setOnKamera(!yeni);
+    }
+  };
+
   useEffect(() => {
     let poseLandmarker;
-    let stream;
 
     const init = async () => {
       const vision = await FilesetResolver.forVisionTasks(
@@ -60,11 +85,13 @@ function Dashboard() {
       poseLandmarkerRef.current = poseLandmarker;
       setModelReady(true);
 
-      stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      videoRef.current.srcObject = stream;
+      await kamerayiAc(onKamera);
       videoRef.current.onloadeddata = () => {
         setCameraReady(true);
-        detectLoop();
+        if (!detectStartedRef.current) {
+          detectStartedRef.current = true;
+          detectLoop();
+        }
       };
     };
 
@@ -104,7 +131,7 @@ function Dashboard() {
 
     return () => {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
-      if (stream) stream.getTracks().forEach((t) => t.stop());
+      if (streamRef.current) streamRef.current.getTracks().forEach((t) => t.stop());
       if (poseLandmarker) poseLandmarker.close();
     };
   }, []);
@@ -173,6 +200,16 @@ function Dashboard() {
         <div className="video-container" style={{ position: 'relative' }}>
           <video ref={videoRef} id="webcam" autoPlay playsInline muted />
           <canvas ref={canvasRef} id="output_canvas" width="640" height="480" />
+
+          <button
+            className="timer-btn"
+            style={{ position: 'absolute', top: '12px', right: '12px', zIndex: 5, width: 'auto', padding: '8px 14px' }}
+            onClick={kameraDegistir}
+            disabled={phase === 'recording' || phase === 'countdown' || phase === 'analyzing'}
+            title="Kamerayı Değiştir"
+          >
+            <SwitchCamera size={18} /> {onKamera ? 'Arka Kamera' : 'Ön Kamera'}
+          </button>
 
           {phase === 'countdown' && (
             <div className="camera-overlay">
