@@ -20,7 +20,7 @@ def get_validated_diet_inputs(current_user: User) -> User:
     if missing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Diyet onerisi icin eksik bilgiler: {', '.join(missing)}"
+            detail=f"Diyet önerisi için eksik bilgiler: {', '.join(missing)}"
         )
     return current_user
 
@@ -51,12 +51,12 @@ def change_password(
     current_user: User = Depends(get_current_user)
 ):
     if not verify_password(data.mevcut_sifre, current_user.sifre):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Mevcut sifre yanlis.")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Mevcut şifre yanlış.")
     if len(data.yeni_sifre) < 6:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Yeni sifre en az 6 karakter olmalidir.")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Yeni şifre en az 6 karakter olmalıdır.")
     current_user.sifre = get_password_hash(data.yeni_sifre)
     db.commit()
-    return {"mesaj": "Sifre basariyla guncellendi."}
+    return {"mesaj": "Şifre başarıyla güncellendi."}
 
 
 @router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)

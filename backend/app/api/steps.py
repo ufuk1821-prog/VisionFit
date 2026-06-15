@@ -19,13 +19,13 @@ def log_steps(
     if current_user.kilo is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Kalori hesaplamasi icin profilinizde kilo bilgisi gereklidir."
+            detail="Kalori hesaplaması için profilinizde kilo bilgisi gereklidir."
         )
 
     if data.aktivite_tipi not in ACTIVITY_PROFILES:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Gecersiz aktivite tipi."
+            detail="Geçersiz aktivite tipi."
         )
 
     yakilan_kalori = calculate_calories_burned(data.adim_sayisi, data.aktivite_tipi, current_user.kilo)

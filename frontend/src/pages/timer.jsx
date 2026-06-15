@@ -23,7 +23,6 @@ function playBeep() {
     osc.start();
     osc.stop(ctx.currentTime + 0.5);
   } catch {
-    // ses desteklenmiyor, sessizce gec
   }
 }
 

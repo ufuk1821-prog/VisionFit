@@ -33,13 +33,13 @@ def add_meal(
     current_user: User = Depends(get_current_user)
 ):
     if data.ogun_tipi not in OGUN_TIPLERI:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Gecersiz ogun tipi.")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Geçersiz öğün tipi.")
 
     if data.besin_anahtari not in FOOD_DATABASE:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Gecersiz besin.")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Geçersiz besin.")
 
     if data.gram <= 0:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Gram pozitif olmalidir.")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Gram pozitif olmalıdır.")
 
     besin = FOOD_DATABASE[data.besin_anahtari]
     oran = data.gram / 100
@@ -86,7 +86,7 @@ def delete_meal(
     kayit = db.query(MealLog).filter(MealLog.id == meal_id, MealLog.user_id == current_user.id).first()
 
     if not kayit:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Kayit bulunamadi.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Kayıt bulunamadı.")
 
     db.delete(kayit)
     db.commit()
@@ -98,7 +98,7 @@ def add_water(
     current_user: User = Depends(get_current_user)
 ):
     if data.miktar_ml <= 0:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Miktar pozitif olmalidir.")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Miktar pozitif olmalıdır.")
 
     kayit = WaterLog(user_id=current_user.id, miktar_ml=data.miktar_ml)
     db.add(kayit)
@@ -127,7 +127,7 @@ def delete_water(
     kayit = db.query(WaterLog).filter(WaterLog.id == water_id, WaterLog.user_id == current_user.id).first()
 
     if not kayit:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Kayit bulunamadi.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Kayıt bulunamadı.")
 
     db.delete(kayit)
     db.commit()
