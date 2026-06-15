@@ -155,7 +155,7 @@ function History() {
                 const iyiDurum = detayKismi === 'Tüm kategoriler iyi';
 
                 return (
-                  <div className="history-card" key={k.id} style={{ position: 'relative' }}>
+                  <div className="history-card" key={k.id} style={{ position: 'relative', paddingRight: '36px' }}>
                     <button
                       onClick={() => setAcikMenu(acikMenu === k.id ? null : k.id)}
                       style={{ position: 'absolute', top: '10px', right: '10px', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px', zIndex: 5 }}

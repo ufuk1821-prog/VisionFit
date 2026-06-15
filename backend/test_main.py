@@ -584,7 +584,7 @@ def test_45_plank_gecersiz_durumlar():
         on_frame[idx * 4] = 0.5
     response = client.post("/api/analyze/plank", json={"landmarks": on_frame}, headers=headers)
     assert response.status_code == 400
-    
+
     # --- YENI FOTOGRAF HAREKETLERI ---
 def hat_kare_olustur(ust_y, orta_y, alt_y, alt_idx=(27, 28)):
     frame = [0.0] * 132
@@ -696,3 +696,28 @@ def test_50_duvar_squat_durumlari():
     response = client.post("/api/analyze/duvar-squat", json={"landmarks": frame}, headers=headers)
     assert response.status_code == 200
     assert response.json()["durum"] == "Çok Derin Çömelmiş"
+    
+def test_51_gecmis_kaydi_silme():
+    token1 = get_token("silme1@test.com")
+    token2 = get_token("silme2@test.com")
+    headers1 = {"Authorization": f"Bearer {token1}"}
+    headers2 = {"Authorization": f"Bearer {token2}"}
+
+    frame = plank_kare_olustur(0.30, 0.32, 0.34)
+    response = client.post("/api/analyze/plank", json={"landmarks": frame}, headers=headers1)
+    kayit_id = response.json()["kayit_id"]
+
+    response = client.delete(f"/api/analyze/history/{kayit_id}", headers=headers2)
+    assert response.status_code == 404
+
+    response = client.delete(f"/api/analyze/history/{kayit_id}", headers=headers1)
+    assert response.status_code == 200
+
+    response = client.get("/api/analyze/history", headers=headers1)
+    kayit_idler = [k["id"] for k in response.json()]
+    assert kayit_id not in kayit_idler
+
+    response = client.delete(f"/api/analyze/history/{kayit_id}", headers=headers1)
+    assert response.status_code == 404
+    
+    

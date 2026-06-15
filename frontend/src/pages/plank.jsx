@@ -210,9 +210,7 @@ function FotografliAnaliz() {
               fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer',
               transition: 'background 0.2s, color 0.2s',
               border: secili === h.id ? 'none' : '1px solid var(--danger)',
-              background: secili === h.id
-                ? 'var(--danger)'
-                : 'repeating-linear-gradient(45deg, var(--surface-2) 0px, var(--surface-2) 9px, var(--danger) 9px, var(--danger) 10px)',
+              background: secili === h.id ? 'var(--danger)' : 'var(--surface-2)',
               color: secili === h.id ? '#fff' : 'var(--danger)',
             }}
             onMouseEnter={(e) => {
