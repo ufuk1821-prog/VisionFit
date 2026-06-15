@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { TrendingUp, TrendingDown, Minus, Activity, Zap } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, Activity, Zap, MoreVertical } from 'lucide-react';
 import Sidebar from '../components/sidebar';
 import EmptyState from '../components/EmptyState';
 
@@ -10,7 +10,14 @@ const HAREKET_BILGI = {
   dogru_squat: { etiket: 'Squat - Anlık Kayıt', tip: 'anlik' },
   yanlis_squat: { etiket: 'Squat - Anlık Kayıt', tip: 'anlik' },
   plank: { etiket: 'Plank Analizi', tip: 'anlik' },
+  sinav: { etiket: 'Şınav Analizi', tip: 'anlik' },
+  kopru: { etiket: 'Köprü Analizi', tip: 'anlik' },
+  yan_plank: { etiket: 'Yan Plank Analizi', tip: 'anlik' },
+  duvar_squat: { etiket: 'Duvar Squat Analizi', tip: 'anlik' },
+  supermen: { etiket: 'Süpermen Analizi', tip: 'anlik' },
 };
+
+const ACI_GOSTERME_HAREKETLERI = ['plank', 'sinav', 'kopru', 'yan_plank', 'supermen'];
 
 const FILTRE_OPTIONS = [
   { value: 'tumu', label: 'Tümü' },
@@ -35,7 +42,20 @@ function History() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [filtre, setFiltre] = useState('tumu');
+  const [acikMenu, setAcikMenu] = useState(null);
   const token = localStorage.getItem('token');
+
+  const silKaydi = async (id) => {
+    try {
+      await axios.delete(`${import.meta.env.VITE_API_URL}/api/analyze/history/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setKayitlar((prev) => prev.filter((k) => k.id !== id));
+    } catch {
+      // silinemedi
+    }
+    setAcikMenu(null);
+  };
 
   useEffect(() => {
     axios.get(`${import.meta.env.VITE_API_URL}/api/analyze/history`, {
@@ -135,7 +155,20 @@ function History() {
                 const iyiDurum = detayKismi === 'Tüm kategoriler iyi';
 
                 return (
-                  <div className="history-card" key={k.id}>
+                  <div className="history-card" key={k.id} style={{ position: 'relative' }}>
+                    <button
+                      onClick={() => setAcikMenu(acikMenu === k.id ? null : k.id)}
+                      style={{ position: 'absolute', top: '10px', right: '10px', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px', zIndex: 5 }}
+                    >
+                      <MoreVertical size={18} />
+                    </button>
+                    {acikMenu === k.id && (
+                      <div style={{ position: 'absolute', top: '36px', right: '10px', background: 'var(--surface-2)', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.3)', zIndex: 10, overflow: 'hidden' }}>
+                        <button onClick={() => silKaydi(k.id)} style={{ background: 'none', border: 'none', color: 'var(--danger)', padding: '10px 16px', cursor: 'pointer', whiteSpace: 'nowrap', fontSize: '0.85rem' }}>
+                          Bu Kaydı Sil
+                        </button>
+                      </div>
+                    )}
                     <div className="history-card-header">
                       <span className="history-badge oturum">
                         <Zap size={14} /> {etiket}
@@ -160,7 +193,20 @@ function History() {
               }
 
               return (
-                <div className="history-card" key={k.id}>
+                <div className="history-card" key={k.id} style={{ position: 'relative' }}>
+                  <button
+                    onClick={() => setAcikMenu(acikMenu === k.id ? null : k.id)}
+                    style={{ position: 'absolute', top: '10px', right: '10px', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px', zIndex: 5 }}
+                  >
+                    <MoreVertical size={18} />
+                  </button>
+                  {acikMenu === k.id && (
+                    <div style={{ position: 'absolute', top: '36px', right: '10px', background: 'var(--surface-2)', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.3)', zIndex: 10, overflow: 'hidden' }}>
+                      <button onClick={() => silKaydi(k.id)} style={{ background: 'none', border: 'none', color: 'var(--danger)', padding: '10px 16px', cursor: 'pointer', whiteSpace: 'nowrap', fontSize: '0.85rem' }}>
+                        Bu Kaydı Sil
+                      </button>
+                    </div>
+                  )}
                   <div className="history-card-header">
                     <span className="history-badge anlik">
                       <Activity size={14} /> {etiket}
@@ -172,7 +218,7 @@ function History() {
                       %{k.eminlik_skoru}
                     </div>
                     <div className="history-detail">
-                      {k.hareket_adi !== 'plank' && <div className="history-angle">Diz Açısı: {k.diz_acisi}°</div>}
+                      {!ACI_GOSTERME_HAREKETLERI.includes(k.hareket_adi) && <div className="history-angle">Diz Açısı: {k.diz_acisi}°</div>}
                       <div className="history-note">{k.antrenor_notu}</div>
                     </div>
                   </div>

@@ -513,3 +513,21 @@ async def get_history(
     return db.query(WorkoutHistory).filter(
         WorkoutHistory.user_id == current_user.id
     ).order_by(WorkoutHistory.tarih.desc()).all()
+
+@router.delete("/history/{kayit_id}")
+async def delete_history(
+    kayit_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    kayit = db.query(WorkoutHistory).filter(
+        WorkoutHistory.id == kayit_id,
+        WorkoutHistory.user_id == current_user.id
+    ).first()
+
+    if not kayit:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Kayıt bulunamadı.")
+
+    db.delete(kayit)
+    db.commit()
+    return {"mesaj": "Kayıt silindi."}

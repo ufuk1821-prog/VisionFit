@@ -6,7 +6,7 @@ import logoImg from '../assets/logo.png';
 const NAV_ITEMS = [
   { path: '/', label: 'Ana Sayfa', icon: Home },
   { path: '/dashboard', label: 'Kamera', icon: Camera },
-  { path: '/plank', label: 'Plank Analizi', icon: Image },
+  { path: '/plank', label: 'Fotoğraflı Analiz', icon: Image },
   { path: '/history', label: 'Geçmiş Antrenmanlar', icon: History },
   { path: '/exercises', label: 'Egzersiz Kütüphanesi', icon: Dumbbell },
   { path: '/workout-notebook', label: 'Antrenman Defteri', icon: ClipboardList },
