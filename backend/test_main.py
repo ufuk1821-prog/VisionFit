@@ -501,7 +501,7 @@ def test_41_zayif_sifre_ile_kayit_engelle():
         "ad": "Guclu", "soyad": "Sifre", "email": "guclu1@test.com", "sifre": "GucluSifre1!"
     })
     assert response.status_code == 201
-    
+
     # --- YEREL AI ---
 def test_42_yerel_ai_model_yoksa_503():
     token = get_token("yerelai@test.com")
@@ -530,3 +530,57 @@ def test_42_yerel_ai_model_yoksa_503():
             "agirliklar": [40, 42.5],
         }, headers=headers)
         assert response.status_code == 503
+        
+        # --- PLANK ANALIZI ---
+def plank_kare_olustur(omuz_y, kalca_y, ayak_y):
+    frame = [0.0] * 132
+    points = {
+        11: (0.2, omuz_y), 12: (0.2, omuz_y + 0.02),
+        23: (0.5, kalca_y), 24: (0.5, kalca_y + 0.02),
+        27: (0.8, ayak_y), 28: (0.8, ayak_y + 0.02),
+    }
+    for idx, (x, y) in points.items():
+        base = idx * 4
+        frame[base] = x
+        frame[base + 1] = y
+        frame[base + 2] = 0.0
+        frame[base + 3] = 0.9
+    return frame
+
+
+def test_43_plank_iyi_form():
+    token = get_token("plank1@test.com")
+    frame = plank_kare_olustur(0.30, 0.32, 0.34)
+    response = client.post("/api/analyze/plank", json={"landmarks": frame},
+        headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 200
+    assert response.json()["durum"] == "İyi Form"
+
+
+def test_44_plank_kalca_yuksek_ve_bel_cokuk():
+    token = get_token("plank2@test.com")
+    headers = {"Authorization": f"Bearer {token}"}
+
+    frame = plank_kare_olustur(0.30, 0.10, 0.34)
+    response = client.post("/api/analyze/plank", json={"landmarks": frame}, headers=headers)
+    assert response.status_code == 200
+    assert response.json()["durum"] == "Kalça Çok Yukarıda"
+
+    frame = plank_kare_olustur(0.30, 0.55, 0.34)
+    response = client.post("/api/analyze/plank", json={"landmarks": frame}, headers=headers)
+    assert response.status_code == 200
+    assert response.json()["durum"] == "Bel Çökmüş"
+
+
+def test_45_plank_gecersiz_durumlar():
+    token = get_token("plank3@test.com")
+    headers = {"Authorization": f"Bearer {token}"}
+
+    response = client.post("/api/analyze/plank", json={"landmarks": [0.0] * 132}, headers=headers)
+    assert response.status_code == 400
+
+    on_frame = plank_kare_olustur(0.30, 0.32, 0.34)
+    for idx in [11, 12, 23, 24, 27, 28]:
+        on_frame[idx * 4] = 0.5
+    response = client.post("/api/analyze/plank", json={"landmarks": on_frame}, headers=headers)
+    assert response.status_code == 400

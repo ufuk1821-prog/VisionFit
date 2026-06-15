@@ -212,6 +212,57 @@ async def analyze_squat(
         "mesaj": "Veritabanına başarıyla kaydedildi!"
     }
 
+@router.post("/plank")
+async def analyze_plank(
+    data: PoseData,
+    current_user=Depends(get_current_user)
+):
+    if len(data.landmarks) < 132:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Eksik landmark verisi gönderildi."
+        )
+
+    gerekli_noktalar = [11, 12, 23, 24, 27, 28]
+    if not landmarks_visible(data.landmarks, gerekli_noktalar):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Vücudunuz net görünmüyor. Lütfen yandan, tüm vücudunuz kadraja girecek şekilde durun."
+        )
+
+    omuz_x = (data.landmarks[11 * 4] + data.landmarks[12 * 4]) / 2
+    omuz_y = (data.landmarks[11 * 4 + 1] + data.landmarks[12 * 4 + 1]) / 2
+    kalca_x = (data.landmarks[23 * 4] + data.landmarks[24 * 4]) / 2
+    kalca_y = (data.landmarks[23 * 4 + 1] + data.landmarks[24 * 4 + 1]) / 2
+    ayak_x = (data.landmarks[27 * 4] + data.landmarks[28 * 4]) / 2
+    ayak_y = (data.landmarks[27 * 4 + 1] + data.landmarks[28 * 4 + 1]) / 2
+
+    if abs(ayak_x - omuz_x) < 0.05:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Plank pozisyonunuz tespit edilemedi. Lütfen kameraya yandan durun."
+        )
+
+    oran = (kalca_x - omuz_x) / (ayak_x - omuz_x)
+    beklenen_kalca_y = omuz_y + oran * (ayak_y - omuz_y)
+    fark = kalca_y - beklenen_kalca_y
+
+    ESIK = 0.05
+    if fark < -ESIK:
+        durum = "Kalça Çok Yukarıda"
+        antrenor_mesaji = "Kalçanız omuz-ayak çizgisinin üzerinde, vücudunuzu düz bir hat haline getirin."
+    elif fark > ESIK:
+        durum = "Bel Çökmüş"
+        antrenor_mesaji = "Belinizde çökme var, karın kaslarınızı sıkarak belinizi düzleştirin."
+    else:
+        durum = "İyi Form"
+        antrenor_mesaji = "Vücudunuz düz bir hat halinde, harika bir plank formu!"
+
+    return {
+        "durum": durum,
+        "fark": round(float(fark), 4),
+        "antrenor_mesaji": antrenor_mesaji
+    }
 
 @router.post("/session", response_model=SessionResult)
 async def analyze_session(

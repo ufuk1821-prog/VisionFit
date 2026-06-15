@@ -140,3 +140,32 @@ Tüm endpoint'ler (`/`, `/docs` hariç) JWT tabanlı kimlik doğrulama gerektiri
 - **Backend:** Render üzerinde, `backend/Dockerfile` kullanılarak Docker container olarak deploy edilir.
 - **Frontend:** Vercel üzerinde, `main` branch'ine yapılan her push'ta otomatik olarak build edilip deploy edilir.
 - **CI/CD:** GitHub Actions (`.github/workflows/ci.yml`), her push ve pull request'te backend testlerini PostgreSQL servis container'ı ile çalıştırır ve coverage raporu üretir. Testler `main` branch'inde başarılı olursa, pipeline'ın `deploy` job'ı Render'ın deploy hook'unu tetikleyerek backend'in yeniden deploy edilmesini sağlar (`RENDER_DEPLOY_HOOK_URL` repository secret'ı olarak tanımlıdır).
+## Yerel AI (LLM) Özelliği
+
+`ai_training/` klasöründe, VisionFit'e özel verilerle fine-tune edilmiş bir Qwen2.5-1.5B-Instruct modeli bulunur. Bu model 3 görev için eğitilmiştir: antrenör geri bildirimi, diyet AI önerisi ve antrenman defteri ilerleme analizi.
+
+**Bu özellik sadece lokal ortamda çalışır**, deploy edilen siteye dahil değildir (Render'ın ücretsiz planında bu büyüklükte bir modeli çalıştıracak kaynak yoktur).
+
+### Lokalde çalıştırmak için:
+
+1. Ek kütüphaneleri kur (bunlar `requirements.txt`'e dahil değildir, sadece lokal kullanım içindir):
+```bash
+pip install transformers torch
+```
+
+2. Modeli indir (Hugging Face token gerekir, `HF_TOKEN` ortam değişkeni olarak ayarlanmalıdır):
+```bash
+cd ai_training
+python model_indir.py
+```
+
+3. Backend'i başlatınca `/api/yerel-ai/antrenor-yorumu`, `/api/yerel-ai/diyet-onerisi`, `/api/yerel-ai/defter-analizi` endpoint'leri aktif olur.
+
+### İlgili dosyalar
+
+- `ai_training/egitim_verisi_uret.py`: Eğitim verisini üreten script (1500 örnek, 3 görev)
+- `ai_training/egitim_verisi.jsonl`: Üretilen eğitim verisi
+- `ai_training/model_indir.py`: Hugging Face'ten model indirme scripti
+- `ai_training/llm_test.py`: Modeli doğrudan test eden script
+- `ai_training/llm_api_test.py`: API endpoint'lerini test eden script
+- `backend/app/services/local_llm.py`: Modeli yükleyip çalıştıran servis
