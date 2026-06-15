@@ -52,7 +52,6 @@ function History() {
       });
       setKayitlar((prev) => prev.filter((k) => k.id !== id));
     } catch {
-      // silinemedi
     }
     setAcikMenu(null);
   };
@@ -155,25 +154,29 @@ function History() {
                 const iyiDurum = detayKismi === 'Tüm kategoriler iyi';
 
                 return (
-                  <div className="history-card" key={k.id} style={{ position: 'relative', paddingRight: '36px' }}>
-                    <button
-                      onClick={() => setAcikMenu(acikMenu === k.id ? null : k.id)}
-                      style={{ position: 'absolute', top: '10px', right: '10px', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px', zIndex: 5 }}
-                    >
-                      <MoreVertical size={18} />
-                    </button>
-                    {acikMenu === k.id && (
-                      <div style={{ position: 'absolute', top: '36px', right: '10px', background: 'var(--surface-2)', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.3)', zIndex: 10, overflow: 'hidden' }}>
-                        <button onClick={() => silKaydi(k.id)} style={{ background: 'none', border: 'none', color: 'var(--danger)', padding: '10px 16px', cursor: 'pointer', whiteSpace: 'nowrap', fontSize: '0.85rem' }}>
-                          Bu Kaydı Sil
-                        </button>
-                      </div>
-                    )}
+                  <div className="history-card" key={k.id} style={{ position: 'relative' }}>
                     <div className="history-card-header">
                       <span className="history-badge oturum">
                         <Zap size={14} /> {etiket}
                       </span>
-                      <span className="history-date">{new Date(k.tarih).toLocaleString('tr-TR')}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span className="history-date">{new Date(k.tarih).toLocaleString('tr-TR')}</span>
+                        <div style={{ position: 'relative' }}>
+                          <button
+                            onClick={() => setAcikMenu(acikMenu === k.id ? null : k.id)}
+                            style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px', display: 'flex' }}
+                          >
+                            <MoreVertical size={18} />
+                          </button>
+                          {acikMenu === k.id && (
+                            <div style={{ position: 'absolute', top: '28px', right: '0', background: 'var(--surface-2)', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.3)', zIndex: 10, overflow: 'hidden' }}>
+                              <button onClick={() => silKaydi(k.id)} style={{ background: 'none', border: 'none', color: 'var(--danger)', padding: '10px 16px', cursor: 'pointer', whiteSpace: 'nowrap', fontSize: '0.85rem' }}>
+                                Bu Kaydı Sil
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                     <div className="history-card-body">
                       <div className="history-score" style={{ color: skorRengi(k.eminlik_skoru) }}>
@@ -194,24 +197,28 @@ function History() {
 
               return (
                 <div className="history-card" key={k.id} style={{ position: 'relative' }}>
-                  <button
-                    onClick={() => setAcikMenu(acikMenu === k.id ? null : k.id)}
-                    style={{ position: 'absolute', top: '10px', right: '10px', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px', zIndex: 5 }}
-                  >
-                    <MoreVertical size={18} />
-                  </button>
-                  {acikMenu === k.id && (
-                    <div style={{ position: 'absolute', top: '36px', right: '10px', background: 'var(--surface-2)', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.3)', zIndex: 10, overflow: 'hidden' }}>
-                      <button onClick={() => silKaydi(k.id)} style={{ background: 'none', border: 'none', color: 'var(--danger)', padding: '10px 16px', cursor: 'pointer', whiteSpace: 'nowrap', fontSize: '0.85rem' }}>
-                        Bu Kaydı Sil
-                      </button>
-                    </div>
-                  )}
                   <div className="history-card-header">
                     <span className="history-badge anlik">
                       <Activity size={14} /> {etiket}
                     </span>
-                    <span className="history-date">{new Date(k.tarih).toLocaleString('tr-TR')}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span className="history-date">{new Date(k.tarih).toLocaleString('tr-TR')}</span>
+                      <div style={{ position: 'relative' }}>
+                        <button
+                          onClick={() => setAcikMenu(acikMenu === k.id ? null : k.id)}
+                          style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px', display: 'flex' }}
+                        >
+                          <MoreVertical size={18} />
+                        </button>
+                        {acikMenu === k.id && (
+                          <div style={{ position: 'absolute', top: '28px', right: '0', background: 'var(--surface-2)', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.3)', zIndex: 10, overflow: 'hidden' }}>
+                            <button onClick={() => silKaydi(k.id)} style={{ background: 'none', border: 'none', color: 'var(--danger)', padding: '10px 16px', cursor: 'pointer', whiteSpace: 'nowrap', fontSize: '0.85rem' }}>
+                              Bu Kaydı Sil
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                   <div className="history-card-body">
                     <div className="history-score" style={{ color: skorRengi(k.eminlik_skoru), fontSize: '1.4rem' }}>
