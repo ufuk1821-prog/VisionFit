@@ -10,6 +10,7 @@ function Login() {
   const [error, setError] = useState('');
   const [needsVerification, setNeedsVerification] = useState(false);
   const [resendMessage, setResendMessage] = useState('');
+  const [yukleniyor, setYukleniyor] = useState(false);
   const [resending, setResending] = useState(false);
   const navigate = useNavigate();
 
@@ -18,6 +19,7 @@ function Login() {
     setError('');
     setNeedsVerification(false);
     setResendMessage('');
+    setYukleniyor(true);
     try {
       const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
         email: email,
@@ -32,9 +34,10 @@ function Login() {
       } else {
         setError('Giriş başarısız. Email veya şifre hatalı.');
       }
+    } finally {
+      setYukleniyor(false);
     }
   };
-
   const handleResend = async () => {
     setResending(true);
     setResendMessage('');
@@ -93,7 +96,9 @@ function Login() {
                 required
               />
             </div>
-            <button type="submit" className="submit-btn">Giriş Yap</button>
+            <button type="submit" className="submit-btn" disabled={yukleniyor}>
+  {yukleniyor ? 'Giriş Yapılıyor...' : 'Giriş Yap'}
+</button>
           </form>
           <Link to="/register" className="link-text">Hesabın yok mu? Kayıt Ol</Link>
         </div>

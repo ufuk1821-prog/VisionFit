@@ -1,8 +1,7 @@
 import os
 import requests
 
-MODAL_URL = "https://ufuk1821-prog--visionfit-llm-api.modal.run"
-
+MODAL_URL = os.getenv("MODAL_URL", "https://ufuk1821-prog--visionfit-llm-api.modal.run")
 
 def llm_kullanilabilir_mi():
     return True

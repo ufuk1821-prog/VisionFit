@@ -504,15 +504,16 @@ def test_41_zayif_sifre_ile_kayit_engelle():
     assert response.status_code == 201
 
     # --- YEREL AI ---
-def test_42_yerel_ai_model_yoksa_503():
+def test_42_yerel_ai_endpoint_calisıyor():
     token = get_token("yerelai@test.com")
     headers = {"Authorization": f"Bearer {token}"}
 
-    with patch("app.services.local_llm.llm_kullanilabilir_mi", return_value=False):
+    with patch("app.services.local_llm._yanit_uret", return_value="Test yaniti."):
         response = client.post("/api/yerel-ai/antrenor-yorumu", json={
             "skorlar": {"Genel Form": 80}
         }, headers=headers)
-        assert response.status_code == 503
+        assert response.status_code == 200
+        assert "yorum" in response.json()
 
         response = client.post("/api/yerel-ai/diyet-onerisi", json={
             "bmi": 22.5,
@@ -524,13 +525,13 @@ def test_42_yerel_ai_model_yoksa_503():
             "yag_g": 70,
             "istek": "test",
         }, headers=headers)
-        assert response.status_code == 503
+        assert response.status_code == 200
 
         response = client.post("/api/yerel-ai/defter-analizi", json={
             "hareket": "Bench Press",
             "agirliklar": [40, 42.5],
         }, headers=headers)
-        assert response.status_code == 503
+        assert response.status_code == 200
 
         # --- PLANK ANALIZI ---
 def plank_kare_olustur(omuz_y, kalca_y, ayak_y):
@@ -751,3 +752,32 @@ def test_54_local_llm_baglanti_hatasi(monkeypatch):
 
     sonuc = local_llm.antrenor_geri_bildirimi_uret({"Genel Form": 80})
     assert sonuc == "Şu anda yapay zeka servisine erişilemiyor, lütfen birkaç saniye sonra tekrar deneyin."
+
+    
+def test_55_yeni_hareketler_gecmis_kaydina_ekleniyor():
+    token = get_token("yenihareketler@test.com")
+    headers = {"Authorization": f"Bearer {token}"}
+
+    hareketler = [
+        ("/api/analyze/sinav", "sinav"),
+        ("/api/analyze/yan-plank", "yan_plank"),
+        ("/api/analyze/kopru", "kopru"),
+        ("/api/analyze/supermen", "supermen"),
+    ]
+
+    frame = plank_kare_olustur(0.30, 0.32, 0.34)
+    kayit_idler = []
+
+    for endpoint, _ in hareketler:
+        response = client.post(endpoint, json={"landmarks": frame}, headers=headers)
+        assert response.status_code == 200
+        kayit_idler.append(response.json()["kayit_id"])
+
+    response = client.get("/api/analyze/history", headers=headers)
+    mevcut_idler = [k["id"] for k in response.json()]
+    for kid in kayit_idler:
+        assert kid in mevcut_idler
+
+    for kid in kayit_idler:
+        response = client.delete(f"/api/analyze/history/{kid}", headers=headers)
+        assert response.status_code == 200
