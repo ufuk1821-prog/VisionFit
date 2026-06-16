@@ -12,7 +12,9 @@ csv_path = os.path.join(script_dir, 'squat_veri.csv')
 model_path = os.path.join(script_dir, 'squat_model.pkl')
 
 print("1. Veriler Excel'den okunuyor...")
-df = pd.read_csv(csv_path)
+sutun_sayisi = 33 * 4
+sutunlar = ['hareket_sinifi'] + [f'x{i}' for i in range(sutun_sayisi)]
+df = pd.read_csv(csv_path, header=None, names=sutunlar)
 
 X = df.drop('hareket_sinifi', axis=1)
 y = df['hareket_sinifi']
