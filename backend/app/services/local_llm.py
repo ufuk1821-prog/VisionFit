@@ -56,10 +56,13 @@ def _yanit_uret(talimat, girdi):
                 continue
             if re.search(r'[éàèêëâîïôûùäõãñ]', c):
                 continue
+            kelimeler = re.findall(r'\b\w+\b', c)
+            if re.search(r'[a-zA-Z]{3,}[şğüöçı]|[şğüöçı][a-zA-Z]{3,}', c):
+                continue
             ingilizce_sayisi = len(re.findall(r'\b[a-zA-Z]{5,}\b', c))
             izin_verilenler = {'bench', 'press', 'squat', 'deadlift', 'lunge', 'curl', 'romanian', 'morning', 'protein', 'kalori', 'cardio', 'hiit'}
             gercek_ing = [k for k in re.findall(r'\b[a-zA-Z]{5,}\b', c) if k.lower() not in izin_verilenler]
-            if len(gercek_ing) > 2:
+            if len(gercek_ing) > 4:
                 continue
             if len(c) < 5:
                 continue
