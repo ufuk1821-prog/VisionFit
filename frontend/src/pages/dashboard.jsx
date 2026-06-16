@@ -81,6 +81,7 @@ function VideoAnalizBolumu({ apiUrl, token }) {
         };
 
         let sonZaman = -1;
+        let frameNo = 0;
 
         const isle = () => {
           if (video.ended || video.paused) {
@@ -89,8 +90,9 @@ function VideoAnalizBolumu({ apiUrl, token }) {
             return;
           }
 
+          frameNo++;
           const simdikiZaman = video.currentTime * 1000;
-          if (simdikiZaman !== sonZaman) {
+          if (simdikiZaman !== sonZaman && frameNo % 2 === 0) {
             sonZaman = simdikiZaman;
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             try {
@@ -109,6 +111,9 @@ function VideoAnalizBolumu({ apiUrl, token }) {
         video.onerror = reject;
         video.play();
       });
+
+      console.log('Toplam frame:', frames.length);
+      if (frames.length > 0) console.log('İlk frame uzunluğu:', frames[0].length);
 
       if (frames.length < 10) {
         setVideoHata('Videoda yeterli vücut tespiti yapılamadı. Yandan, tüm vücudun göründüğü bir video yükleyin.');
