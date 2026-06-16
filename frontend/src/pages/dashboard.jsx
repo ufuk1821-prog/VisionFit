@@ -65,25 +65,50 @@ function VideoAnalizBolumu({ apiUrl, token }) {
       });
 
       const video = videoRef2.current;
-      video.currentTime = 0;
-      await new Promise((res) => { video.onloadeddata = res; video.load(); });
-
       const frames = [];
-      const sure = video.duration;
-      const adim = 1 / 30;
 
-      for (let t = 0; t < sure; t += adim) {
-        video.currentTime = t;
-        await new Promise((res) => { video.onseeked = res; });
-        const sonuc = poseLandmarker.detectForVideo(video, t * 1000);
-        if (sonuc.landmarks && sonuc.landmarks.length > 0) {
-          const flat = [];
-          sonuc.landmarks[0].forEach((lm) => flat.push(lm.x, lm.y, lm.z, lm.visibility ?? 0));
-          frames.push(flat);
-        }
-      }
+      await new Promise((resolve, reject) => {
+        video.currentTime = 0;
+        video.muted = true;
+        video.playbackRate = 1;
 
-      poseLandmarker.close();
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        video.onloadedmetadata = () => {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+        };
+
+        let sonZaman = -1;
+
+        const isle = () => {
+          if (video.ended || video.paused) {
+            poseLandmarker.close();
+            resolve();
+            return;
+          }
+
+          const simdikiZaman = video.currentTime * 1000;
+          if (simdikiZaman !== sonZaman) {
+            sonZaman = simdikiZaman;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            try {
+              const sonuc = poseLandmarker.detectForVideo(canvas, simdikiZaman);
+              if (sonuc.landmarks && sonuc.landmarks.length > 0) {
+                const flat = [];
+                sonuc.landmarks[0].forEach((lm) => flat.push(lm.x, lm.y, lm.z, lm.visibility ?? 0));
+                frames.push(flat);
+              }
+            } catch {}
+          }
+          requestAnimationFrame(isle);
+        };
+
+        video.onplay = () => requestAnimationFrame(isle);
+        video.onerror = reject;
+        video.play();
+      });
 
       if (frames.length < 10) {
         setVideoHata('Videoda yeterli vücut tespiti yapılamadı. Yandan, tüm vücudun göründüğü bir video yükleyin.');
