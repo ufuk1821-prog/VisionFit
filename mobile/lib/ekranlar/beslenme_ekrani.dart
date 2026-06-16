@@ -1,0 +1,240 @@
+import 'package:flutter/material.dart';
+import '../servisler/api_servisi.dart';
+
+class BeslenmeEkrani extends StatefulWidget {
+  const BeslenmeEkrani({super.key});
+
+  @override
+  State<BeslenmeEkrani> createState() => _BeslenmeEkraniState();
+}
+
+class _BeslenmeEkraniState extends State<BeslenmeEkrani> {
+  int _aktifSekme = 0;
+  List _besinler = [];
+  List _ogunler = [];
+  List _suKayitlari = [];
+  String _aramaMetni = '';
+  String _ogunTipi = 'kahvalti';
+  Map<String, dynamic>? _secilenBesin;
+  final _gramController = TextEditingController();
+  final _suController = TextEditingController();
+
+  final List<Map<String, String>> _ogunTipleri = [
+    {'value': 'kahvalti', 'label': 'Kahvaltı'},
+    {'value': 'ogle', 'label': 'Öğle'},
+    {'value': 'aksam', 'label': 'Akşam'},
+    {'value': 'ara_ogun', 'label': 'Ara Öğün'},
+  ];
+
+  final List<int> _suSecenekleri = [200, 250, 330, 500];
+  static const int _suHedef = 2500;
+
+  @override
+  void initState() {
+    super.initState();
+    _yukle();
+  }
+
+  Future<void> _yukle() async {
+    final besinler = await ApiServisi.getJson('/api/nutrition/foods');
+    final ogunler = await ApiServisi.getJson('/api/nutrition/meals/today');
+    final su = await ApiServisi.getJson('/api/nutrition/water/today');
+    setState(() {
+      _besinler = besinler is List ? besinler : [];
+      _ogunler = ogunler is List ? ogunler : [];
+      _suKayitlari = su is List ? su : [];
+    });
+  }
+
+  Future<void> _ogunEkle() async {
+    if (_secilenBesin == null || _gramController.text.isEmpty) return;
+    await ApiServisi.postJson('/api/nutrition/meals', {
+      'besin_id': _secilenBesin!['id'],
+      'miktar_gram': double.parse(_gramController.text),
+      'ogun_tipi': _ogunTipi,
+    });
+    setState(() { _secilenBesin = null; _gramController.clear(); });
+    await _yukle();
+  }
+
+  Future<void> _suEkle(int ml) async {
+    await ApiServisi.postJson('/api/nutrition/water', {'miktar_ml': ml});
+    await _yukle();
+  }
+
+  Future<void> _ogunSil(int id) async {
+    await ApiServisi.deleteJson('/api/nutrition/meals/$id');
+    await _yukle();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(children: [
+      Container(
+        color: const Color(0xFF1A1A1A),
+        child: Row(children: [
+          _sekmeButonu('Yemek Takibi', 0),
+          _sekmeButonu('Su Takibi', 1),
+        ]),
+      ),
+      Expanded(child: _aktifSekme == 0 ? _yemekEkrani() : _suEkrani()),
+    ]);
+  }
+
+  Widget _sekmeButonu(String label, int index) {
+    return Expanded(child: GestureDetector(
+      onTap: () => setState(() { _aktifSekme = index; }),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: _aktifSekme == index ? const Color(0xFFE8313F) : Colors.transparent, width: 2)),
+        ),
+        child: Text(label, textAlign: TextAlign.center, style: TextStyle(color: _aktifSekme == index ? const Color(0xFFE8313F) : const Color(0xFF888888), fontSize: 14, fontWeight: _aktifSekme == index ? FontWeight.w600 : FontWeight.normal)),
+      ),
+    ));
+  }
+
+  Widget _yemekEkrani() {
+    final toplam = _ogunler.fold<double>(0, (s, o) => s + (o['kalori'] as num? ?? 0));
+    final filtreliBesinler = _besinler.where((b) => (b['ad'] as String? ?? '').toLowerCase().contains(_aramaMetni.toLowerCase())).take(20).toList();
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('Beslenme Takibi', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 8),
+        Text('Günlük Toplam: ${toplam.round()} kcal', style: const TextStyle(color: Color(0xFF888888), fontSize: 13)),
+        const SizedBox(height: 16),
+        TextField(
+          onChanged: (v) => setState(() { _aramaMetni = v; }),
+          style: const TextStyle(color: Colors.white),
+          decoration: _inputDeko('Besin ara...', Icons.search),
+        ),
+        if (_secilenBesin != null) ...[
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(color: const Color(0xFF1A1A1A), borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFFE8313F))),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(_secilenBesin!['ad'] ?? '', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 8),
+              Row(children: [
+                Expanded(child: _dropdown(_ogunTipleri, _ogunTipi, (v) => setState(() { _ogunTipi = v!; }))),
+                const SizedBox(width: 8),
+                SizedBox(width: 80, child: TextField(controller: _gramController, keyboardType: TextInputType.number, style: const TextStyle(color: Colors.white), decoration: _inputDeko('gram', null))),
+                const SizedBox(width: 8),
+                ElevatedButton(onPressed: _ogunEkle, style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFE8313F)), child: const Text('Ekle', style: TextStyle(color: Colors.white))),
+              ]),
+            ]),
+          ),
+        ],
+        const SizedBox(height: 12),
+        if (_aramaMetni.isNotEmpty) ...[
+          ...filtreliBesinler.map((b) => ListTile(
+            title: Text(b['ad'] ?? '', style: const TextStyle(color: Colors.white, fontSize: 13)),
+            subtitle: Text('${b['kalori_per_100g']} kcal/100g', style: const TextStyle(color: Color(0xFF888888), fontSize: 11)),
+            onTap: () => setState(() { _secilenBesin = Map<String, dynamic>.from(b); _aramaMetni = ''; }),
+            tileColor: const Color(0xFF1A1A1A),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          )),
+        ],
+        if (_ogunler.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          const Text('Bugünkü Öğünler', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 8),
+          ..._ogunler.map((o) => Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(color: const Color(0xFF1A1A1A), borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFF333333))),
+            child: Row(children: [
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(o['besin_ad'] ?? '', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+                Text('${o['miktar_gram']}g • ${(o['kalori'] as num?)?.round()} kcal', style: const TextStyle(color: Color(0xFF888888), fontSize: 12)),
+              ])),
+              IconButton(icon: const Icon(Icons.close, color: Color(0xFF666666), size: 18), onPressed: () => _ogunSil(o['id'])),
+            ]),
+          )),
+        ],
+      ]),
+    );
+  }
+
+  Widget _suEkrani() {
+    final toplamSu = _suKayitlari.fold<int>(0, (s, k) => s + (k['miktar_ml'] as int? ?? 0));
+    final yuzde = (toplamSu / _suHedef).clamp(0.0, 1.0);
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('Su Takibi', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 24),
+        Center(child: Stack(alignment: Alignment.center, children: [
+          SizedBox(width: 180, height: 180, child: CircularProgressIndicator(value: yuzde, strokeWidth: 12, backgroundColor: const Color(0xFF333333), color: const Color(0xFF3B82F6))),
+          Column(children: [
+            const Icon(Icons.water_drop_outlined, color: Color(0xFF3B82F6), size: 28),
+            const SizedBox(height: 4),
+            Text('$toplamSu ml', style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w700)),
+            Text('/ $_suHedef ml', style: const TextStyle(color: Color(0xFF888888), fontSize: 13)),
+          ]),
+        ])),
+        const SizedBox(height: 32),
+        const Text('Hızlı Ekle', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 12),
+        Row(children: _suSecenekleri.map((ml) => Expanded(child: Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: ElevatedButton(
+            onPressed: () => _suEkle(ml),
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1A1A1A), side: const BorderSide(color: Color(0xFF333333)), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+            child: Text('$ml ml', style: const TextStyle(color: Colors.white, fontSize: 12)),
+          ),
+        ))).toList()),
+        const SizedBox(height: 16),
+        Row(children: [
+          Expanded(child: TextField(controller: _suController, keyboardType: TextInputType.number, style: const TextStyle(color: Colors.white), decoration: _inputDeko('Özel miktar (ml)', null))),
+          const SizedBox(width: 8),
+          ElevatedButton(
+            onPressed: () { final ml = int.tryParse(_suController.text); if (ml != null) { _suEkle(ml); _suController.clear(); } },
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF3B82F6), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+            child: const Text('Ekle', style: TextStyle(color: Colors.white)),
+          ),
+        ]),
+        if (_suKayitlari.isNotEmpty) ...[
+          const SizedBox(height: 20),
+          const Text('Bugünkü Su Kayıtları', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 8),
+          ..._suKayitlari.map((k) => Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Row(children: [
+              const Icon(Icons.water_drop_outlined, color: Color(0xFF3B82F6), size: 16),
+              const SizedBox(width: 8),
+              Text('${k['miktar_ml']} ml', style: const TextStyle(color: Colors.white, fontSize: 13)),
+            ]),
+          )),
+        ],
+      ]),
+    );
+  }
+
+  Widget _dropdown(List<Map<String, String>> secenekler, String value, void Function(String?) onChanged) {
+    return DropdownButtonFormField<String>(
+      value: value.isEmpty ? null : value,
+      dropdownColor: const Color(0xFF1A1A1A),
+      style: const TextStyle(color: Colors.white, fontSize: 13),
+      decoration: _inputDeko('', null),
+      items: secenekler.map((s) => DropdownMenuItem(value: s['value'], child: Text(s['label']!, style: const TextStyle(fontSize: 12)))).toList(),
+      onChanged: onChanged,
+    );
+  }
+
+  InputDecoration _inputDeko(String hint, IconData? ikon) {
+    return InputDecoration(
+      hintText: hint, hintStyle: const TextStyle(color: Color(0xFF555555)),
+      prefixIcon: ikon != null ? Icon(ikon, color: const Color(0xFF888888), size: 20) : null,
+      filled: true, fillColor: const Color(0xFF1A1A1A),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF333333))),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF333333))),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE8313F))),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+    );
+  }
+}

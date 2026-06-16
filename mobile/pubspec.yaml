@@ -33,6 +33,8 @@ dependencies:
   cupertino_icons: ^1.0.8
   http: ^1.2.0
   shared_preferences: ^2.2.2
+  pedometer: ^4.0.1
+  permission_handler: ^11.3.0
 
 dev_dependencies:
   flutter_test:
@@ -50,12 +52,9 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
-
-  # The following line ensures that the Material Icons font is
-  # included with your application, so that you can use the icons in
-  # the material Icons class.
   uses-material-design: true
-
+  assets:
+    - assets/logo.png
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg

@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../sabitler.dart';
@@ -20,13 +19,43 @@ class ApiServisi {
     await prefs.remove('token');
   }
 
+  static Future<Map<String, String>> _basliklar() async {
+    final token = await tokenAl();
+    return {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'};
+  }
+
+  static Future<dynamic> getJson(String path) async {
+    final baslik = await _basliklar();
+    final yanit = await http.get(Uri.parse('$apiUrl$path'), headers: baslik);
+    return jsonDecode(utf8.decode(yanit.bodyBytes));
+  }
+
+  static Future<dynamic> postJson(String path, Map<String, dynamic> body) async {
+    final baslik = await _basliklar();
+    final yanit = await http.post(Uri.parse('$apiUrl$path'), headers: baslik, body: jsonEncode(body));
+    return jsonDecode(utf8.decode(yanit.bodyBytes));
+  }
+
+  static Future<dynamic> putJson(String path, Map<String, dynamic> body) async {
+    final baslik = await _basliklar();
+    final yanit = await http.put(Uri.parse('$apiUrl$path'), headers: baslik, body: jsonEncode(body));
+    return jsonDecode(utf8.decode(yanit.bodyBytes));
+  }
+
+  static Future<void> deleteJson(String path) async {
+    final baslik = await _basliklar();
+    await http.delete(Uri.parse('$apiUrl$path'), headers: baslik);
+  }
+
   static Future<Map<String, dynamic>> girisYap(String email, String sifre) async {
     final yanit = await http.post(
       Uri.parse('$apiUrl/api/auth/login'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'email': email, 'sifre': sifre}),
     );
-    return jsonDecode(yanit.body);
+    final veri = jsonDecode(utf8.decode(yanit.bodyBytes));
+    if (yanit.statusCode == 403) veri['status_code'] = 403;
+    return Map<String, dynamic>.from(veri);
   }
 
   static Future<Map<String, dynamic>> kayitOl(String ad, String soyad, String email, String sifre) async {
@@ -35,15 +64,15 @@ class ApiServisi {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'ad': ad, 'soyad': soyad, 'email': email, 'sifre': sifre}),
     );
-    return jsonDecode(yanit.body);
+    return Map<String, dynamic>.from(jsonDecode(utf8.decode(yanit.bodyBytes)));
   }
 
-  static Future<Map<String, dynamic>> anaSayfaVerisiAl() async {
-    final token = await tokenAl();
-    final yanit = await http.get(
-      Uri.parse('$apiUrl/api/home'),
-      headers: {'Authorization': 'Bearer $token'},
+  static Future<Map<String, dynamic>> dogrulamaYenidenGonder(String email) async {
+    final yanit = await http.post(
+      Uri.parse('$apiUrl/api/auth/resend-verification'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email}),
     );
-    return jsonDecode(utf8.decode(yanit.bodyBytes));
+    return Map<String, dynamic>.from(jsonDecode(utf8.decode(yanit.bodyBytes)));
   }
 }
