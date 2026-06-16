@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from app.core.database import get_db
 from app.core.security import get_current_user
 from app.schemas.local_llm import AntrenorYorumuRequest, DiyetOnerisiRequest, DefterAnaliziRequest
 from app.services import local_llm
@@ -36,3 +37,30 @@ def defter_analizi(istek: DefterAnaliziRequest, kullanici=Depends(get_current_us
     _yerel_llm_kontrol()
     yorum = local_llm.defter_analizi_uret(istek.hareket, istek.agirliklar)
     return {"yorum": yorum}
+
+@router.post("/gecmis-analizi")
+def gecmis_analizi(
+    sayi: int = 10,
+    db=Depends(get_db),
+    kullanici=Depends(get_current_user)
+):
+    from app.models.history import WorkoutHistory
+    from app.services.local_llm import _yanit_uret
+
+    sayi = min(sayi, 30)
+    kayitlar = db.query(WorkoutHistory).filter(
+        WorkoutHistory.user_id == kullanici.id
+    ).order_by(WorkoutHistory.tarih.desc()).limit(sayi).all()
+
+    if not kayitlar:
+        return {"yorum": "Henüz geçmiş antrenman kaydınız yok."}
+
+    kayit_metni = " | ".join(
+        f"{k.hareket_adi} - Skor: {k.eminlik_skoru}, Durum: {k.antrenor_notu.split(':')[0] if k.antrenor_notu else 'Bilinmiyor'}"
+        for k in kayitlar
+    )
+
+    talimat = "Aşağıdaki son antrenman kayıtlarını analiz ederek genel bir değerlendirme ve öneri sun. Türkçe, kısa ve yapıcı bir dille yaz."
+    girdi = f"Son {sayi} antrenman kaydı: {kayit_metni}"
+    yorum = _yanit_uret(talimat, girdi)
+    return {"yorum": yorum or "Şu anda analiz yapılamıyor."}

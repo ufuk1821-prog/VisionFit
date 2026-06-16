@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { PoseLandmarker, FilesetResolver, DrawingUtils } from '@mediapipe/tasks-vision';
 import axios from 'axios';
-import { Play, Square, CheckCircle, XCircle, SwitchCamera } from 'lucide-react';
+import { Play, Square, CheckCircle, XCircle, SwitchCamera, Sparkles } from 'lucide-react';
 import Sidebar from '../components/sidebar';
+
 
 const KATEGORI_LABELS = {
   genel_form: 'Genel Form',
@@ -37,6 +38,9 @@ function Dashboard() {
   const [countdown, setCountdown] = useState(3);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
+  const [aiYorum, setAiYorum] = useState('');
+  const [aiYukleniyor, setAiYukleniyor] = useState(false);
+  const [aiHata, setAiHata] = useState('');
   const [onKamera, setOnKamera] = useState(true);
 
   const streamRef = useRef(null);
@@ -189,12 +193,38 @@ function Dashboard() {
     setResult(null);
     setError('');
     setPhaseSync('idle');
+    setAiYorum('');
+    setAiHata('');
+  };
+const aiYorumuAl = async () => {
+    setAiYukleniyor(true);
+    setAiHata('');
+    setAiYorum('');
+    try {
+      const skorlar = {};
+      Object.keys(KATEGORI_LABELS).forEach((key) => {
+        skorlar[key] = result[key].skor;
+      });
+      const res = await axios.post(
+        `${apiUrl}/api/yerel-ai/antrenor-yorumu`,
+        { skorlar },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setAiYorum(res.data.yorum);
+    } catch {
+      setAiHata('AI yorumu alınamadı, lütfen tekrar deneyin.');
+    } finally {
+      setAiYukleniyor(false);
+    }
   };
 
   return (
     <div>
       <Sidebar />
       <div className="section-title">Kamera Analizi</div>
+      <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', marginBottom: '8px' }}>
+        💡 Daha doğru analiz için kameranıza <strong>yandan</strong> bakacak şekilde durun.
+      </p>
 
       <div className="main-wrapper">
         <div className="video-container" style={{ position: 'relative' }}>
@@ -302,6 +332,19 @@ function Dashboard() {
               </div>
 
               <button className="timer-btn primary" style={{ justifyContent: 'center' }} onClick={handleReset}>
+                <div className="card">
+                <div className="card-header">
+                  <div className="card-icon"><Sparkles size={18} /></div>
+                  <div className="card-title">AI Antrenör Yorumu</div>
+                </div>
+                {!aiYorum && !aiHata && (
+                  <button className="timer-btn" style={{ marginTop: '8px', justifyContent: 'center', width: '100%' }} onClick={aiYorumuAl} disabled={aiYukleniyor}>
+                    <Sparkles size={16} /> {aiYukleniyor ? 'Yorum Hazırlanıyor...' : 'AI Yorumu Al'}
+                  </button>
+                )}
+                {aiYorum && <p style={{ fontSize: '0.85rem', color: 'var(--text)', marginTop: '8px', lineHeight: '1.6' }}>{aiYorum}</p>}
+                {aiHata && <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '8px' }}>{aiHata}</p>}
+              </div>
                 <Play size={18} /> Yeni Antrenman
               </button>
             </div>

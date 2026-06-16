@@ -187,7 +187,7 @@ function FotografliAnaliz() {
 
       {sonuc && (
         <Link
-          to="/history"
+          to={sonuc?.kayit_id ? `/history?kayit=${sonuc.kayit_id}` : "/history"}
           className="timer-btn"
           style={{
             width: 'fit-content', margin: '12px 0', textDecoration: 'none',

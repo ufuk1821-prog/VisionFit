@@ -577,14 +577,17 @@ def defter_ornek_uret():
 def main():
     ornekler = []
 
-    for _ in range(500):
+    for _ in range(2000):
         ornekler.append(antrenor_ornek_uret())
 
-    for _ in range(500):
+    for _ in range(2000):
         ornekler.append(diyet_ornek_uret())
 
-    for _ in range(500):
+    for _ in range(2000):
         ornekler.append(defter_ornek_uret())
+
+    for _ in range(2000):
+        ornekler.append(gecmis_analizi_ornek_uret())
 
     random.shuffle(ornekler)
 
@@ -593,8 +596,165 @@ def main():
             dosya.write(json.dumps(ornek, ensure_ascii=False) + "\n")
 
     print(f"{len(ornekler)} ornek uretildi: egitim_verisi.jsonl")
-    print("Antrenor: 500, Diyet: 500, Antrenman Defteri: 500")
+    print("Antrenor: 2000, Diyet: 2000, Antrenman Defteri: 2000, Gecmis Analizi: 2000")
 
+HAREKET_ETIKETLERI = {
+    "plank": "Plank",
+    "sinav": "Şınav",
+    "kopru": "Köprü",
+    "yan_plank": "Yan Plank",
+    "duvar_squat": "Duvar Squat",
+    "supermen": "Süpermen",
+    "squat_session": "Squat",
+}
+
+HAREKET_DURUMLARI = {
+    "plank": ["Kalça Çok Yukarıda", "Bel Çökmüş"],
+    "sinav": ["Kalça Çok Yukarıda", "Bel Çökmüş"],
+    "kopru": ["Kalça Aşırı Yükselmiş", "Kalça Yeterince Yükseltilmemiş"],
+    "yan_plank": ["Kalça Çok Yukarıda", "Kalça Düşük"],
+    "duvar_squat": ["Çok Derin Çömelmiş", "Yeterince Çömelmemiş"],
+    "supermen": ["Yetersiz Kaldırma"],
+    "squat_session": ["Bel Çökmesi Görüldü", "Diz Hizası Bozuk"],
+}
+
+GECMIS_ACILIS = [
+    "Son antrenmanlarını inceledim, işte genel değerlendirmem.",
+    "Geçmiş antrenman kayıtlarına göre kısa bir analiz hazırladım.",
+    "Antrenman geçmişini gözden geçirdim, birlikte değerlendirelim.",
+    "Son kayıtlarına bakarak genel bir görünüm çıkardım.",
+    "Antrenman verilerini analiz ettim, gözlemlerim şöyle.",
+    "Geçmiş performansını inceledim, sonuçlar şu şekilde.",
+]
+
+GENEL_IYI_YORUMLAR = [
+    "genel olarak form seviyen oldukça iyi, antrenmanların büyük kısmında başarılı sonuçlar almışsın",
+    "çoğu hareketinde tutarlı şekilde iyi form gösteriyorsun, bu harika bir gelişim işareti",
+    "antrenman kalitende genel bir yükseliş gözlemleniyor, bu motivasyonunu artırmalı",
+    "kayıtların büyük bir kısmında formun yüksek seviyede, bu disiplinli çalıştığını gösteriyor",
+    "genel performansın oldukça istikrarlı ve yüksek seviyede",
+    "son dönemde formunda gözle görülür bir olgunlaşma var",
+    "çalıştığın hareketlerin çoğunda hedeflenen forma yakın sonuçlar alıyorsun",
+    "antrenman geçmişin, sağlıklı ve tutarlı bir gelişim sürecine işaret ediyor",
+]
+
+GENEL_IYI_KAPANIS = [
+    "Bu tempoyu sürdürerek mevcut programına devam edebilirsin.",
+    "Form kaliteni korurken ağırlık veya tekrar sayısını kademeli olarak artırmayı düşünebilirsin.",
+    "Bu istikrarı korumak için antrenman düzenini değiştirmene gerek yok.",
+    "Bu seviyeyi sürdürdüğün sürece gelişim devam edecektir.",
+    "Yeni bir hareket ekleyerek rutinini çeşitlendirmeyi değerlendirebilirsin.",
+    "Bu performansla hedeflerine planladığından daha hızlı ulaşabilirsin.",
+    "Form kaliteni koruyarak antrenman sıklığını artırmayı deneyebilirsin.",
+    "Bu güzel gidişatı sürdürmek için dinlenme ve beslenmene de aynı özeni göstermeye devam et.",
+]
+
+TEK_ZAYIF_YORUMLAR_SABLON = [
+    "genel olarak iyi gidiyorsun, ancak {hareket} hareketinde tekrar eden bir sorun göze çarpıyor: {sorun}",
+    "{hareket} hareketinde dikkatini çekmem gereken bir nokta var: {sorun}, diğer hareketlerde durum gayet iyi",
+    "kayıtların çoğunda form iyi, fakat {hareket} hareketinde sürekli {sorun} şeklinde bir eğilim görüyorum",
+    "genel tabloda olumlu bir görünüm var, sadece {hareket} hareketinde {sorun} sorunu tekrarlanıyor",
+    "{hareket} hareketi dışındaki tüm kayıtların iyi seviyede, bu harekette ise {sorun} dikkat çekiyor",
+]
+
+TEK_ZAYIF_KAPANIS_SABLON = [
+    "Önümüzdeki antrenmanlarda {hareket} formuna özellikle odaklanmanı öneririm.",
+    "{hareket} için bir sonraki seansında bu noktaya dikkat edersen genel skorun yükselecektir.",
+    "{hareket} hareketini biraz daha düşük tempoda tekrar ederek formunu pekiştirebilirsin.",
+    "{hareket} öncesi kısa bir ısınma ve mobilite çalışması bu sorunu azaltabilir.",
+    "{hareket} hareketini fotoğraflı analiz sayfasıyla tekrar kontrol etmen faydalı olur.",
+]
+
+GENEL_ZAYIF_YORUMLAR = [
+    "son kayıtların genel olarak düşük formu işaret ediyor, bu durum yorgunluk veya dinlenme eksikliğinden kaynaklanabilir",
+    "antrenmanlarının çoğunda form skorların beklenenin altında kalmış",
+    "genel performansında bir gerileme dikkat çekiyor, bu geçici bir dönem olabilir",
+    "son dönemdeki kayıtların çoğu, form açısından geliştirilmesi gereken bir tablo çiziyor",
+    "kayıtların büyük kısmında istenen form seviyesine ulaşılamamış görünüyor",
+]
+
+GENEL_ZAYIF_KAPANIS = [
+    "Bu dönemde ağırlık veya tekrar sayısını azaltıp forma odaklanmak faydalı olabilir.",
+    "Her hareket öncesi kısa bir ısınma rutini eklemek form kalitesini artırabilir.",
+    "Uyku ve dinlenme düzenini gözden geçirmek genel performansını iyileştirebilir.",
+    "Temel hareketleri yavaş tempoda ve ayna karşısında tekrar etmek faydalı olur.",
+    "Birkaç gün dinlenme sonrası antrenmana daha düşük yoğunlukla başlamayı deneyebilirsin.",
+]
+
+KARISIK_YORUMLAR = [
+    "kayıtların arasında hem güçlü hem geliştirilmesi gereken alanlar var, performansın hareketten harekete değişkenlik gösteriyor",
+    "genel tabloda belirgin bir örüntü yerine inişli çıkışlı bir performans seyri var",
+    "bazı hareketlerde form oldukça iyi, bazılarında ise henüz istikrar sağlanamamış",
+    "performansın hareket türüne göre farklılık gösteriyor, bu durum normal bir öğrenme sürecinin parçası olabilir",
+    "kayıtların karışık bir görünüm sergiliyor, bazı hareketlerde daha fazla tekrar pratiğine ihtiyaç olabilir",
+]
+
+KARISIK_KAPANIS = [
+    "Daha düşük skorlu hareketlere haftada bir ekstra pratik seansı ayırmak dengelemeye yardımcı olabilir.",
+    "Her hareket için fotoğraflı analiz sayfasını düzenli kullanarak hangi alanlarda ilerleme olduğunu takip edebilirsin.",
+    "Güçlü olduğun hareketleri korurken, zayıf kalan hareketlere biraz daha öncelik verebilirsin.",
+    "Haftalık olarak tüm hareketleri dengeli şekilde çalışmaya özen göstermen genel formunu iyileştirecektir.",
+    "Bu değişkenlik normal, düzenli tekrarla zamanla tüm hareketlerde tutarlılık sağlanacaktır.",
+]
+
+
+def gecmis_analizi_ornek_uret():
+    kayit_sayisi = random.randint(3, 30)
+    hareketler = list(HAREKET_ETIKETLERI.keys())
+    senaryo = random.choice(["genel_iyi", "tek_zayif", "genel_zayif", "karisik"])
+    zayif_hareket = random.choice(hareketler) if senaryo == "tek_zayif" else None
+
+    kayitlar = []
+    for _ in range(kayit_sayisi):
+        hareket = random.choice(hareketler)
+        if senaryo == "genel_iyi":
+            skor = random.randint(75, 100)
+        elif senaryo == "genel_zayif":
+            skor = random.randint(20, 60)
+        elif senaryo == "tek_zayif" and hareket == zayif_hareket:
+            skor = random.randint(20, 55)
+        elif senaryo == "tek_zayif":
+            skor = random.randint(75, 100)
+        else:
+            skor = random.randint(20, 100)
+
+        if skor >= 75:
+            durum = "İyi Form"
+        else:
+            durum = random.choice(HAREKET_DURUMLARI.get(hareket, ["İyi Form"]))
+
+        kayitlar.append((hareket, skor, durum))
+
+    girdi_satirlari = []
+    for i, (hareket, skor, durum) in enumerate(kayitlar, 1):
+        etiket = HAREKET_ETIKETLERI[hareket]
+        girdi_satirlari.append(f"{i}) {etiket} - Skor: {skor}, Durum: {durum}")
+    girdi = f"Son {kayit_sayisi} antrenman kaydi: " + " | ".join(girdi_satirlari)
+
+    acilis = random.choice(GECMIS_ACILIS)
+
+    if senaryo == "genel_iyi":
+        yorum = random.choice(GENEL_IYI_YORUMLAR)
+        kapanis = random.choice(GENEL_IYI_KAPANIS)
+    elif senaryo == "tek_zayif":
+        etiket = HAREKET_ETIKETLERI[zayif_hareket]
+        sorun = next((d for h, s, d in kayitlar if h == zayif_hareket and d != "İyi Form"), "form hatası")
+        yorum = random.choice(TEK_ZAYIF_YORUMLAR_SABLON).format(hareket=etiket, sorun=sorun.lower())
+        kapanis = random.choice(TEK_ZAYIF_KAPANIS_SABLON).format(hareket=etiket)
+    elif senaryo == "genel_zayif":
+        yorum = random.choice(GENEL_ZAYIF_YORUMLAR)
+        kapanis = random.choice(GENEL_ZAYIF_KAPANIS)
+    else:
+        yorum = random.choice(KARISIK_YORUMLAR)
+        kapanis = random.choice(KARISIK_KAPANIS)
+
+    cikti = f"{acilis} {yorum.capitalize()}. {kapanis}"
+
+    return {
+        "instruction": "Asagidaki son antrenman kayitlarini analiz ederek genel bir degerlendirme ve oneri sun. Turkce, kisa ve yapici bir dille yaz.",
+        "input": girdi,
+        "output": cikti,
+    }
 
 if __name__ == "__main__":
     main()

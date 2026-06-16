@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import axios from 'axios';
+import { Sparkles } from 'lucide-react';
 import { Activity, Flame, Target } from 'lucide-react';
 import Sidebar from '../components/sidebar';
 
@@ -31,6 +32,8 @@ function Diet() {
   const [diet, setDiet] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [aiOneri, setAiOneri] = useState('');
+  const [aiYukleniyor, setAiYukleniyor] = useState(false);
   const [boyHata, setBoyHata] = useState('');
   const [kiloHata, setKiloHata] = useState('');
   const [yasHata, setYasHata] = useState('');
@@ -100,6 +103,32 @@ function Diet() {
       setDiet(null);
     } finally {
       setLoading(false);
+    }
+  };
+const aiOneriAl = async () => {
+    if (!diet) return;
+    setAiYukleniyor(true);
+    setAiOneri('');
+    try {
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/yerel-ai/diyet-onerisi`,
+        {
+          bmi: diet.bmi,
+          bmi_kategori: diet.bmi_kategori,
+          hedef: hedef,
+          hedef_kalori: diet.hedef_kalori,
+          protein_g: diet.gunluk_protein_g,
+          karbonhidrat_g: diet.gunluk_karbonhidrat_g,
+          yag_g: diet.gunluk_yag_g,
+          istek: istek || 'genel öneri',
+        },
+        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+      );
+      setAiOneri(res.data.yorum);
+    } catch {
+      setAiOneri('AI önerisi alınamadı, lütfen tekrar deneyin.');
+    } finally {
+      setAiYukleniyor(false);
     }
   };
 
@@ -257,6 +286,18 @@ function Diet() {
               );
             })}
           </div>
+        <div className="card" style={{ marginTop: '16px' }}>
+          <div className="card-header">
+            <div className="card-icon"><Sparkles size={18} /></div>
+            <div className="card-title">AI Diyet Önerisi</div>
+          </div>
+          {!aiOneri && (
+            <button className="timer-btn" style={{ marginTop: '8px', justifyContent: 'center', width: '100%' }} onClick={aiOneriAl} disabled={aiYukleniyor}>
+              <Sparkles size={16} /> {aiYukleniyor ? 'Öneri Hazırlanıyor...' : 'AI Önerisi Al'}
+            </button>
+          )}
+          {aiOneri && <p style={{ fontSize: '0.85rem', color: 'var(--text)', marginTop: '8px', lineHeight: '1.6' }}>{aiOneri}</p>}
+        </div>
         </>
       )}
     </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Plus, Trash2, Save, Calendar } from 'lucide-react';
+import { Plus, Trash2, Save, Calendar, Sparkles } from 'lucide-react';
 import Sidebar from '../components/sidebar';
 
 const GUN_ADLARI = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
@@ -29,6 +29,8 @@ function WorkoutNotebook() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savedMessage, setSavedMessage] = useState('');
+  const [aiAnaliz, setAiAnaliz] = useState('');
+  const [aiYukleniyor, setAiYukleniyor] = useState(false);
   const token = localStorage.getItem('token');
   const headers = { Authorization: `Bearer ${token}` };
   const apiUrl = import.meta.env.VITE_API_URL;
@@ -113,6 +115,26 @@ function WorkoutNotebook() {
       setSavedMessage('Kaydedilemedi, lütfen tekrar deneyin.');
     } finally {
       setSaving(false);
+    }
+  };
+const aiAnalizAl = async () => {
+    const kayitliHareketler = rows.filter((r) => r.hareket && r.agirliklar);
+    if (kayitliHareketler.length === 0) return;
+    setAiYukleniyor(true);
+    setAiAnaliz('');
+    const hedef = kayitliHareketler[0];
+    const agirliklar = hedef.agirliklar.split(',').map((a) => parseFloat(a.trim())).filter((a) => !isNaN(a));
+    try {
+      const res = await axios.post(
+        `${apiUrl}/api/yerel-ai/defter-analizi`,
+        { hareket: hedef.hareket, agirliklar },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setAiAnaliz(res.data.yorum);
+    } catch {
+      setAiAnaliz('AI analizi alınamadı, lütfen tekrar deneyin.');
+    } finally {
+      setAiYukleniyor(false);
     }
   };
 
@@ -235,6 +257,19 @@ function WorkoutNotebook() {
           </div>
 
           {savedMessage && <div className="info-banner" style={{ marginTop: '16px' }}>{savedMessage}</div>}
+
+          <div className="card" style={{ marginTop: '16px' }}>
+            <div className="card-header">
+              <div className="card-icon"><Sparkles size={18} /></div>
+              <div className="card-title">AI İlerleme Analizi</div>
+            </div>
+            {!aiAnaliz && (
+              <button className="timer-btn" style={{ marginTop: '8px', justifyContent: 'center', width: '100%' }} onClick={aiAnalizAl} disabled={aiYukleniyor}>
+                <Sparkles size={16} /> {aiYukleniyor ? 'Analiz Hazırlanıyor...' : 'AI ile Analiz Et'}
+              </button>
+            )}
+            {aiAnaliz && <p style={{ fontSize: '0.85rem', color: 'var(--text)', marginTop: '8px', lineHeight: '1.6' }}>{aiAnaliz}</p>}
+          </div>
         </>
       )}
     </div>

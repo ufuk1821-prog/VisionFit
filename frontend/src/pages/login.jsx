@@ -53,6 +53,11 @@ function Login() {
 
   return (
     <div className="auth-layout">
+      {yukleniyor && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, background: 'var(--accent)', color: '#fff', textAlign: 'center', padding: '6px', fontSize: '0.8rem', zIndex: 999 }}>
+          Sunucu uyandırılıyor, lütfen bekleyin...
+        </div>
+      )}
       <div className="auth-side-panel">
         <img src={logoImg} alt="VisionFit" className="auth-side-logo" />
         <h2>En İyi Haline Ulaş</h2>

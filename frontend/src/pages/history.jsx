@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { TrendingUp, TrendingDown, Minus, Activity, Zap, MoreVertical } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, Activity, Zap, MoreVertical, Sparkles } from 'lucide-react';
 import Sidebar from '../components/sidebar';
 import EmptyState from '../components/EmptyState';
 
@@ -43,6 +44,12 @@ function History() {
   const [error, setError] = useState('');
   const [filtre, setFiltre] = useState('tumu');
   const [acikMenu, setAcikMenu] = useState(null);
+  const [analizSayi, setAnalizSayi] = useState(10);
+  const [analizSonuc, setAnalizSonuc] = useState('');
+  const [analizYukleniyor, setAnalizYukleniyor] = useState(false);
+  const [searchParams] = useSearchParams();
+  const hedefKayitId = searchParams.get('kayit');
+  const hedefRef = useRef(null);
   const token = localStorage.getItem('token');
 
   const silKaydi = async (id) => {
@@ -62,6 +69,11 @@ function History() {
     }).then((res) => {
       setKayitlar(res.data);
       setLoading(false);
+      if (hedefKayitId) {
+        setTimeout(() => {
+          hedefRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 300);
+      }
     }).catch(() => {
       setError('Veriler yüklenemedi.');
       setLoading(false);
@@ -131,6 +143,51 @@ function History() {
       )}
 
       {!loading && kayitlar.length > 0 && (
+        <div className="card" style={{ marginTop: '16px', marginBottom: '8px' }}>
+          <div className="card-header">
+            <div className="card-icon"><Sparkles size={18} /></div>
+            <div className="card-title">Antrenmanlarımı Analiz Et</div>
+          </div>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '8px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Son</span>
+            <input
+              type="number"
+              min={1}
+              max={30}
+              value={analizSayi}
+              onChange={(e) => setAnalizSayi(Math.min(30, Math.max(1, Number(e.target.value))))}
+              style={{ width: '60px', padding: '6px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface-2)', color: 'var(--text)', textAlign: 'center' }}
+            />
+            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>antrenmanı analiz et</span>
+            <button
+              className="timer-btn"
+              style={{ marginLeft: 'auto', width: 'auto', padding: '8px 16px' }}
+              onClick={async () => {
+                setAnalizYukleniyor(true);
+                setAnalizSonuc('');
+                try {
+                  const res = await axios.post(
+                    `${import.meta.env.VITE_API_URL}/api/yerel-ai/gecmis-analizi?sayi=${analizSayi}`,
+                    {},
+                    { headers: { Authorization: `Bearer ${token}` } }
+                  );
+                  setAnalizSonuc(res.data.yorum);
+                } catch {
+                  setAnalizSonuc('Analiz alınamadı, lütfen tekrar deneyin.');
+                } finally {
+                  setAnalizYukleniyor(false);
+                }
+              }}
+              disabled={analizYukleniyor}
+            >
+              <Sparkles size={16} /> {analizYukleniyor ? 'Analiz Ediliyor...' : 'Analiz Et'}
+            </button>
+          </div>
+          {analizSonuc && <p style={{ fontSize: '0.85rem', color: 'var(--text)', marginTop: '12px', lineHeight: '1.6' }}>{analizSonuc}</p>}
+        </div>
+      )}
+
+      {!loading && kayitlar.length > 0 && (
         <>
           <div className="tab-switcher">
             {FILTRE_OPTIONS.map((opt) => (
@@ -154,7 +211,12 @@ function History() {
                 const iyiDurum = detayKismi === 'Tüm kategoriler iyi';
 
                 return (
-                  <div className="history-card" key={k.id} style={{ position: 'relative' }}>
+                  <div
+                    className="history-card"
+                    key={k.id}
+                    ref={hedefKayitId && String(k.id) === hedefKayitId ? hedefRef : null}
+                    style={{ position: 'relative', outline: hedefKayitId && String(k.id) === hedefKayitId ? '2px solid var(--accent)' : 'none' }}
+                  >
                     <div className="history-card-header">
                       <span className="history-badge oturum">
                         <Zap size={14} /> {etiket}
@@ -196,7 +258,12 @@ function History() {
               }
 
               return (
-                <div className="history-card" key={k.id} style={{ position: 'relative' }}>
+                <div
+                  className="history-card"
+                  key={k.id}
+                  ref={hedefKayitId && String(k.id) === hedefKayitId ? hedefRef : null}
+                  style={{ position: 'relative', outline: hedefKayitId && String(k.id) === hedefKayitId ? '2px solid var(--accent)' : 'none' }}
+                >
                   <div className="history-card-header">
                     <span className="history-badge anlik">
                       <Activity size={14} /> {etiket}
