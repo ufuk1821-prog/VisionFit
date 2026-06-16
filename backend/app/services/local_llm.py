@@ -54,6 +54,13 @@ def _yanit_uret(talimat, girdi):
         for c in cumleler:
             if re.search(r'[\u3000-\u9fff\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff]', c):
                 continue
+            if re.search(r'[éàèêëâîïôûùäõãñ]', c):
+                continue
+            ingilizce_sayisi = len(re.findall(r'\b[a-zA-Z]{5,}\b', c))
+            izin_verilenler = {'bench', 'press', 'squat', 'deadlift', 'lunge', 'curl', 'romanian', 'morning', 'protein', 'kalori', 'cardio', 'hiit'}
+            gercek_ing = [k for k in re.findall(r'\b[a-zA-Z]{5,}\b', c) if k.lower() not in izin_verilenler]
+            if len(gercek_ing) > 2:
+                continue
             if len(c) < 5:
                 continue
             turkce_cumleler.append(c)

@@ -43,3 +43,6 @@ yanit = requests.post(f"{TABAN_URL}/api/yerel-ai/defter-analizi", json={
     "agirliklar": [40, 42.5, 45, 45, 47.5],
 }, headers=basliklar)
 print(yanit.status_code, yanit.json())
+print("--- GECMIS ---")
+yanit = requests.post(f"{TABAN_URL}/api/yerel-ai/gecmis-analizi?sayi=5", json={}, headers=basliklar)
+print(yanit.status_code, yanit.json())
