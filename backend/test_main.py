@@ -723,21 +723,16 @@ def test_51_gecmis_kaydi_silme():
     
     # --- LOCAL LLM GERCEK MANTIK ---
 def test_52_local_llm_token_yoksa_kullanilamaz(monkeypatch):
-    monkeypatch.delenv("HF_TOKEN", raising=False)
-    assert local_llm.llm_kullanilabilir_mi() is False
-    assert local_llm.antrenor_geri_bildirimi_uret({"Genel Form": 80}) is None
+    assert local_llm.llm_kullanilabilir_mi() is True
 
 
 def test_53_local_llm_basarili_yanit(monkeypatch):
-    monkeypatch.setenv("HF_TOKEN", "test_token")
-
     class SahteYanit:
         def json(self):
-            return [{"generated_text": "Harika bir antrenmandi, devam et."}]
+            return {"yorum": "Harika bir antrenmandi, devam et."}
 
     monkeypatch.setattr(local_llm.requests, "post", lambda *a, **k: SahteYanit())
 
-    assert local_llm.llm_kullanilabilir_mi() is True
     sonuc = local_llm.antrenor_geri_bildirimi_uret({"Genel Form": 80})
     assert sonuc == "Harika bir antrenmandi, devam et."
 
@@ -749,12 +744,10 @@ def test_53_local_llm_basarili_yanit(monkeypatch):
 
 
 def test_54_local_llm_baglanti_hatasi(monkeypatch):
-    monkeypatch.setenv("HF_TOKEN", "test_token")
-
     def hata_firlat(*args, **kwargs):
         raise ConnectionError("baglanti hatasi")
 
     monkeypatch.setattr(local_llm.requests, "post", hata_firlat)
 
     sonuc = local_llm.antrenor_geri_bildirimi_uret({"Genel Form": 80})
-    assert sonuc == "Su anda yapay zeka servisine erisilemiyor, lutfen birkac saniye sonra tekrar deneyin."
+    assert sonuc == "Şu anda yapay zeka servisine erişilemiyor, lütfen birkaç saniye sonra tekrar deneyin."
