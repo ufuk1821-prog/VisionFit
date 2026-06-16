@@ -127,7 +127,7 @@ const aiOneriAl = async () => {
         { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
       );
       setAiOneri(res.data.yorum);
-      setTimeout(() => sonucRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+      setTimeout(() => sonucRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
     } catch {
       setAiOneri('AI önerisi alınamadı, lütfen tekrar deneyin.');
     } finally {

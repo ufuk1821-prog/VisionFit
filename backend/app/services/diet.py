@@ -111,18 +111,21 @@ FOOD_DATABASE = {
 
 MEAL_SPLIT = {
     "Kahvalti": 0.25,
-    "Ogle": 0.35,
-    "Aksam": 0.40,
+    "Ogle": 0.30,
+    "Aksam": 0.30,
+    "AraOgun": 0.15,
 }
 
 MEAL_LABELS = {
     "Kahvalti": "Kahvaltı",
     "Ogle": "Öğle Yemeği",
     "Aksam": "Akşam Yemeği",
+    "AraOgun": "Ara Öğün",
 }
 
 EK_KCAL_TAHMINI = 60
 ANA_YAN_ORANI = 0.5
+
 
 MEAL_POOL = {
     "Kahvalti": [
@@ -160,6 +163,18 @@ MEAL_POOL = {
         {"ana": "kirmizi_et", "yan": "tatli_patates", "ek": "közlenmiş sebze", "anahtarlar": ["et", "patates"]},
         {"ana": "cipura", "yan": "esmer_pirinc", "ek": "ızgara sebze", "anahtarlar": ["balik", "pirinc"]},
         {"ana": "dana_kiyma", "yan": "tam_tahil_makarna", "ek": "domates sosu ve roka", "anahtarlar": ["et", "makarna"]},
+    ],
+    "AraOgun": [
+        {"ana": "yogurt", "yan": "muz", "ek": "tarçın", "anahtarlar": ["yogurt", "sut", "muz"]},
+        {"ana": "suzme_yogurt", "yan": "elma", "ek": "tarçın", "anahtarlar": ["yogurt", "sut", "elma"]},
+        {"ana": "yumurta", "yan": "tam_tahil_ekmek", "ek": "domates", "anahtarlar": ["yumurta", "ekmek"]},
+        {"ana": "lor_peyniri", "yan": "elma", "ek": "tarçın", "anahtarlar": ["peynir", "sut", "elma"]},
+        {"ana": "badem", "yan": "muz", "ek": "su", "anahtarlar": ["badem", "muz"]},
+        {"ana": "suzme_yogurt", "yan": "cilek", "ek": "chia tohumu", "anahtarlar": ["yogurt", "sut", "cilek", "chia"]},
+        {"ana": "ton_balik", "yan": "tam_tahil_ekmek", "ek": "salatalık", "anahtarlar": ["balik", "ekmek"]},
+        {"ana": "beyaz_peynir", "yan": "tam_tahil_ekmek", "ek": "salatalık", "anahtarlar": ["peynir", "sut", "ekmek"]},
+        {"ana": "yumurta_beyazi", "yan": "avokado", "ek": "limon suyu", "anahtarlar": ["yumurta", "avokado"]},
+        {"ana": "nohut", "yan": "havuc", "ek": "limon suyu", "anahtarlar": ["nohut", "havuc"]},
     ],
 }
 
@@ -312,7 +327,7 @@ def build_diet_plans(target_calories: int, istek: Optional[str] = None) -> List[
 
         ornek_ogunler = []
 
-        for meal_type in ("Kahvalti", "Ogle", "Aksam"):
+        for meal_type in ("Kahvalti", "AraOgun", "Ogle", "Aksam"):
             meal_kcal_target = target_calories * MEAL_SPLIT[meal_type]
 
             option = select_meal(MEAL_POOL[meal_type], hard_excluded, soft_excluded, preferred, index)
