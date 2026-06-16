@@ -1,3 +1,4 @@
+from app.services import local_llm
 import os
 os.environ["TESTING"] = "True"
 
@@ -720,4 +721,40 @@ def test_51_gecmis_kaydi_silme():
     response = client.delete(f"/api/analyze/history/{kayit_id}", headers=headers1)
     assert response.status_code == 404
     
-    
+    # --- LOCAL LLM GERCEK MANTIK ---
+def test_52_local_llm_token_yoksa_kullanilamaz(monkeypatch):
+    monkeypatch.delenv("HF_TOKEN", raising=False)
+    assert local_llm.llm_kullanilabilir_mi() is False
+    assert local_llm.antrenor_geri_bildirimi_uret({"Genel Form": 80}) is None
+
+
+def test_53_local_llm_basarili_yanit(monkeypatch):
+    monkeypatch.setenv("HF_TOKEN", "test_token")
+
+    class SahteYanit:
+        def json(self):
+            return [{"generated_text": "Harika bir antrenmandi, devam et."}]
+
+    monkeypatch.setattr(local_llm.requests, "post", lambda *a, **k: SahteYanit())
+
+    assert local_llm.llm_kullanilabilir_mi() is True
+    sonuc = local_llm.antrenor_geri_bildirimi_uret({"Genel Form": 80})
+    assert sonuc == "Harika bir antrenmandi, devam et."
+
+    sonuc = local_llm.diyet_onerisi_uret(22.5, "Normal", "kilo_koruma", 2200, 120, 220, 70, "test")
+    assert sonuc == "Harika bir antrenmandi, devam et."
+
+    sonuc = local_llm.defter_analizi_uret("Bench Press", [40, 42.5])
+    assert sonuc == "Harika bir antrenmandi, devam et."
+
+
+def test_54_local_llm_baglanti_hatasi(monkeypatch):
+    monkeypatch.setenv("HF_TOKEN", "test_token")
+
+    def hata_firlat(*args, **kwargs):
+        raise ConnectionError("baglanti hatasi")
+
+    monkeypatch.setattr(local_llm.requests, "post", hata_firlat)
+
+    sonuc = local_llm.antrenor_geri_bildirimi_uret({"Genel Form": 80})
+    assert sonuc == "Su anda yapay zeka servisine erisilemiyor, lutfen birkac saniye sonra tekrar deneyin."
