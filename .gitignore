@@ -11,3 +11,5 @@ htmlcov/
 coverage.xml
 ai_training/visionfit_llm/
 *.db
+*.mp4
+*.pkl
