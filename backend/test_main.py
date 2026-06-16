@@ -758,20 +758,23 @@ def test_55_yeni_hareketler_gecmis_kaydina_ekleniyor():
     token = get_token("yenihareketler@test.com")
     headers = {"Authorization": f"Bearer {token}"}
 
-    hareketler = [
-        ("/api/analyze/sinav", "sinav"),
-        ("/api/analyze/yan-plank", "yan_plank"),
-        ("/api/analyze/kopru", "kopru"),
-        ("/api/analyze/supermen", "supermen"),
-    ]
-
-    frame = plank_kare_olustur(0.30, 0.32, 0.34)
     kayit_idler = []
 
-    for endpoint, _ in hareketler:
-        response = client.post(endpoint, json={"landmarks": frame}, headers=headers)
+    frame_hat = plank_kare_olustur(0.30, 0.32, 0.34)
+    for endpoint in ["/api/analyze/sinav", "/api/analyze/yan-plank"]:
+        response = client.post(endpoint, json={"landmarks": frame_hat}, headers=headers)
         assert response.status_code == 200
         kayit_idler.append(response.json()["kayit_id"])
+
+    frame_kopru = hat_kare_olustur(0.30, 0.32, 0.34, alt_idx=(25, 26))
+    response = client.post("/api/analyze/kopru", json={"landmarks": frame_kopru}, headers=headers)
+    assert response.status_code == 200
+    kayit_idler.append(response.json()["kayit_id"])
+
+    frame_supermen = plank_kare_olustur(0.20, 0.35, 0.20)
+    response = client.post("/api/analyze/supermen", json={"landmarks": frame_supermen}, headers=headers)
+    assert response.status_code == 200
+    kayit_idler.append(response.json()["kayit_id"])
 
     response = client.get("/api/analyze/history", headers=headers)
     mevcut_idler = [k["id"] for k in response.json()]
