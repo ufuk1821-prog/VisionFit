@@ -9,5 +9,6 @@ export default defineConfig({
     globals: true,
     setupFiles: './src/test/setup.js',
     exclude: ['sistem-testleri/**', 'node_modules/**'],
+    include: ['src/**/*.test.{js,jsx}'],
   },
 })
