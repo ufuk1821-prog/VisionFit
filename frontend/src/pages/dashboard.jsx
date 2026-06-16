@@ -411,7 +411,7 @@ const aiYorumuAl = async () => {
         </div>
 
         <div className="dashboard">
-          {phase === 'idle' && cameraReady && (
+          {phase === 'idle' && (
             <>
               <div className="card status-card" style={{ alignItems: 'center', textAlign: 'center', gap: '16px' }}>
                 <div className="card-title" style={{ fontSize: '1rem' }}>Hazır</div>
