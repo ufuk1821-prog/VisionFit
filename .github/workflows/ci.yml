@@ -48,8 +48,28 @@ jobs:
         cd backend
         PYTHONPATH=. python -m pytest --cov=app --cov=main --cov-report=xml
 
+  frontend-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install dependencies
+      run: |
+        cd frontend
+        npm ci
+
+    - name: Run frontend tests
+      run: |
+        cd frontend
+        npm test
+
   deploy:
-    needs: test
+    needs: [test, frontend-test]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
 
