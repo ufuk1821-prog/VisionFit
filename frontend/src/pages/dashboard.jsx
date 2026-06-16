@@ -112,9 +112,6 @@ function VideoAnalizBolumu({ apiUrl, token }) {
         video.play();
       });
 
-      console.log('Toplam frame:', frames.length);
-      if (frames.length > 0) console.log('İlk frame uzunluğu:', frames[0].length);
-
       if (frames.length < 10) {
         setVideoHata('Videoda yeterli vücut tespiti yapılamadı. Yandan, tüm vücudun göründüğü bir video yükleyin.');
         return;

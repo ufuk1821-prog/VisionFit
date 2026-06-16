@@ -6,12 +6,24 @@ MODAL_URL = os.getenv("MODAL_URL", "https://ufuk1821-prog--visionfit-llm-api.mod
 def llm_kullanilabilir_mi():
     return True
 
+SISTEM_TALIMATI = (
+    "Sen VisionFit fitness uygulamasının Türkçe konuşan AI asistanısın. "
+    "Türkçe dil kurallarına tam uyarak yaz. "
+    "Büyük harfleri doğru kullan: cümle başları, özel isimler büyük harf ile başlamalı. "
+    "ş, ğ, ü, ö, ç, ı harflerini doğru kullan, asla İngilizce karakter kullanma. "
+    "Maksimum 3-4 cümle yaz. Selamlama yazma, direkt konuya gir. "
+    "Markdown kullanma, düz metin yaz. "
+    "BMI kelimesini her zaman büyük harf yaz."
+)
 
 def _yanit_uret(talimat, girdi):
     try:
         yanit = requests.post(
             MODAL_URL,
-            json={"talimat": talimat, "girdi": girdi},
+            json={
+                "talimat": f"{SISTEM_TALIMATI}\n\n{talimat}",
+                "girdi": girdi
+            },
             timeout=120,
         )
         veri = yanit.json()
