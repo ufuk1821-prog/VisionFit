@@ -44,7 +44,24 @@ def _yanit_uret(talimat, girdi):
             timeout=120,
         )
         veri = yanit.json()
-        return veri.get("yorum", "Şu anda yapay zeka servisine erişilemiyor, lütfen birkaç saniye sonra tekrar deneyin.")
+        yorum = veri.get("yorum", "")
+        if not yorum:
+            return "Şu anda yapay zeka servisine erişilemiyor, lütfen birkaç saniye sonra tekrar deneyin."
+        
+        import re
+        cumleler = re.split(r'(?<=[.!?])\s+', yorum.strip())
+        turkce_cumleler = []
+        for c in cumleler:
+            if re.search(r'[\u3000-\u9fff\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff]', c):
+                continue
+            if len(c) < 5:
+                continue
+            turkce_cumleler.append(c)
+        
+        if not turkce_cumleler:
+            return "Şu anda yapay zeka servisine erişilemiyor, lütfen birkaç saniye sonra tekrar deneyin."
+        
+        return " ".join(turkce_cumleler[:4])
     except Exception as e:
         print(f"MODAL HATA: {e}")
         return "Şu anda yapay zeka servisine erişilemiyor, lütfen birkaç saniye sonra tekrar deneyin."
