@@ -122,15 +122,19 @@ const aiAnalizAl = async () => {
     if (kayitliHareketler.length === 0) return;
     setAiYukleniyor(true);
     setAiAnaliz('');
-    const hedef = kayitliHareketler[0];
-    const agirliklar = rows
-      .filter((r) => r.hareket === hedef.hareket && r.agirlik)
-      .map((r) => parseFloat(r.agirlik))
-      .filter((a) => !isNaN(a));
+    const hareketGruplari = {};
+    kayitliHareketler.forEach((r) => {
+      if (!hareketGruplari[r.hareket]) hareketGruplari[r.hareket] = [];
+      hareketGruplari[r.hareket].push(parseFloat(r.agirlik));
+    });
+    const hareketListesi = Object.entries(hareketGruplari).map(([hareket, agirliklar]) => ({
+      hareket,
+      agirliklar: agirliklar.filter((a) => !isNaN(a)),
+    }));
     try {
       const res = await axios.post(
         `${apiUrl}/api/yerel-ai/defter-analizi`,
-        { hareket: hedef.hareket, agirliklar },
+        { hareketler: hareketListesi },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setAiAnaliz(res.data.yorum);

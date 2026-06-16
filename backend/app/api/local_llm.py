@@ -35,7 +35,10 @@ def diyet_onerisi(istek: DiyetOnerisiRequest, kullanici=Depends(get_current_user
 @router.post("/defter-analizi")
 def defter_analizi(istek: DefterAnaliziRequest, kullanici=Depends(get_current_user)):
     _yerel_llm_kontrol()
-    yorum = local_llm.defter_analizi_uret(istek.hareket, istek.agirliklar)
+    girdi_parcalari = [f"{h.hareket}: {', '.join(str(a) for a in h.agirliklar)} kg" for h in istek.hareketler]
+    girdi = " | ".join(girdi_parcalari)
+    talimat = "Aşağıdaki hareketlerin ağırlık geçmişine göre kısa, yapıcı ve Türkçe bir ilerleme analizi yaz."
+    yorum = local_llm._yanit_uret(talimat, girdi)
     return {"yorum": yorum}
 
 @router.post("/gecmis-analizi")

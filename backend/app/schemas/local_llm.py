@@ -17,6 +17,9 @@ class DiyetOnerisiRequest(BaseModel):
     istek: str
 
 
-class DefterAnaliziRequest(BaseModel):
+class HareketVeri(BaseModel):
     hareket: str
     agirliklar: List[float]
+
+class DefterAnaliziRequest(BaseModel):
+    hareketler: List[HareketVeri]
