@@ -423,23 +423,6 @@ const aiYorumuAl = async () => {
                 </button>
               </div>
 
-              <div className="card" style={{ gap: '12px' }}>
-                <div className="card-title" style={{ fontSize: '0.9rem' }}>📋 Doğru Squat İçin</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {[
-                    { emoji: '🦵', text: 'Ayaklar omuz genişliğinde açık' },
-                    { emoji: '⬇️', text: 'Kalçayı diz seviyesine kadar indir' },
-                    { emoji: '🔝', text: 'Göğsü dik, omurgayı nötr tut' },
-                    { emoji: '👣', text: 'Ağırlığı topuklarda hisset' },
-                    { emoji: '🦵', text: 'Dizler ayak uçlarıyla aynı hizada' },
-                  ].map((m, i) => (
-                    <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'center', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-                      <span>{m.emoji}</span>
-                      <span>{m.text}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
 
               <div className="card" style={{ gap: '8px' }}>
                 <div className="card-title" style={{ fontSize: '0.9rem' }}>⚠️ Sık Yapılan Hatalar</div>
