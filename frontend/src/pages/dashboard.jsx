@@ -24,6 +24,146 @@ function ScoreBar({ skor }) {
     </div>
   );
 }
+function VideoAnalizBolumu({ apiUrl, token }) {
+  const [videoSonuc, setVideoSonuc] = useState(null);
+  const [videoYukleniyor, setVideoYukleniyor] = useState(false);
+  const [videoHata, setVideoHata] = useState('');
+  const [secilenVideo, setSecilenVideo] = useState(null);
+  const videoRef2 = useRef(null);
+  const canvasRef2 = useRef(null);
+  const poseLandmarkerRef2 = useRef(null);
+
+  const videoSec = (e) => {
+    const dosya = e.target.files[0];
+    if (!dosya) return;
+    setSecilenVideo(dosya);
+    setVideoSonuc(null);
+    setVideoHata('');
+    if (videoRef2.current) {
+      videoRef2.current.src = URL.createObjectURL(dosya);
+    }
+  };
+
+  const videoAnalizEt = async () => {
+    if (!secilenVideo || !videoRef2.current) return;
+    setVideoYukleniyor(true);
+    setVideoHata('');
+    setVideoSonuc(null);
+
+    try {
+      const { PoseLandmarker, FilesetResolver } = await import('@mediapipe/tasks-vision');
+      const vision = await FilesetResolver.forVisionTasks(
+        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
+      );
+      const poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
+        baseOptions: {
+          modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',
+          delegate: 'GPU',
+        },
+        runningMode: 'VIDEO',
+        numPoses: 1,
+      });
+
+      const video = videoRef2.current;
+      video.currentTime = 0;
+      await new Promise((res) => { video.onloadeddata = res; video.load(); });
+
+      const frames = [];
+      const sure = video.duration;
+      const adim = 1 / 30;
+
+      for (let t = 0; t < sure; t += adim) {
+        video.currentTime = t;
+        await new Promise((res) => { video.onseeked = res; });
+        const sonuc = poseLandmarker.detectForVideo(video, t * 1000);
+        if (sonuc.landmarks && sonuc.landmarks.length > 0) {
+          const flat = [];
+          sonuc.landmarks[0].forEach((lm) => flat.push(lm.x, lm.y, lm.z, lm.visibility ?? 0));
+          frames.push(flat);
+        }
+      }
+
+      poseLandmarker.close();
+
+      if (frames.length < 10) {
+        setVideoHata('Videoda yeterli vücut tespiti yapılamadı. Yandan, tüm vücudun göründüğü bir video yükleyin.');
+        return;
+      }
+
+      const res = await axios.post(
+        `${apiUrl}/api/analyze/session`,
+        { frames },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setVideoSonuc(res.data);
+    } catch (err) {
+      setVideoHata(err.response?.data?.detail || 'Video analizi sırasında hata oluştu.');
+    } finally {
+      setVideoYukleniyor(false);
+    }
+  };
+
+  return (
+    <div style={{ marginTop: '24px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '24px' }}>
+      <div className="section-title" style={{ marginBottom: '16px' }}>Video Analizi</div>
+      <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', marginBottom: '16px' }}>
+        💡 Yandan çekilmiş, tüm vücudunuzun göründüğü bir squat videosu yükleyin.
+      </p>
+
+      <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+        <div style={{ flex: '0 0 auto' }}>
+          <video
+            ref={videoRef2}
+            style={{ width: '320px', height: '240px', background: '#000', borderRadius: '12px', border: '2px solid var(--border)', display: secilenVideo ? 'block' : 'none' }}
+            controls
+          />
+          {!secilenVideo && (
+            <div style={{ width: '320px', height: '240px', background: '#000', borderRadius: '12px', border: '2px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+              Video seçilmedi
+            </div>
+          )}
+        </div>
+
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px', minWidth: '200px' }}>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: '8px', cursor: 'pointer' }}>
+            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Video Seç</span>
+            <input type="file" accept="video/*" onChange={videoSec} style={{ display: 'none' }} />
+            <div className="timer-btn" style={{ justifyContent: 'center', cursor: 'pointer' }}>
+              📁 Video Yükle
+            </div>
+          </label>
+
+          {secilenVideo && (
+            <button
+              className="timer-btn primary"
+              style={{ justifyContent: 'center' }}
+              onClick={videoAnalizEt}
+              disabled={videoYukleniyor}
+            >
+              {videoYukleniyor ? '⏳ Analiz Ediliyor...' : '▶ Videoyu Analiz Et'}
+            </button>
+          )}
+
+          {videoHata && (
+            <p style={{ color: 'var(--danger)', fontSize: '0.85rem' }}>{videoHata}</p>
+          )}
+
+          {videoSonuc && (
+            <div className="card" style={{ gap: '8px' }}>
+              <div className="card-title">Analiz Sonucu</div>
+              <div style={{ fontSize: '2rem', fontWeight: 700, color: videoSonuc.genel_skor >= 75 ? 'var(--accent)' : videoSonuc.genel_skor >= 50 ? 'var(--accent-2)' : 'var(--danger)' }}>
+                %{videoSonuc.genel_skor}
+              </div>
+              <p style={{ fontSize: '0.82rem', color: 'var(--text)', lineHeight: 1.5 }}>{videoSonuc.olumlu_mesaj}</p>
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>{videoSonuc.gelistirilecek_mesaj}</p>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{videoSonuc.squat_kare} kare analiz edildi</div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function Dashboard() {
   const videoRef = useRef(null);
@@ -351,6 +491,8 @@ const aiYorumuAl = async () => {
           )}
         </div>
       </div>
+
+      <VideoAnalizBolumu apiUrl={apiUrl} token={token} />
 
       {phase === 'result' && result && (
         <>
