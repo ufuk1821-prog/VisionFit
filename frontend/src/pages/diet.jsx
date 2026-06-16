@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import axios from 'axios';
 import { Sparkles } from 'lucide-react';
 import { Activity, Flame, Target } from 'lucide-react';
@@ -32,6 +32,7 @@ function Diet() {
   const [diet, setDiet] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const sonucRef = useRef(null);
   const [aiOneri, setAiOneri] = useState('');
   const [aiYukleniyor, setAiYukleniyor] = useState(false);
   const [boyHata, setBoyHata] = useState('');
@@ -125,6 +126,7 @@ const aiOneriAl = async () => {
         { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
       );
       setAiOneri(res.data.yorum);
+      setTimeout(() => sonucRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     } catch {
       setAiOneri('AI önerisi alınamadı, lütfen tekrar deneyin.');
     } finally {
@@ -223,7 +225,7 @@ const aiOneriAl = async () => {
       {error && <p className="error-text">{error}</p>}
 
       {diet && (
-        <>
+        <div ref={sonucRef}>
           <div className="main-wrapper" style={{ marginTop: '24px' }}>
             <div className="bmi-card">
               <div className="bmi-card-title">Vücut Kitle Endeksi</div>
@@ -298,7 +300,7 @@ const aiOneriAl = async () => {
           )}
           {aiOneri && <p style={{ fontSize: '0.85rem', color: 'var(--text)', marginTop: '8px', lineHeight: '1.6' }}>{aiOneri}</p>}
         </div>
-        </>
+        </div>
       )}
     </div>
   );

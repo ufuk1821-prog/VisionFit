@@ -242,9 +242,28 @@ def round_to_5(value: float) -> int:
     clamped = min(max(value, 30), 400)
     return int(round(clamped / 5) * 5)
 
+MAKUL_PORSIYONLAR = {
+    "tavuk_gogsu": (120, 200), "tavuk_but": (120, 200), "hindi_gogsu": (120, 200),
+    "kirmizi_et": (100, 180), "dana_kiyma": (100, 180), "kuzu_eti": (100, 150),
+    "kofte": (100, 180), "somon": (100, 180), "levrek": (100, 180),
+    "cipura": (100, 180), "ton_balik": (80, 150), "uskumru": (100, 180),
+    "karides": (100, 180), "yumurta": (50, 150), "yumurta_beyazi": (50, 120),
+    "yogurt": (150, 250), "suzme_yogurt": (150, 250), "lor_peyniri": (80, 150),
+    "beyaz_peynir": (50, 100), "kasar_peyniri": (30, 60), "mercimek": (150, 250),
+    "nohut": (150, 250), "kuru_fasulye": (150, 250), "barbunya": (150, 250),
+    "soya_fasulyesi": (100, 200), "tofu": (100, 200), "bezelye": (100, 150),
+    "bulgur": (100, 200), "pirinc": (100, 200), "esmer_pirinc": (100, 200),
+    "kinoa": (80, 150), "tam_tahil_ekmek": (50, 100), "beyaz_ekmek": (50, 100),
+    "tam_tahil_makarna": (80, 150), "makarna": (80, 150), "yulaf": (50, 100),
+    "patates": (150, 250), "tatli_patates": (150, 250),
+}
+
 def describe_meal(option: Dict, meal_kcal_target: float) -> str:
     ana = FOOD_DATABASE[option["ana"]]
     yan = FOOD_DATABASE[option["yan"]]
+
+    ana_min, ana_maks = MAKUL_PORSIYONLAR.get(option["ana"], (80, 200))
+    yan_min, yan_maks = MAKUL_PORSIYONLAR.get(option["yan"], (80, 200))
 
     usable_kcal = max(meal_kcal_target - EK_KCAL_TAHMINI, 100)
     ana_kcal_target = usable_kcal * ANA_YAN_ORANI
@@ -253,8 +272,8 @@ def describe_meal(option: Dict, meal_kcal_target: float) -> str:
     ana_gram = (ana_kcal_target / food_kcal_per_100g(ana)) * 100
     yan_gram = (yan_kcal_target / food_kcal_per_100g(yan)) * 100
 
-    ana_gram = round_to_5(ana_gram)
-    yan_gram = round_to_5(yan_gram)
+    ana_gram = int(round(max(ana_min, min(ana_maks, ana_gram)) / 5) * 5)
+    yan_gram = int(round(max(yan_min, min(yan_maks, yan_gram)) / 5) * 5)
 
     return f"{ana_gram}g {ana['ad']}, {yan_gram}g {yan['ad']}, {option['ek']}"
 
