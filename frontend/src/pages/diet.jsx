@@ -98,7 +98,7 @@ function Diet() {
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setDiet(response.data);
+      setTimeout(() => sonucRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     } catch (err) {
       setError(err.response?.data?.detail || 'Hesaplama sırasında hata oluştu.');
       setDiet(null);

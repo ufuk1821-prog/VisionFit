@@ -140,7 +140,7 @@ MEAL_POOL = {
     "Ogle": [
         {"ana": "tavuk_gogsu", "yan": "bulgur", "ek": "yeşil salata (zeytinyağlı)", "anahtarlar": ["tavuk", "et", "bulgur"]},
         {"ana": "mercimek", "yan": "tam_tahil_ekmek", "ek": "yeşil salata", "anahtarlar": ["mercimek", "ekmek"]},
-        {"ana": "somon", "yan": "kinoa", "ek": "buharda sebze", "anahtarlar": ["balik", "kinoa"]},
+        {"ana": "somon", "yan": "bulgur", "ek": "buharda sebze", "anahtarlar": ["balik", "bulgur"]},
         {"ana": "nohut", "yan": "pirinc", "ek": "yoğurt (1 kase)", "anahtarlar": ["nohut", "pirinc", "yogurt", "sut"]},
         {"ana": "yumurta", "yan": "tam_tahil_ekmek", "ek": "yeşil salata (omlet şeklinde)", "anahtarlar": ["yumurta", "ekmek"]},
         {"ana": "levrek", "yan": "pirinc", "ek": "haşlanmış sebze", "anahtarlar": ["balik", "pirinc"]},
@@ -156,9 +156,9 @@ MEAL_POOL = {
         {"ana": "somon", "yan": "bulgur", "ek": "sebzeli", "anahtarlar": ["balik", "bulgur"]},
         {"ana": "nohut", "yan": "pirinc", "ek": "sebze yemeği şeklinde", "anahtarlar": ["nohut", "pirinc"]},
         {"ana": "karides", "yan": "tam_tahil_makarna", "ek": "sarımsaklı zeytinyağlı sos", "anahtarlar": ["karides", "makarna"]},
-        {"ana": "tofu", "yan": "kinoa", "ek": "sebzeli soya sosu", "anahtarlar": ["tofu", "kinoa"]},
+        {"ana": "tofu", "yan": "bulgur", "ek": "sebzeli soya sosu", "anahtarlar": ["tofu", "bulgur"]},
         {"ana": "kirmizi_et", "yan": "tatli_patates", "ek": "közlenmiş sebze", "anahtarlar": ["et", "patates"]},
-        {"ana": "cipura", "yan": "kinoa", "ek": "ızgara sebze", "anahtarlar": ["balik", "kinoa"]},
+        {"ana": "cipura", "yan": "esmer_pirinc", "ek": "ızgara sebze", "anahtarlar": ["balik", "pirinc"]},
         {"ana": "dana_kiyma", "yan": "tam_tahil_makarna", "ek": "domates sosu ve roka", "anahtarlar": ["et", "makarna"]},
     ],
 }
