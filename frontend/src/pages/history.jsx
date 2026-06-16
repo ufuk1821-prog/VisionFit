@@ -44,6 +44,7 @@ function History() {
   const [error, setError] = useState('');
   const [filtre, setFiltre] = useState('tumu');
   const [acikMenu, setAcikMenu] = useState(null);
+  const [acikKart, setAcikKart] = useState(null);
   const [analizSayi, setAnalizSayi] = useState(10);
   const [analizSonuc, setAnalizSonuc] = useState('');
   const [analizYukleniyor, setAnalizYukleniyor] = useState(false);
@@ -155,7 +156,13 @@ function History() {
               min={1}
               max={30}
               value={analizSayi}
-              onChange={(e) => setAnalizSayi(Math.min(30, Math.max(1, Number(e.target.value))))}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val === '' || val === '0') { setAnalizSayi(''); return; }
+                const num = Math.min(30, Math.max(1, Number(val)));
+                setAnalizSayi(num);
+              }}
+              onBlur={() => { if (!analizSayi || analizSayi === '') setAnalizSayi(10); }}
               style={{ width: '60px', padding: '6px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface-2)', color: 'var(--text)', textAlign: 'center' }}
             />
             <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>antrenmanı analiz et</span>
@@ -240,7 +247,11 @@ function History() {
                         </div>
                       </div>
                     </div>
-                    <div className="history-card-body">
+                    <div
+                    className="history-card-body"
+                    onClick={() => setAcikKart(acikKart === k.id ? null : k.id)}
+                    style={{ cursor: 'pointer' }}
+                  >
                       <div className="history-score" style={{ color: skorRengi(k.eminlik_skoru) }}>
                         %{k.eminlik_skoru}
                       </div>
@@ -253,6 +264,26 @@ function History() {
                         )}
                       </div>
                     </div>
+                    {acikKart === k.id && (
+                      <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Kayıt ID: #{k.id}</div>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text)' }}>
+                          <strong>Hareket:</strong> {etiket}
+                        </div>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text)' }}>
+                          <strong>Skor:</strong> <span style={{ color: skorRengi(k.eminlik_skoru) }}>%{k.eminlik_skoru}</span>
+                        </div>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text)' }}>
+                          <strong>Ortalama Diz Açısı:</strong> {k.diz_acisi}°
+                        </div>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text)' }}>
+                          <strong>Durum:</strong> {iyiDurum ? 'Tüm kategorilerde form iyiydi' : `Geliştirilecek: ${detayKismi}`}
+                        </div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                          {new Date(k.tarih).toLocaleString('tr-TR')}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               }
@@ -287,7 +318,11 @@ function History() {
                       </div>
                     </div>
                   </div>
-                  <div className="history-card-body">
+                  <div
+                    className="history-card-body"
+                    onClick={() => setAcikKart(acikKart === k.id ? null : k.id)}
+                    style={{ cursor: 'pointer' }}
+                  >
                     <div className="history-score" style={{ color: skorRengi(k.eminlik_skoru), fontSize: '1.4rem' }}>
                       %{k.eminlik_skoru}
                     </div>
@@ -296,6 +331,28 @@ function History() {
                       <div className="history-note">{k.antrenor_notu}</div>
                     </div>
                   </div>
+                  {acikKart === k.id && (
+                    <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Kayıt ID: #{k.id}</div>
+                      <div style={{ fontSize: '0.85rem', color: 'var(--text)' }}>
+                        <strong>Hareket:</strong> {etiket}
+                      </div>
+                      <div style={{ fontSize: '0.85rem', color: 'var(--text)' }}>
+                        <strong>Skor:</strong> <span style={{ color: skorRengi(k.eminlik_skoru) }}>%{k.eminlik_skoru}</span>
+                      </div>
+                      {!ACI_GOSTERME_HAREKETLERI.includes(k.hareket_adi) && (
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text)' }}>
+                          <strong>Diz Açısı:</strong> {k.diz_acisi}°
+                        </div>
+                      )}
+                      <div style={{ fontSize: '0.85rem', color: 'var(--text)' }}>
+                        <strong>Antrenör Notu:</strong> {k.antrenor_notu}
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        {new Date(k.tarih).toLocaleString('tr-TR')}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
