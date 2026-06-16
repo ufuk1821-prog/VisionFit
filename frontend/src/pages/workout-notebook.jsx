@@ -118,12 +118,15 @@ function WorkoutNotebook() {
     }
   };
 const aiAnalizAl = async () => {
-    const kayitliHareketler = rows.filter((r) => r.hareket && r.agirliklar);
+    const kayitliHareketler = rows.filter((r) => r.hareket && r.agirlik);
     if (kayitliHareketler.length === 0) return;
     setAiYukleniyor(true);
     setAiAnaliz('');
     const hedef = kayitliHareketler[0];
-    const agirliklar = hedef.agirliklar.split(',').map((a) => parseFloat(a.trim())).filter((a) => !isNaN(a));
+    const agirliklar = rows
+      .filter((r) => r.hareket === hedef.hareket && r.agirlik)
+      .map((r) => parseFloat(r.agirlik))
+      .filter((a) => !isNaN(a));
     try {
       const res = await axios.post(
         `${apiUrl}/api/yerel-ai/defter-analizi`,

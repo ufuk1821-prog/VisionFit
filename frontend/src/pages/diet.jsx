@@ -117,9 +117,9 @@ const aiOneriAl = async () => {
           bmi_kategori: diet.bmi_kategori,
           hedef: hedef,
           hedef_kalori: diet.hedef_kalori,
-          protein_g: diet.gunluk_protein_g,
-          karbonhidrat_g: diet.gunluk_karbonhidrat_g,
-          yag_g: diet.gunluk_yag_g,
+          protein_g: diet.planlar?.[0]?.protein_g ?? 0,
+          karbonhidrat_g: diet.planlar?.[0]?.karbonhidrat_g ?? 0,
+          yag_g: diet.planlar?.[0]?.yag_g ?? 0,
           istek: istek || 'genel öneri',
         },
         { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }

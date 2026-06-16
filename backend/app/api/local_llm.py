@@ -50,7 +50,7 @@ def gecmis_analizi(
     sayi = min(sayi, 30)
     kayitlar = db.query(WorkoutHistory).filter(
         WorkoutHistory.user_id == kullanici.id
-    ).order_by(WorkoutHistory.tarih.desc()).limit(sayi).all()
+    ).order_by(WorkoutHistory.tarih.asc()).limit(sayi).all()
 
     if not kayitlar:
         return {"yorum": "Henüz geçmiş antrenman kaydınız yok."}
