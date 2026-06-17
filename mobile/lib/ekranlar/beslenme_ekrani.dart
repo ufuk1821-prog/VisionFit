@@ -67,10 +67,18 @@ class _BeslenmeEkraniState extends State<BeslenmeEkrani> {
   }
 
   Future<void> _suEkle(int ml) async {
+    final bugun = DateTime.now();
+    final secilenBugun = _seciliTarih.year == bugun.year && _seciliTarih.month == bugun.month && _seciliTarih.day == bugun.day;
+    if (!secilenBugun) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sadece bugüne su ekleyebilirsiniz.'), backgroundColor: Color(0xFFE8313F)));
+      return;
+    }
     try {
       await ApiServisi.postJson('/api/nutrition/water', {'miktar_ml': ml});
       await _yukle();
-    } catch (_) {}
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e'), backgroundColor: const Color(0xFFE8313F)));
+    }
   }
 
   Future<void> _ogunSil(int id) async {
@@ -107,7 +115,7 @@ class _BeslenmeEkraniState extends State<BeslenmeEkrani> {
 
   Widget _tarihSatiri() {
     final bugun = DateTime.now();
-    final gunler = List.generate(30, (i) => bugun.subtract(Duration(days: 29 - i)));
+    final gunler = List.generate(30, (i) => bugun.subtract(Duration(days: i)));
     return SizedBox(
       height: 72,
       child: ListView.builder(
@@ -215,8 +223,8 @@ class _BeslenmeEkraniState extends State<BeslenmeEkrani> {
             decoration: BoxDecoration(color: const Color(0xFF1A1A1A), borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFF333333))),
             child: Row(children: [
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(o['besin_ad'] ?? o['ad'] ?? '', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
-                Text('${o['miktar_gram'] ?? o['gram']}g • ${(o['kalori'] as num?)?.round()} kcal', style: const TextStyle(color: Color(0xFF888888), fontSize: 12)),
+                Text('${o['besin_ad'] ?? o['besin_adi'] ?? o['ad'] ?? o['anahtar'] ?? ''}', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+                Text('${o['miktar_gram'] ?? o['gram'] ?? '?'}g • ${(o['kalori'] as num?)?.round() ?? '?'} kcal', style: const TextStyle(color: Color(0xFF888888), fontSize: 12)),
               ])),
               IconButton(icon: const Icon(Icons.close, color: Color(0xFF666666), size: 18), onPressed: () => _ogunSil(o['id'])),
             ]),

@@ -295,6 +295,7 @@ class _DefterEkraniState extends State<DefterEkrani> {
 
   Widget _tablo() {
     return Container(
+      key: ValueKey(_tarihStr),
       decoration: BoxDecoration(color: const Color(0xFF1A1A1A), borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFF333333))),
       child: Column(children: [
         Container(
@@ -334,15 +335,14 @@ class _DefterEkraniState extends State<DefterEkrani> {
 
   Widget _input(String val, void Function(String) onChange, String hint, {bool sayi = false}) {
     return TextFormField(
+      key: ValueKey('$_tarihStr$val$hint'),
       initialValue: val,
       keyboardType: sayi ? TextInputType.number : TextInputType.text,
       style: const TextStyle(color: Colors.white, fontSize: 12),
       textAlign: sayi ? TextAlign.center : TextAlign.start,
       decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(color: Color(0xFF555555), fontSize: 12),
-        filled: true,
-        fillColor: const Color(0xFF0F0F0F),
+        hintText: hint, hintStyle: const TextStyle(color: Color(0xFF555555), fontSize: 12),
+        filled: true, fillColor: const Color(0xFF0F0F0F),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF333333))),
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF333333))),
         contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
