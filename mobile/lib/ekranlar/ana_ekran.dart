@@ -102,14 +102,16 @@ class _AnaEkranState extends State<AnaEkran> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Image.asset('assets/logo.png', height: 48),
+                    const SizedBox(),
                     IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white),
+                      icon: const Icon(Icons.close, color: Color(0xFF888888)),
                       onPressed: () => Navigator.pop(context),
                     ),
                   ],
                 ),
                 const Spacer(),
+                Image.asset('assets/logo.png', height: 52),
+                const SizedBox(height: 6),
                 const Text('En iyi haline ulaş.', style: TextStyle(color: Color(0xFF888888), fontSize: 12)),
               ],
             ),

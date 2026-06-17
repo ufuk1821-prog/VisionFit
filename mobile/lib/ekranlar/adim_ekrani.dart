@@ -80,17 +80,25 @@ class _AdimEkraniState extends State<AdimEkrani> {
   }
 
   Future<void> _ekle() async {
-    if (_adimController.text.isEmpty || _aktivite.isEmpty) {
-      setState(() { _hata = 'Lütfen tüm alanları doldurun.'; }); return;
+    final adim = int.tryParse(_adimController.text.trim());
+    if (adim == null || adim <= 0) {
+      setState(() { _hata = 'Geçerli bir adım sayısı girin.'; });
+      return;
+    }
+    if (_aktivite.isEmpty) {
+      setState(() { _hata = 'Aktivite tipi seçin.'; });
+      return;
     }
     setState(() { _yukleniyor = true; _hata = ''; });
     try {
-      await ApiServisi.postJson('/api/steps', {'adim_sayisi': int.parse(_adimController.text), 'aktivite_tipi': _aktivite});
+      final adim = int.tryParse(_adimController.text.trim());
+      if (adim == null || adim <= 0) { setState(() { _hata = 'Geçerli adım sayısı girin.'; _yukleniyor = false; }); return; }
+      await ApiServisi.postJson('/api/steps', {'adim_sayisi': adim, 'aktivite_tipi': _aktivite});
       _adimController.clear();
       setState(() { _aktivite = ''; });
       await _yukle();
-    } catch (_) {
-      setState(() { _hata = 'Kayıt eklenemedi.'; });
+    } catch (e) {
+      setState(() { _hata = 'Kayıt eklenemedi: $e'; });
     } finally {
       setState(() { _yukleniyor = false; });
     }

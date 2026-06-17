@@ -503,6 +503,118 @@ async def analyze_session(
         olumlu_mesaj=olumlu_mesaj,
         gelistirilecek_mesaj=gelistir_mesaj,
     )
+@router.post("/lunge")
+async def analyze_lunge(data: PoseData, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    if len(data.landmarks) < 132:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Eksik landmark verisi.")
+    lm = data.landmarks
+    sol_kalca = (lm[23*4], lm[23*4+1])
+    sol_diz = (lm[25*4], lm[25*4+1])
+    sol_ayak = (lm[27*4], lm[27*4+1])
+    sag_kalca = (lm[24*4], lm[24*4+1])
+    sag_diz = (lm[26*4], lm[26*4+1])
+    sag_ayak = (lm[28*4], lm[28*4+1])
+    sol_diz_aci = calculate_angle(sol_kalca, sol_diz, sol_ayak)
+    sag_diz_aci = calculate_angle(sag_kalca, sag_diz, sag_ayak)
+    on_diz = min(sol_diz_aci, sag_diz_aci)
+    omuz_mx = (lm[11*4] + lm[12*4]) / 2
+    kalca_mx = (lm[23*4] + lm[24*4]) / 2
+    govde_egimi = abs(omuz_mx - kalca_mx)
+    if 80 <= on_diz <= 105 and govde_egimi < 0.08:
+        durum, skor, mesaj = "İyi Form", 90, "Ön diz açısı ideal, gövde dik. Harika lunge pozisyonu!"
+    elif govde_egimi >= 0.08:
+        durum, skor, mesaj = "Gövde Öne Eğik", 60, "Gövdenizi dik tutun, öne eğilmeyin."
+    elif on_diz < 80:
+        durum, skor, mesaj = "Çok Derin", 65, f"Ön diz açısı çok küçük ({int(on_diz)}°). Biraz daha yukarı gelin."
+    else:
+        durum, skor, mesaj = "Yeterince Derin Değil", 60, f"Ön diz açısı geniş ({int(on_diz)}°). Daha aşağı çömelin."
+    kayit = WorkoutHistory(user_id=current_user.id, hareket_adi="lunge", eminlik_skoru=skor, diz_acisi=int(round(on_diz)), antrenor_notu=f"{durum}: {mesaj}")
+    db.add(kayit); db.commit(); db.refresh(kayit)
+    return {"kayit_id": kayit.id, "durum": durum, "antrenor_mesaji": mesaj}
+
+
+@router.post("/omuz-acikligi")
+async def analyze_omuz_acikligi(data: PoseData, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    if len(data.landmarks) < 132:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Eksik landmark verisi.")
+    lm = data.landmarks
+    sol_bilek_y = lm[15*4+1]
+    sag_bilek_y = lm[16*4+1]
+    sol_omuz_y = lm[11*4+1]
+    sag_omuz_y = lm[12*4+1]
+    sol_fark = abs(sol_bilek_y - sol_omuz_y)
+    sag_fark = abs(sag_bilek_y - sag_omuz_y)
+    ort_fark = (sol_fark + sag_fark) / 2
+    sol_kol_aci = calculate_angle((lm[15*4], lm[15*4+1]), (lm[11*4], lm[11*4+1]), (lm[12*4], lm[12*4+1]))
+    sag_kol_aci = calculate_angle((lm[16*4], lm[16*4+1]), (lm[12*4], lm[12*4+1]), (lm[11*4], lm[11*4+1]))
+    if ort_fark < 0.06 and 70 <= sol_kol_aci <= 110 and 70 <= sag_kol_aci <= 110:
+        durum, skor, mesaj = "İyi Form", 90, "Kollar omuz hizasında dengeli açılmış."
+    elif ort_fark < 0.13:
+        durum, skor, mesaj = "Geliştirilebilir", 70, "Kolları biraz daha omuz hizasına getirin."
+    else:
+        durum, skor, mesaj = "Kollar Omuz Hizasında Değil", 50, "Kollarınızı tam olarak yanlara, omuz hizasına açın."
+    kayit = WorkoutHistory(user_id=current_user.id, hareket_adi="omuz_acikligi", eminlik_skoru=skor, diz_acisi=0, antrenor_notu=f"{durum}: {mesaj}")
+    db.add(kayit); db.commit(); db.refresh(kayit)
+    return {"kayit_id": kayit.id, "durum": durum, "antrenor_mesaji": mesaj}
+
+
+@router.post("/one-egilme")
+async def analyze_one_egilme(data: PoseData, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    if len(data.landmarks) < 132:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Eksik landmark verisi.")
+    lm = data.landmarks
+    sol_omuz = (lm[11*4], lm[11*4+1])
+    sol_kalca = (lm[23*4], lm[23*4+1])
+    sol_diz = (lm[25*4], lm[25*4+1])
+    sag_omuz = (lm[12*4], lm[12*4+1])
+    sag_kalca = (lm[24*4], lm[24*4+1])
+    sag_diz = (lm[26*4], lm[26*4+1])
+    sol_kalca_aci = calculate_angle(sol_omuz, sol_kalca, sol_diz)
+    sag_kalca_aci = calculate_angle(sag_omuz, sag_kalca, sag_diz)
+    ort_kalca_aci = (sol_kalca_aci + sag_kalca_aci) / 2
+    bilek_y = (lm[15*4+1] + lm[16*4+1]) / 2
+    ayak_y = (lm[27*4+1] + lm[28*4+1]) / 2
+    el_mesafe = abs(bilek_y - ayak_y)
+    if ort_kalca_aci < 70 and el_mesafe < 0.15:
+        durum, skor, mesaj = "Mükemmel Esneklik", 95, "Harika! Eller zemine çok yakın, esnekliğiniz mükemmel."
+    elif ort_kalca_aci < 90:
+        durum, skor, mesaj = "İyi Form", 80, "İyi esneklik. Dizleri düz tutarak biraz daha aşağı inin."
+    elif ort_kalca_aci < 120:
+        durum, skor, mesaj = "Orta Esneklik", 60, "Hamstring kaslarınızı düzenli gererek esnekliği artırın."
+    else:
+        durum, skor, mesaj = "Geliştirme Gerekli", 40, "Düzenli germe egzersizleriyle esnekliğinizi artırabilirsiniz."
+    kayit = WorkoutHistory(user_id=current_user.id, hareket_adi="one_egilme", eminlik_skoru=skor, diz_acisi=int(round(ort_kalca_aci)), antrenor_notu=f"{durum}: {mesaj}")
+    db.add(kayit); db.commit(); db.refresh(kayit)
+    return {"kayit_id": kayit.id, "durum": durum, "antrenor_mesaji": mesaj}
+
+
+@router.post("/ters-kopru")
+async def analyze_ters_kopru(data: PoseData, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    if len(data.landmarks) < 132:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Eksik landmark verisi.")
+    lm = data.landmarks
+    sol_kalca = (lm[23*4], lm[23*4+1])
+    sol_diz = (lm[25*4], lm[25*4+1])
+    sol_ayak = (lm[27*4], lm[27*4+1])
+    sag_kalca = (lm[24*4], lm[24*4+1])
+    sag_diz = (lm[26*4], lm[26*4+1])
+    sag_ayak = (lm[28*4], lm[28*4+1])
+    sol_diz_aci = calculate_angle(sol_kalca, sol_diz, sol_ayak)
+    sag_diz_aci = calculate_angle(sag_kalca, sag_diz, sag_ayak)
+    ort_diz = (sol_diz_aci + sag_diz_aci) / 2
+    omuz_y = (lm[11*4+1] + lm[12*4+1]) / 2
+    kalca_y = (lm[23*4+1] + lm[24*4+1]) / 2
+    diz_y = (lm[25*4+1] + lm[26*4+1]) / 2
+    kalca_yukari = kalca_y < diz_y and kalca_y < omuz_y + 0.1
+    if 80 <= ort_diz <= 110 and kalca_yukari:
+        durum, skor, mesaj = "İyi Form", 90, "Kalça yeterince yüksekte, diz açısı ideal. Harika pozisyon!"
+    elif not kalca_yukari:
+        durum, skor, mesaj = "Kalça Yeterince Yukarıda Değil", 55, "Kalçanızı daha yüksek kaldırın, düz bir hat oluşturun."
+    else:
+        durum, skor, mesaj = "Diz Açısı Hatalı", 65, f"Diz açısı {int(ort_diz)}°. Hedef 90° olmalı, ayakları ayarlayın."
+    kayit = WorkoutHistory(user_id=current_user.id, hareket_adi="ters_kopru", eminlik_skoru=skor, diz_acisi=int(round(ort_diz)), antrenor_notu=f"{durum}: {mesaj}")
+    db.add(kayit); db.commit(); db.refresh(kayit)
+    return {"kayit_id": kayit.id, "durum": durum, "antrenor_mesaji": mesaj}
 
 
 @router.get("/history", response_model=List[HistoryRead])
@@ -531,3 +643,5 @@ async def delete_history(
     db.delete(kayit)
     db.commit()
     return {"mesaj": "Kayıt silindi."}
+
+    

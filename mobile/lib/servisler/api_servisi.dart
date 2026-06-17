@@ -27,24 +27,36 @@ class ApiServisi {
   static Future<dynamic> getJson(String path) async {
     final baslik = await _basliklar();
     final yanit = await http.get(Uri.parse('$apiUrl$path'), headers: baslik);
+    if (yanit.statusCode >= 400) {
+      throw Exception('GET $path → ${yanit.statusCode}: ${utf8.decode(yanit.bodyBytes)}');
+    }
     return jsonDecode(utf8.decode(yanit.bodyBytes));
   }
 
   static Future<dynamic> postJson(String path, dynamic body) async {
     final baslik = await _basliklar();
     final yanit = await http.post(Uri.parse('$apiUrl$path'), headers: baslik, body: jsonEncode(body));
+    if (yanit.statusCode >= 400) {
+      throw Exception('POST $path → ${yanit.statusCode}: ${utf8.decode(yanit.bodyBytes)}');
+    }
     return jsonDecode(utf8.decode(yanit.bodyBytes));
   }
 
   static Future<dynamic> putJson(String path, dynamic body) async {
     final baslik = await _basliklar();
     final yanit = await http.put(Uri.parse('$apiUrl$path'), headers: baslik, body: jsonEncode(body));
+    if (yanit.statusCode >= 400) {
+      throw Exception('PUT $path → ${yanit.statusCode}: ${utf8.decode(yanit.bodyBytes)}');
+    }
     return jsonDecode(utf8.decode(yanit.bodyBytes));
   }
 
   static Future<void> deleteJson(String path) async {
     final baslik = await _basliklar();
-    await http.delete(Uri.parse('$apiUrl$path'), headers: baslik);
+    final yanit = await http.delete(Uri.parse('$apiUrl$path'), headers: baslik);
+    if (yanit.statusCode >= 400) {
+      throw Exception('DELETE $path → ${yanit.statusCode}: ${utf8.decode(yanit.bodyBytes)}');
+    }
   }
 
   static Future<Map<String, dynamic>> girisYap(String email, String sifre) async {
@@ -53,9 +65,9 @@ class ApiServisi {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'email': email, 'sifre': sifre}),
     );
-    final veri = jsonDecode(utf8.decode(yanit.bodyBytes));
+    final veri = Map<String, dynamic>.from(jsonDecode(utf8.decode(yanit.bodyBytes)));
     if (yanit.statusCode == 403) veri['status_code'] = 403;
-    return Map<String, dynamic>.from(veri);
+    return veri;
   }
 
   static Future<Map<String, dynamic>> kayitOl(String ad, String soyad, String email, String sifre) async {

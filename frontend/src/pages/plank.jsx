@@ -36,6 +36,26 @@ const HAREKETLER = [
     dogruForm: 'Yüzüstü pozisyonda kollar ve bacaklar aynı anda yukarı kaldırılmalı, omurga doğal kavisinde kalmalı, boyun gevşek ve bakış yere doğru olmalı.',
     nasilCalisir: 'Sistem, omuz, kalça ve ayak bileği noktalarını tespit eder; kol ve bacaklarınızın kalçanıza göre ne kadar yukarı kaldırıldığını ölçerek formunuzu değerlendirir.',
   },
+  {
+    id: 'lunge', label: 'Lunge', endpoint: 'lunge',
+    dogruForm: 'Öne adım at, ön diz 90° açıda olsun. Gövden dik, arka diz yere yakın. Ön diz ayak ucunu geçmemeli.',
+    nasilCalisir: 'Ön bacağın kalça-diz-ayak bileği açısı ve gövde eğimi ölçülür.',
+  },
+  {
+    id: 'omuz_acikligi', label: 'Omuz Açıklığı', endpoint: 'omuz-acikligi',
+    dogruForm: 'Kollar tam olarak yanlara, omuz hizasında T şeklinde açık. Her iki kol aynı seviyede.',
+    nasilCalisir: 'Bilek konumları omuz hizasıyla karşılaştırılır, kol açıları ölçülür.',
+  },
+  {
+    id: 'one_egilme', label: 'Öne Eğilme', endpoint: 'one-egilme',
+    dogruForm: 'Ayakta dur, öne doğru eğil. Dizler düz veya hafif bükülü, eller yere mümkün olduğunca yakın.',
+    nasilCalisir: 'Kalça açısı ve ellerin zemine mesafesi ölçülerek esneklik belirlenir.',
+  },
+  {
+    id: 'ters_kopru', label: 'Ters Köprü', endpoint: 'ters-kopru',
+    dogruForm: 'Yere otur, ellerini arkanıza koy, kalçanı yukarı kaldır. Diz açısı ~90°, gövde düz.',
+    nasilCalisir: 'Kalça yüksekliği ve diz açısı ölçülerek form değerlendirilir.',
+  },
 ];
 
 function FotografliAnaliz() {
