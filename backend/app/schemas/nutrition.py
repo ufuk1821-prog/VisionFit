@@ -1,5 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime
+from typing import Optional
 
 class FoodItem(BaseModel):
     anahtar: str
@@ -12,6 +13,7 @@ class MealLogCreate(BaseModel):
     ogun_tipi: str
     besin_anahtari: str
     gram: float
+    tarih: Optional[str] = None
 
 class MealLogRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -29,7 +31,8 @@ class MealLogRead(BaseModel):
 
 class WaterLogCreate(BaseModel):
     miktar_ml: int
-
+    tarih: Optional[str] = None
+    
 class WaterLogRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

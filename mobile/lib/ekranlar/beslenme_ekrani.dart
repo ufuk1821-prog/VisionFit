@@ -60,6 +60,7 @@ class _BeslenmeEkraniState extends State<BeslenmeEkrani> {
         'besin_anahtari': _secilenBesin!['anahtar'],
         'gram': double.parse(_gramController.text),
         'ogun_tipi': _ogunTipi,
+        'tarih': _tarihParam,
       });
       setState(() { _secilenBesin = null; _gramController.clear(); });
       await _yukle();
@@ -67,17 +68,11 @@ class _BeslenmeEkraniState extends State<BeslenmeEkrani> {
   }
 
   Future<void> _suEkle(int ml) async {
-    final bugun = DateTime.now();
-    final secilenBugun = _seciliTarih.year == bugun.year && _seciliTarih.month == bugun.month && _seciliTarih.day == bugun.day;
-    if (!secilenBugun) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sadece bugüne su ekleyebilirsiniz.'), backgroundColor: Color(0xFFE8313F)));
-      return;
-    }
     try {
-      await ApiServisi.postJson('/api/nutrition/water', {'miktar_ml': ml});
+      await ApiServisi.postJson('/api/nutrition/water', {'miktar_ml': ml, 'tarih': _tarihParam});
       await _yukle();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e'), backgroundColor: const Color(0xFFE8313F)));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e'), backgroundColor: const Color(0xFFE8313F)));
     }
   }
 

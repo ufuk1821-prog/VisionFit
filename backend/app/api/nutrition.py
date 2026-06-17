@@ -49,6 +49,14 @@ def add_meal(
     yag_g = round(besin["yag"] * oran, 1)
     kalori = round((protein_g * 4) + (karbonhidrat_g * 4) + (yag_g * 9), 1)
 
+    from datetime import datetime as dt
+    hedef_tarih = dt.now()
+    if data.tarih:
+        try:
+            hedef_tarih = dt.fromisoformat(data.tarih)
+        except ValueError:
+            pass
+
     kayit = MealLog(
         user_id=current_user.id,
         ogun_tipi=data.ogun_tipi,
@@ -59,6 +67,7 @@ def add_meal(
         protein_g=protein_g,
         karbonhidrat_g=karbonhidrat_g,
         yag_g=yag_g,
+        tarih=hedef_tarih,
     )
     db.add(kayit)
     db.commit()
@@ -109,7 +118,15 @@ def add_water(
     if data.miktar_ml <= 0:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Miktar pozitif olmalıdır.")
 
-    kayit = WaterLog(user_id=current_user.id, miktar_ml=data.miktar_ml)
+    from datetime import datetime as dt
+    hedef_tarih = dt.now()
+    if data.tarih:
+        try:
+            hedef_tarih = dt.fromisoformat(data.tarih)
+        except ValueError:
+            pass
+    kayit = WaterLog(user_id=current_user.id, miktar_ml=data.miktar_ml, tarih=hedef_tarih)
+    
     db.add(kayit)
     db.commit()
     db.refresh(kayit)
