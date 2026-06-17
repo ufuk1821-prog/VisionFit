@@ -528,8 +528,7 @@ def test_42_yerel_ai_endpoint_calisıyor():
         assert response.status_code == 200
 
         response = client.post("/api/yerel-ai/defter-analizi", json={
-            "hareket": "Bench Press",
-            "agirliklar": [40, 42.5],
+            "hareketler": [{"hareket": "Bench Press", "agirliklar": [40, 42.5]}]
         }, headers=headers)
         assert response.status_code == 200
 
