@@ -5,8 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'ekranlar/giris_ekrani.dart';
 import 'ekranlar/ana_ekran.dart';
 
-import 'package:webview_flutter_android/webview_flutter_android.dart';
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   WebViewPlatform.instance ??= AndroidWebViewPlatform();

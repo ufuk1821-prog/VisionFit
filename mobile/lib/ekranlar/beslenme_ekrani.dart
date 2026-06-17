@@ -13,6 +13,7 @@ class _BeslenmeEkraniState extends State<BeslenmeEkrani> {
   List _besinler = [];
   List _ogunler = [];
   List _suKayitlari = [];
+  DateTime _seciliTarih = DateTime.now();
   String _aramaMetni = '';
   String _ogunTipi = 'kahvalti';
   Map<String, dynamic>? _secilenBesin;
@@ -37,8 +38,9 @@ class _BeslenmeEkraniState extends State<BeslenmeEkrani> {
 
   Future<void> _yukle() async {
     final besinler = await ApiServisi.getJson('/api/nutrition/foods');
-    final ogunler = await ApiServisi.getJson('/api/nutrition/meals/today');
-    final su = await ApiServisi.getJson('/api/nutrition/water/today');
+    final tarihStr = '${_seciliTarih.year}-${_seciliTarih.month.toString().padLeft(2, '0')}-${_seciliTarih.day.toString().padLeft(2, '0')}';
+    final ogunler = await ApiServisi.getJson('/api/nutrition/meals/today?tarih=$tarihStr');
+    final su = await ApiServisi.getJson('/api/nutrition/water/today?tarih=$tarihStr');
     setState(() {
       _besinler = besinler is List ? besinler : [];
       _ogunler = ogunler is List ? ogunler : [];
@@ -93,6 +95,38 @@ class _BeslenmeEkraniState extends State<BeslenmeEkrani> {
     );
   }
 
+  Widget _tarihSecici() {
+    final bugun = DateTime.now();
+    final dun = bugun.subtract(const Duration(days: 1));
+    String etiket = '${_seciliTarih.day}.${_seciliTarih.month}.${_seciliTarih.year}';
+    if (_seciliTarih.year == bugun.year && _seciliTarih.month == bugun.month && _seciliTarih.day == bugun.day) etiket = 'Bugün';
+    if (_seciliTarih.year == dun.year && _seciliTarih.month == dun.month && _seciliTarih.day == dun.day) etiket = 'Dün';
+
+    return GestureDetector(
+      onTap: () async {
+        final secilen = await showDatePicker(
+          context: context,
+          initialDate: _seciliTarih,
+          firstDate: DateTime(2020),
+          lastDate: DateTime.now(),
+          builder: (ctx, child) => Theme(data: ThemeData.dark().copyWith(colorScheme: const ColorScheme.dark(primary: Color(0xFFE8313F))), child: child!),
+        );
+        if (secilen != null) { setState(() { _seciliTarih = secilen; }); _yukle(); }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(color: const Color(0xFF1A1A1A), borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFF333333))),
+        child: Row(children: [
+          const Icon(Icons.calendar_today_outlined, color: Color(0xFFE8313F), size: 16),
+          const SizedBox(width: 8),
+          Text(etiket, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+          const Spacer(),
+          const Icon(Icons.expand_more, color: Color(0xFF888888), size: 16),
+        ]),
+      ),
+    );
+  }
+
   Widget _sekmeButonu(String label, int index) {
     return Expanded(child: GestureDetector(
       onTap: () => setState(() { _aktifSekme = index; }),
@@ -115,6 +149,9 @@ class _BeslenmeEkraniState extends State<BeslenmeEkrani> {
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         const Text('Beslenme Takibi', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)),
         const SizedBox(height: 8),
+        const SizedBox(height: 12),
+          _tarihSecici(),
+          const SizedBox(height: 8),
         const SizedBox(height: 8),
           Row(children: [
             Expanded(child: _makroOzet('Kalori', '${toplam.round()} kcal', const Color(0xFFE8313F))),
@@ -199,6 +236,9 @@ class _BeslenmeEkraniState extends State<BeslenmeEkrani> {
       padding: const EdgeInsets.all(16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         const Text('Su Takibi', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 12),
+          _tarihSecici(),
+          const SizedBox(height: 8),
         const SizedBox(height: 24),
         Center(child: Stack(alignment: Alignment.center, children: [
           SizedBox(width: 180, height: 180, child: CircularProgressIndicator(value: yuzde, strokeWidth: 12, backgroundColor: const Color(0xFF333333), color: const Color(0xFF3B82F6))),

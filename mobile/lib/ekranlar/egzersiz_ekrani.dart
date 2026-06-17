@@ -119,6 +119,7 @@ class _EgzersizEkraniState extends State<EgzersizEkrani> with SingleTickerProvid
   late TabController _tabController;
   String _seciliGrup = 'ust_gogus';
   Map<String, String>? _seciliEgzersiz;
+  bool _onGoster = true;
   WebViewController? _onWebController;
   WebViewController? _arkaWebController;
 
@@ -306,12 +307,43 @@ setSelected('');
           const Text('Kas grubuna tıklayarak hareketleri görün.', style: TextStyle(color: Color(0xFF888888), fontSize: 13)),
           const SizedBox(height: 16),
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _diyagramPanel('Ön', _onWebController, true),
-              const SizedBox(width: 12),
-              _diyagramPanel('Arka', _arkaWebController, false),
+              Expanded(child: GestureDetector(
+                onTap: () => setState(() { _onGoster = true; }),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  decoration: BoxDecoration(
+                    color: _onGoster ? const Color(0xFFE8313F) : const Color(0xFF1A1A1A),
+                    borderRadius: const BorderRadius.horizontal(left: Radius.circular(10)),
+                    border: Border.all(color: const Color(0xFFE8313F)),
+                  ),
+                  child: Text('Ön', textAlign: TextAlign.center, style: TextStyle(color: _onGoster ? Colors.white : const Color(0xFFE8313F), fontWeight: FontWeight.w600)),
+                ),
+              )),
+              Expanded(child: GestureDetector(
+                onTap: () => setState(() { _onGoster = false; }),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  decoration: BoxDecoration(
+                    color: !_onGoster ? const Color(0xFFE8313F) : const Color(0xFF1A1A1A),
+                    borderRadius: const BorderRadius.horizontal(right: Radius.circular(10)),
+                    border: Border.all(color: const Color(0xFFE8313F)),
+                  ),
+                  child: Text('Arka', textAlign: TextAlign.center, style: TextStyle(color: !_onGoster ? Colors.white : const Color(0xFFE8313F), fontWeight: FontWeight.w600)),
+                ),
+              )),
             ],
+          ),
+          const SizedBox(height: 16),
+          Container(
+            height: 380,
+            decoration: BoxDecoration(color: const Color(0xFF1A1A1A), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFF333333))),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: _onGoster
+                  ? (_onWebController != null ? WebViewWidget(controller: _onWebController!) : const SizedBox())
+                  : (_arkaWebController != null ? WebViewWidget(controller: _arkaWebController!) : const SizedBox()),
+            ),
           ),
           const SizedBox(height: 16),
           Container(

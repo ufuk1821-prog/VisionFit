@@ -84,9 +84,11 @@ class _DefterEkraniState extends State<DefterEkrani> {
       await ApiServisi.putJson('/api/workout-notes/$_tarihStr', kayitlar);
       setState(() { _kaydedildiMesaj = 'Kaydedildi!'; });
       await _tarihleriYukle();
-    } catch (_) {
-      setState(() { _kaydedildiMesaj = 'Kayıt başarısız.'; });
-    } finally {
+    } catch (e) {
+      debugPrint('KAYIT HATA: $e');
+      setState(() { _kaydedildiMesaj = 'Kayıt başarısız: $e'; });
+    }
+    finally {
       setState(() { _kaydediliyor = false; });
     }
   }
