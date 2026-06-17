@@ -1,3 +1,4 @@
+import '../main.dart';
 import 'package:flutter/material.dart';
 import '../servisler/api_servisi.dart';
 import 'giris_ekrani.dart';
@@ -62,6 +63,7 @@ class _AyarlarEkraniState extends State<AyarlarEkrani> {
         children: [
           const Text('Ayarlar', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)),
           const SizedBox(height: 20),
+          _temaKarti(),
           _sifreDegistirKarti(),
           const SizedBox(height: 16),
           _hesapSilKarti(),
@@ -70,7 +72,31 @@ class _AyarlarEkraniState extends State<AyarlarEkrani> {
       ),
     );
   }
-
+  Widget _temaKarti() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: const Color(0xFF1A1A1A), borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFF333333))),
+      child: Row(children: [
+        const Icon(Icons.palette_outlined, color: Color(0xFFE8313F), size: 20),
+        const SizedBox(width: 8),
+        const Expanded(child: Text('Tema', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700))),
+        GestureDetector(
+          onTap: () {
+            final app = VisionFitApp.of(context);
+          if (app != null) {
+            app.temaDegistir(app.themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark);
+          }
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(color: const Color(0xFFE8313F).withOpacity(0.15), borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFFE8313F))),
+            child: const Text('Temayı Değiştir', style: TextStyle(color: Color(0xFFE8313F), fontSize: 13, fontWeight: FontWeight.w600)),
+          ),
+        ),
+      ]),
+    );
+  }
   Widget _sifreDegistirKarti() {
     return Container(
       padding: const EdgeInsets.all(16),

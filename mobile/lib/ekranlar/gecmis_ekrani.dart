@@ -97,9 +97,15 @@ class _GecmisEkraniState extends State<GecmisEkrani> {
             _analizKarti(),
             const SizedBox(height: 16),
             if (liste.isEmpty)
-              const Center(child: Padding(
-                padding: EdgeInsets.all(32),
-                child: Text('Henüz antrenman kaydı yok.', style: TextStyle(color: Color(0xFF888888))),
+              Center(child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(children: [
+                  const Icon(Icons.fitness_center_outlined, color: Color(0xFF444444), size: 56),
+                  const SizedBox(height: 16),
+                  const Text('Henüz antrenman kaydı yok', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 8),
+                  const Text('Kamera veya fotoğraflı analiz yaparak ilk kaydını oluştur.', style: TextStyle(color: Color(0xFF888888), fontSize: 13), textAlign: TextAlign.center),
+                ]),
               ))
             else
               ...liste.map((k) => _kayitKarti(k)),
@@ -189,7 +195,7 @@ class _GecmisEkraniState extends State<GecmisEkrani> {
     final id = kayit['id'] as int;
     final hareket = kayit['hareket_adi'] as String? ?? '';
     final etiket = hareketEtiketler[hareket] ?? hareket;
-    final skor = kayit['eminlik_skoru'] as int? ?? 0;
+    final skor = (kayit['eminlik_skoru'] as num?)?.toInt() ?? 0;
     final not = kayit['antrenor_notu'] as String? ?? '';
     final tarih = DateTime.tryParse(kayit['tarih'] ?? '');
     final acik = _acikKart == id;
@@ -241,8 +247,8 @@ class _GecmisEkraniState extends State<GecmisEkrani> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Divider(color: Color(0xFF333333)),
-                    if (!aciGostermeyenHareketler.contains(hareket))
-                      _detayItem('Ortalama Diz Açısı', '${(kayit['diz_acisi'] as num?)?.round() ?? '-'}°'),
+                    if (!aciGostermeyenHareketler.contains(hareket) && kayit['diz_acisi'] != null)
+                      _detayItem('Ortalama Diz Açısı', '${(kayit['diz_acisi'] as num?)?.round() ?? 0}°'),
                     _detayItem('Skor', '$skor%'),
                     if (not.isNotEmpty) _detayItem('Antrenör Notu', not),
                   ],

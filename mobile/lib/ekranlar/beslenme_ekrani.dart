@@ -48,13 +48,15 @@ class _BeslenmeEkraniState extends State<BeslenmeEkrani> {
 
   Future<void> _ogunEkle() async {
     if (_secilenBesin == null || _gramController.text.isEmpty) return;
-    await ApiServisi.postJson('/api/nutrition/meals', {
-      'besin_id': _secilenBesin!['id'],
-      'miktar_gram': double.parse(_gramController.text),
-      'ogun_tipi': _ogunTipi,
-    });
-    setState(() { _secilenBesin = null; _gramController.clear(); });
-    await _yukle();
+    try {
+      await ApiServisi.postJson('/api/nutrition/meals', {
+        'besin_anahtari': _secilenBesin!['anahtar'],
+        'gram': double.parse(_gramController.text),
+        'ogun_tipi': _ogunTipi,
+      });
+      setState(() { _secilenBesin = null; _gramController.clear(); });
+      await _yukle();
+    } catch (e) {}
   }
 
   Future<void> _suEkle(int ml) async {
@@ -80,6 +82,16 @@ class _BeslenmeEkraniState extends State<BeslenmeEkrani> {
       Expanded(child: _aktifSekme == 0 ? _yemekEkrani() : _suEkrani()),
     ]);
   }
+  Widget _makroOzet(String baslik, String deger, Color renk) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+      decoration: BoxDecoration(color: renk.withOpacity(0.1), borderRadius: BorderRadius.circular(10), border: Border.all(color: renk.withOpacity(0.3))),
+      child: Column(children: [
+        Text(deger, style: TextStyle(color: renk, fontSize: 14, fontWeight: FontWeight.w700)),
+        Text(baslik, style: const TextStyle(color: Color(0xFF888888), fontSize: 10)),
+      ]),
+    );
+  }
 
   Widget _sekmeButonu(String label, int index) {
     return Expanded(child: GestureDetector(
@@ -103,8 +115,17 @@ class _BeslenmeEkraniState extends State<BeslenmeEkrani> {
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         const Text('Beslenme Takibi', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)),
         const SizedBox(height: 8),
-        Text('Günlük Toplam: ${toplam.round()} kcal', style: const TextStyle(color: Color(0xFF888888), fontSize: 13)),
-        const SizedBox(height: 16),
+        const SizedBox(height: 8),
+          Row(children: [
+            Expanded(child: _makroOzet('Kalori', '${toplam.round()} kcal', const Color(0xFFE8313F))),
+            const SizedBox(width: 8),
+            Expanded(child: _makroOzet('Protein', '${_ogunler.fold<double>(0, (s, o) => s + (o['protein_g'] as num? ?? 0)).round()} g', const Color(0xFF3B82F6))),
+            const SizedBox(width: 8),
+            Expanded(child: _makroOzet('Karb', '${_ogunler.fold<double>(0, (s, o) => s + (o['karbonhidrat_g'] as num? ?? 0)).round()} g', const Color(0xFF10B981))),
+            const SizedBox(width: 8),
+            Expanded(child: _makroOzet('Yağ', '${_ogunler.fold<double>(0, (s, o) => s + (o['yag_g'] as num? ?? 0)).round()} g', const Color(0xFFF59E0B))),
+          ]),
+          const SizedBox(height: 16),
         TextField(
           onChanged: (v) => setState(() { _aramaMetni = v; }),
           style: const TextStyle(color: Colors.white),
@@ -133,11 +154,22 @@ class _BeslenmeEkraniState extends State<BeslenmeEkrani> {
           ...filtreliBesinler.map((b) => ListTile(
             title: Text(b['ad'] ?? '', style: const TextStyle(color: Colors.white, fontSize: 13)),
             subtitle: Text('${b['kalori_per_100g']} kcal/100g', style: const TextStyle(color: Color(0xFF888888), fontSize: 11)),
-            onTap: () => setState(() { _secilenBesin = Map<String, dynamic>.from(b); _aramaMetni = ''; }),
+            onTap: () => setState(() { _secilenBesin = Map<String, dynamic>.from(b); _aramaMetni = ''; _gramController.clear(); }),
             tileColor: const Color(0xFF1A1A1A),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           )),
         ],
+        if (_ogunler.isEmpty)
+            Center(child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(children: [
+                const Icon(Icons.restaurant_menu_outlined, color: Color(0xFF444444), size: 48),
+                const SizedBox(height: 12),
+                const Text('Bugün öğün eklenmedi', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 6),
+                const Text('Yukarıdan besin arayarak öğün ekleyebilirsin.', style: TextStyle(color: Color(0xFF888888), fontSize: 13), textAlign: TextAlign.center),
+              ]),
+            )),
         if (_ogunler.isNotEmpty) ...[
           const SizedBox(height: 16),
           const Text('Bugünkü Öğünler', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),

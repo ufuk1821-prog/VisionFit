@@ -42,6 +42,16 @@ class _RozetlerEkraniState extends State<RozetlerEkrani> {
   @override
   Widget build(BuildContext context) {
     if (_yukleniyor) return const Center(child: CircularProgressIndicator(color: Color(0xFFE8313F)));
+    if (_rozetler.isEmpty) return const Center(child: Padding(
+      padding: EdgeInsets.all(32),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Icon(Icons.military_tech_outlined, color: Color(0xFF444444), size: 56),
+        SizedBox(height: 16),
+        Text('Henüz rozet kazanılmadı', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+        SizedBox(height: 8),
+        Text('Antrenman yaparak rozetleri kazanmaya başla.', style: TextStyle(color: Color(0xFF888888), fontSize: 13), textAlign: TextAlign.center),
+      ]),
+    ));
 
     final kazanilan = _rozetler.where((r) => r['kazanildi'] == true).length;
 

@@ -30,13 +30,13 @@ class ApiServisi {
     return jsonDecode(utf8.decode(yanit.bodyBytes));
   }
 
-  static Future<dynamic> postJson(String path, Map<String, dynamic> body) async {
+  static Future<dynamic> postJson(String path, dynamic body) async {
     final baslik = await _basliklar();
     final yanit = await http.post(Uri.parse('$apiUrl$path'), headers: baslik, body: jsonEncode(body));
     return jsonDecode(utf8.decode(yanit.bodyBytes));
   }
 
-  static Future<dynamic> putJson(String path, Map<String, dynamic> body) async {
+  static Future<dynamic> putJson(String path, dynamic body) async {
     final baslik = await _basliklar();
     final yanit = await http.put(Uri.parse('$apiUrl$path'), headers: baslik, body: jsonEncode(body));
     return jsonDecode(utf8.decode(yanit.bodyBytes));
