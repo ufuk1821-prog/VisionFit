@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from typing import List
+from typing import List, Optional
 from app.core.database import get_db
 from app.core.security import get_current_user
 from app.models.user import User
@@ -67,12 +67,21 @@ def add_meal(
 
 @router.get("/meals/today", response_model=List[MealLogRead])
 def get_today_meals(
+    tarih: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    from datetime import date as date_type
+    if tarih:
+        try:
+            hedef_tarih = date_type.fromisoformat(tarih)
+        except ValueError:
+            hedef_tarih = date_type.today()
+    else:
+        hedef_tarih = date_type.today()
     return (
         db.query(MealLog)
-        .filter(MealLog.user_id == current_user.id, func.date(MealLog.tarih) == func.current_date())
+        .filter(MealLog.user_id == current_user.id, func.date(MealLog.tarih) == hedef_tarih)
         .order_by(MealLog.tarih.asc())
         .all()
     )
@@ -108,12 +117,21 @@ def add_water(
 
 @router.get("/water/today", response_model=List[WaterLogRead])
 def get_today_water(
+    tarih: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    from datetime import date as date_type
+    if tarih:
+        try:
+            hedef_tarih = date_type.fromisoformat(tarih)
+        except ValueError:
+            hedef_tarih = date_type.today()
+    else:
+        hedef_tarih = date_type.today()
     return (
         db.query(WaterLog)
-        .filter(WaterLog.user_id == current_user.id, func.date(WaterLog.tarih) == func.current_date())
+        .filter(WaterLog.user_id == current_user.id, func.date(WaterLog.tarih) == hedef_tarih)
         .order_by(WaterLog.tarih.asc())
         .all()
     )

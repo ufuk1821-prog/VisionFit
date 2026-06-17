@@ -187,9 +187,11 @@ class _DefterEkraniState extends State<DefterEkrani> {
                 ),
               );
               if (secilen != null) {
-                setState(() { _seciliTarih = secilen; _tarihlerAcik = false; });
-                _yukle();
-              }
+          _seciliTarih = secilen;
+          _tarihlerAcik = false;
+          setState(() {});
+          _yukle();
+        }
             },
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -254,7 +256,9 @@ class _DefterEkraniState extends State<DefterEkrani> {
               onTap: () {
                 final t = DateTime.tryParse(tarih);
                 if (t != null) {
-                  setState(() { _seciliTarih = t; _tarihlerAcik = false; });
+                  _seciliTarih = t;
+                  _tarihlerAcik = false;
+                  setState(() {});
                   _yukle();
                 }
               },
