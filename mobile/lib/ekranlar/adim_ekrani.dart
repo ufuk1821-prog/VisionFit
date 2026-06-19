@@ -200,19 +200,20 @@ class _AdimEkraniState extends State<AdimEkrani> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(color: kSurfaceLow(context), borderRadius: BorderRadius.circular(16), border: Border.all(color: kBorderAlt(context))),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text('BUGÜNKÜ ADIMLAR', style: kLabel(context)),
             const SizedBox(height: 4),
-            Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-              Text('$toplamAdim', style: kHeadline(context, size: 40, weight: FontWeight.w900, color: kRed)),
+            Row(crossAxisAlignment: CrossAxisAlignment.end, mainAxisSize: MainAxisSize.min, children: [
+              Flexible(child: FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.bottomLeft, child: Text('$toplamAdim', style: kHeadline(context, size: 40, weight: FontWeight.w900, color: kRed)))),
               const SizedBox(width: 6),
               Padding(padding: const EdgeInsets.only(bottom: 6), child: Text('/ $hedef', style: kBody(context, size: 14, color: kHint(context)))),
             ]),
-          ]),
-          SizedBox(width: 72, height: 72, child: Stack(alignment: Alignment.center, children: [
+          ])),
+          const SizedBox(width: 12),
+          SizedBox(width: 64, height: 64, child: Stack(alignment: Alignment.center, children: [
             CircularProgressIndicator(value: yuzde, strokeWidth: 6, backgroundColor: kBorder(context), color: kRed),
-            Text('%${(yuzde * 100).round()}', style: kLabel(context, size: 10, color: kRed)),
+            Text('%${(yuzde * 100).round()}', style: kLabel(context, size: 9, color: kRed)),
           ])),
         ]),
         const SizedBox(height: 16),

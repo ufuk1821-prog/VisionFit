@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
@@ -53,11 +54,21 @@ class _FotografEkraniState extends State<FotografEkrani> {
         setState(() { _hata = 'Fotoğrafta vücut tespit edilemedi. Lütfen tüm vücudunuzun göründüğü, yandan çekilmiş bir fotoğraf yükleyin.'; _yukleniyor = false; });
         return;
       }
+      final boyutBytes = await _foto!.readAsBytes();
+      final codec = await ui.instantiateImageCodec(boyutBytes);
+      final frame = await codec.getNextFrame();
+      final genislik = frame.image.width.toDouble();
+      final yukseklik = frame.image.height.toDouble();
+
       final pose = poses.first;
       final landmarks = <double>[];
       for (int i = 0; i < 33; i++) {
         final lm = pose.landmarks[PoseLandmarkType.values[i]];
-        landmarks.addAll(lm != null ? [lm.x, lm.y, lm.z, lm.likelihood] : [0.0, 0.0, 0.0, 0.0]);
+        if (lm != null) {
+          landmarks.addAll([lm.x / genislik, lm.y / yukseklik, lm.z / genislik, lm.likelihood]);
+        } else {
+          landmarks.addAll([0.0, 0.0, 0.0, 0.0]);
+        }
       }
       final yanit = await ApiServisi.postJson('/api/analyze/${_hareket['endpoint']}', {'landmarks': landmarks});
       setState(() { _sonuc = Map<String, dynamic>.from(yanit); });

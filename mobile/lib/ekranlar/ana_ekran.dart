@@ -36,7 +36,7 @@ class AnaEkranState extends State<AnaEkran> {
   Widget _sayfaGetir() {
     switch (_aktifSayfa) {
       case 'ana': return AnaSayfaIcerik(sayfayaGit: sayfayaGit);
-      case 'kamera': return const KameraEkrani();
+      case 'kamera': return KameraEkrani(geriDon: () => sayfayaGit('ana'));
       case 'fotograf': return const FotografEkrani();
       case 'gecmis': return const GecmisEkrani();
       case 'egzersiz': return const EgzersizEkrani();

@@ -11,7 +11,8 @@ import '../tema.dart';
 import '../servisler/api_servisi.dart';
 
 class KameraEkrani extends StatefulWidget {
-  const KameraEkrani({super.key});
+  final VoidCallback? geriDon;
+  const KameraEkrani({super.key, this.geriDon});
   @override
   State<KameraEkrani> createState() => _KameraEkraniState();
 }
@@ -32,6 +33,7 @@ class _KameraEkraniState extends State<KameraEkrani> with SingleTickerProviderSt
       appBar: AppBar(
         backgroundColor: kSurfaceLow(context),
         elevation: 0,
+        leading: IconButton(icon: Icon(Icons.arrow_back, color: kText(context)), onPressed: () => widget.geriDon?.call()),
         title: Text('Kamera Analizi', style: kHeadline(context, size: 18, weight: FontWeight.w700)),
         iconTheme: IconThemeData(color: kText(context)),
         bottom: TabBar(
@@ -121,11 +123,21 @@ class _CanliAnalizSekmeState extends State<_CanliAnalizSekme> {
       final foto = await _controller!.takePicture();
       final poses = await _poseDetector.processImage(InputImage.fromFilePath(foto.path));
       if (poses.isNotEmpty) {
+        final boyutBytes = await File(foto.path).readAsBytes();
+        final codec = await ui.instantiateImageCodec(boyutBytes);
+        final frame = await codec.getNextFrame();
+        final genislik = frame.image.width.toDouble();
+        final yukseklik = frame.image.height.toDouble();
+
         final pose = poses.first;
         final lms = <double>[];
         for (int i = 0; i < 33; i++) {
           final lm = pose.landmarks[PoseLandmarkType.values[i]];
-          lms.addAll(lm != null ? [lm.x, lm.y, lm.z, lm.likelihood] : [0.0, 0.0, 0.0, 0.0]);
+          if (lm != null) {
+            lms.addAll([lm.x / genislik, lm.y / yukseklik, lm.z / genislik, lm.likelihood]);
+          } else {
+            lms.addAll([0.0, 0.0, 0.0, 0.0]);
+          }
         }
         if (mounted) setState(() { _kareler.add(lms); _toplananKare++; });
       }
@@ -371,11 +383,17 @@ class _VideoAnalizSekmeState extends State<_VideoAnalizSekme> {
 
               final poses = await _poseDetector.processImage(InputImage.fromFilePath(dosyaYolu));
               if (poses.isNotEmpty) {
+                final genislik = image.width.toDouble();
+                final yukseklik = image.height.toDouble();
                 final pose = poses.first;
                 final lms = <double>[];
                 for (int j = 0; j < 33; j++) {
                   final lm = pose.landmarks[PoseLandmarkType.values[j]];
-                  lms.addAll(lm != null ? [lm.x, lm.y, lm.z, lm.likelihood] : [0.0, 0.0, 0.0, 0.0]);
+                  if (lm != null) {
+                    lms.addAll([lm.x / genislik, lm.y / yukseklik, lm.z / genislik, lm.likelihood]);
+                  } else {
+                    lms.addAll([0.0, 0.0, 0.0, 0.0]);
+                  }
                 }
                 kareler.add(lms);
               }
