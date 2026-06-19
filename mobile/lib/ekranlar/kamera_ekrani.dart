@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:video_thumbnail/video_thumbnail.dart';
+import 'package:video_thumbnail/video_thumbnail.dart' as vt;
 import 'package:video_player/video_player.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
@@ -351,10 +351,10 @@ class _VideoAnalizSekmeState extends State<_VideoAnalizSekme> {
       for (int i = 0; i < toplamKareSayisi; i++) {
         final zamanMs = ((sureMs - 200) * i / (toplamKareSayisi - 1)).round().clamp(0, sureMs);
         try {
-          final kareYolu = await VideoThumbnail.thumbnailFile(
+          final kareYolu = await vt.VideoThumbnail.thumbnailFile(
             video: _video!.path,
             thumbnailPath: geciciKlasor.path,
-            imageFormat: ImageFormat.jpeg,
+            imageFormat: vt.ImageFormat.JPEG,
             timeMs: zamanMs,
             quality: 80,
           );

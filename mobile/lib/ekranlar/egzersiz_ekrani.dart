@@ -134,14 +134,6 @@ const Map<String, String> _slugToKas = {
   'abductor': 'kalca', 'calves': 'baldir', 'knees': 'baldir',
 };
 
-const Map<String, String> _kasToSlug = {
-  'ust_gogus': 'chest', 'alt_gogus': 'chest', 'sirt_kanat': 'upper-back',
-  'trapez': 'trapezius', 'alt_sirt': 'lower-back', 'on_omuz': 'front-deltoids',
-  'yan_omuz': 'front-deltoids', 'arka_omuz': 'back-deltoids', 'biceps': 'biceps',
-  'triceps': 'triceps', 'on_kol': 'forearm', 'core': 'abs', 'quadriceps': 'quadriceps',
-  'hamstring': 'hamstring', 'kalca': 'gluteal', 'baldir': 'calves',
-};
-
 class EgzersizEkrani extends StatefulWidget {
   const EgzersizEkrani({super.key});
   @override
