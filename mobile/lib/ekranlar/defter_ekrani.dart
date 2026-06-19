@@ -238,6 +238,7 @@ class _DefterEkraniState extends State<DefterEkrani> {
 
   Widget _tablo(BuildContext context) {
     return Container(
+      key: ValueKey(_tarihStr),
       decoration: BoxDecoration(color: kSurfaceLow(context), borderRadius: BorderRadius.circular(12), border: Border.all(color: kBorderAlt(context))),
       child: Column(children: [
         Container(
@@ -279,6 +280,7 @@ class _DefterEkraniState extends State<DefterEkrani> {
 
   Widget _input(BuildContext context, int satirIndex, String alan, String hint, {bool sayi = false}) {
     return TextFormField(
+      key: ValueKey('$_tarihStr$satirIndex$alan'),
       initialValue: _satirlar[satirIndex][alan] ?? '',
       keyboardType: sayi ? TextInputType.number : TextInputType.text,
       style: kBody(context, size: 12, color: kText(context)),

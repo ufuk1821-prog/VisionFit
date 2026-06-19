@@ -619,12 +619,24 @@ async def analyze_ters_kopru(data: PoseData, db: Session = Depends(get_db), curr
 
 @router.get("/history", response_model=List[HistoryRead])
 async def get_history(
+    sayfa: int = 1,
+    sayfa_boyutu: int = 20,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
-    return db.query(WorkoutHistory).filter(
+    sorgu = db.query(WorkoutHistory).filter(
         WorkoutHistory.user_id == current_user.id
-    ).order_by(WorkoutHistory.tarih.desc()).all()
+    ).order_by(WorkoutHistory.tarih.desc())
+    return sorgu.offset((sayfa - 1) * sayfa_boyutu).limit(sayfa_boyutu).all()
+
+
+@router.get("/history/sayim")
+async def get_history_sayim(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    toplam = db.query(WorkoutHistory).filter(WorkoutHistory.user_id == current_user.id).count()
+    return {"toplam": toplam}
 
 @router.delete("/history/{kayit_id}")
 async def delete_history(

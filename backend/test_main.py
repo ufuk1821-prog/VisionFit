@@ -815,3 +815,19 @@ def test_59_ters_kopru_endpoint():
     response = client.post("/api/analyze/ters-kopru", json={"landmarks": landmarks}, headers=headers)
     assert response.status_code in [200, 400]
 
+def test_60_session_note_kaydet_getir():
+    token = get_token("test@test.com")
+    headers = {"Authorization": f"Bearer {token}"}
+    tarih = "2026-06-19"
+    response = client.put(f"/api/workout-notes/session/{tarih}", json={"oncelikli_odak": "Form calismasi", "rpe": 7, "uyku_kalitesi": "iyi"}, headers=headers)
+    assert response.status_code == 200
+    assert response.json()["rpe"] == 7
+    response = client.get(f"/api/workout-notes/session/{tarih}", headers=headers)
+    assert response.status_code == 200
+
+def test_61_pr_listesi():
+    token = get_token("test@test.com")
+    headers = {"Authorization": f"Bearer {token}"}
+    response = client.get("/api/workout-notes/pr-listesi", headers=headers)
+    assert response.status_code == 200
+    assert isinstance(response.json(), list)
