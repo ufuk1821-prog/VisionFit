@@ -1,28 +1,33 @@
 import 'package:flutter/material.dart';
+import '../tema.dart';
 import '../servisler/api_servisi.dart';
 import 'ana_ekran.dart';
 import 'kayit_ekrani.dart';
 
 class GirisEkrani extends StatefulWidget {
   const GirisEkrani({super.key});
-
   @override
   State<GirisEkrani> createState() => _GirisEkraniState();
 }
 
 class _GirisEkraniState extends State<GirisEkrani> {
-  final _emailController = TextEditingController();
-  final _sifreController = TextEditingController();
+  final _emailCtrl = TextEditingController();
+  final _sifreCtrl = TextEditingController();
   bool _yukleniyor = false;
   bool _dogrulamaGerekli = false;
   bool _yenidenGonderiyor = false;
+  bool _sifreGizli = true;
   String _hata = '';
   String _yenidenGonderiMesaj = '';
 
   Future<void> _girisYap() async {
+    if (_emailCtrl.text.trim().isEmpty || _sifreCtrl.text.isEmpty) {
+      setState(() { _hata = 'Email ve şifre boş bırakılamaz.'; });
+      return;
+    }
     setState(() { _yukleniyor = true; _hata = ''; _dogrulamaGerekli = false; _yenidenGonderiMesaj = ''; });
     try {
-      final yanit = await ApiServisi.girisYap(_emailController.text.trim(), _sifreController.text);
+      final yanit = await ApiServisi.girisYap(_emailCtrl.text.trim(), _sifreCtrl.text);
       if (yanit.containsKey('token')) {
         await ApiServisi.tokenKaydet(yanit['token']);
         if (!mounted) return;
@@ -30,10 +35,10 @@ class _GirisEkraniState extends State<GirisEkrani> {
       } else if (yanit['status_code'] == 403) {
         setState(() { _hata = yanit['detail'] ?? ''; _dogrulamaGerekli = true; });
       } else {
-        setState(() { _hata = 'Giriş başarısız. Email veya şifre hatalı.'; });
+        setState(() { _hata = 'Email veya şifre hatalı.'; });
       }
-    } catch (e) {
-      setState(() { _hata = 'Giriş başarısız. Email veya şifre hatalı.'; });
+    } catch (_) {
+      setState(() { _hata = 'Bağlantı hatası. 30 saniye bekleyip tekrar deneyin.'; });
     } finally {
       setState(() { _yukleniyor = false; });
     }
@@ -42,9 +47,9 @@ class _GirisEkraniState extends State<GirisEkrani> {
   Future<void> _yenidenGonder() async {
     setState(() { _yenidenGonderiyor = true; _yenidenGonderiMesaj = ''; });
     try {
-      final yanit = await ApiServisi.dogrulamaYenidenGonder(_emailController.text.trim());
+      final yanit = await ApiServisi.dogrulamaYenidenGonder(_emailCtrl.text.trim());
       setState(() { _yenidenGonderiMesaj = yanit['mesaj'] ?? 'Gönderildi.'; });
-    } catch (e) {
+    } catch (_) {
       setState(() { _yenidenGonderiMesaj = 'Bir hata oluştu, tekrar deneyin.'; });
     } finally {
       setState(() { _yenidenGonderiyor = false; });
@@ -54,179 +59,162 @@ class _GirisEkraniState extends State<GirisEkrani> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0F0F),
+      backgroundColor: kBg(context),
       body: Stack(
         children: [
-          SafeArea(
-            child: Row(
-              children: [
-                if (MediaQuery.of(context).size.width > 600) _solPanel(),
-                Expanded(child: _formPanel()),
-              ],
-            ),
-          ),
-          if (_yukleniyor)
-            Positioned(
-              top: 0, left: 0, right: 0,
-              child: Material(
-                color: const Color(0xFFE8313F),
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8),
-                  child: Text('Sunucu uyandırılıyor, lütfen bekleyin...', style: TextStyle(color: Colors.white, fontSize: 13), textAlign: TextAlign.center),
-                ),
+          Positioned(
+            top: 0, right: 0,
+            child: Container(
+              width: 400, height: 400,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(colors: [kRed.withOpacity(0.05), Colors.transparent]),
               ),
             ),
-        ],
-      ),
-    );
-  }
-
-  Widget _solPanel() {
-    return Container(
-      width: 320,
-      color: const Color(0xFF1A1A1A),
-      padding: const EdgeInsets.all(32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 56, height: 56,
-            decoration: BoxDecoration(color: const Color(0xFFE8313F), borderRadius: BorderRadius.circular(12)),
-            child: Image.asset('assets/logo.png', width: 56, height: 56),
           ),
-          const SizedBox(height: 24),
-          const Text('En İyi Haline Ulaş', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 12),
-          const Text('Yapay zeka destekli antrenman analizi, kişiye özel diyet planı ve gelişim takibi tek platformda.', style: TextStyle(color: Color(0xFF888888), fontSize: 14, height: 1.6)),
-          const SizedBox(height: 32),
-          _ozellikItem(Icons.fitness_center_outlined, 'Kamera ile Form Analizi'),
-          _ozellikItem(Icons.restaurant_menu_outlined, 'Kişiye Özel Diyet Önerisi'),
-          _ozellikItem(Icons.directions_walk_outlined, 'Adım ve Aktivite Takibi'),
-          _ozellikItem(Icons.bar_chart_outlined, 'Gelişim Grafikleri'),
-        ],
-      ),
-    );
-  }
-
-  Widget _ozellikItem(IconData ikon, String baslik) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        children: [
-          Icon(ikon, color: const Color(0xFFE8313F), size: 18),
-          const SizedBox(width: 10),
-          Text(baslik, style: const TextStyle(color: Color(0xFFCCCCCC), fontSize: 14)),
-        ],
-      ),
-    );
-  }
-
-  Widget _formPanel() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 40),
-          Center(
-            child: Column(
-              children: [
-                Container(
-                  width: 56, height: 56,
-                  decoration: BoxDecoration(color: const Color(0xFFE8313F), borderRadius: BorderRadius.circular(12)),
-                  child: Image.asset('assets/logo.png', width: 56, height: 56),
-                ),
-                const SizedBox(height: 8),
-                const Text('VISIONFIT', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: 3)),
-              ],
+          Positioned(
+            bottom: 0, left: 0,
+            child: Container(
+              width: 250, height: 250,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(colors: [kRed.withOpacity(0.07), Colors.transparent]),
+              ),
             ),
           ),
-          const SizedBox(height: 40),
-          const Text('Giriş Yap', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 24),
-          if (_hata.isNotEmpty)
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: const Color(0xFFE8313F).withOpacity(0.15), borderRadius: BorderRadius.circular(8)),
-              child: Text(_hata, style: const TextStyle(color: Color(0xFFE8313F), fontSize: 13)),
-            ),
-          if (_dogrulamaGerekli)
-            Center(
+          SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
                 children: [
-                  TextButton(
-                    onPressed: _yenidenGonderiyor ? null : _yenidenGonder,
-                    child: Text(_yenidenGonderiyor ? 'Gönderiliyor...' : 'Doğrulama E-postasını Yeniden Gönder', style: const TextStyle(color: Color(0xFFE8313F))),
+                  const SizedBox(height: 56),
+                  Container(
+                    width: 64, height: 64,
+                    decoration: BoxDecoration(
+                      color: kRed,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [BoxShadow(color: kRed.withOpacity(0.3), blurRadius: 20, spreadRadius: 2)],
+                    ),
+                    child: const Icon(Icons.visibility, color: Colors.white, size: 36),
                   ),
-                  if (_yenidenGonderiMesaj.isNotEmpty)
-                    Text(_yenidenGonderiMesaj, style: const TextStyle(color: Color(0xFFE8313F), fontSize: 13)),
+                  const SizedBox(height: 12),
+                  Text('VisionFit', style: kHeadline(context, size: 26, weight: FontWeight.w900)),
+                  const SizedBox(height: 4),
+                  Text('EN İYİ HALİNE ULAŞ.', style: kLabel(context)),
+                  const SizedBox(height: 40),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: kSurfaceLow(context),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: kBorderAlt(context)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('EMAIL ADRESİ', style: kLabel(context)),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: _emailCtrl,
+                          keyboardType: TextInputType.emailAddress,
+                          style: kBody(context, color: kText(context)),
+                          decoration: kInputDeko(context, 'adiniz@ornek.com', Icons.mail_outline),
+                        ),
+                        const SizedBox(height: 20),
+                        Text('ŞİFRE', style: kLabel(context)),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: _sifreCtrl,
+                          obscureText: _sifreGizli,
+                          style: kBody(context, color: kText(context)),
+                          onSubmitted: (_) => _girisYap(),
+                          decoration: kInputDeko(context, '••••••••', Icons.lock_outline).copyWith(
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _sifreGizli ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                                color: kHint(context), size: 20,
+                              ),
+                              onPressed: () => setState(() { _sifreGizli = !_sifreGizli; }),
+                            ),
+                          ),
+                        ),
+                        if (_hata.isNotEmpty) ...[
+                          const SizedBox(height: 16),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: kRed.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: kRed.withOpacity(0.3)),
+                            ),
+                            child: Row(children: [
+                              const Icon(Icons.warning_amber_outlined, color: kRed, size: 16),
+                              const SizedBox(width: 8),
+                              Expanded(child: Text(_hata, style: kBody(context, size: 12, color: kRed))),
+                            ]),
+                          ),
+                        ],
+                        if (_dogrulamaGerekli) ...[
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: kSurface(context),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: kBorder(context)),
+                            ),
+                            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              Text('Email adresinizi doğrulamanız gerekiyor.', style: kBody(context, size: 12, color: kText(context))),
+                              const SizedBox(height: 6),
+                              GestureDetector(
+                                onTap: _yenidenGonderiyor ? null : _yenidenGonder,
+                                child: Text(
+                                  _yenidenGonderiyor ? 'Gönderiliyor...' : 'Doğrulama maili gönder →',
+                                  style: kLabel(context, color: kRed),
+                                ),
+                              ),
+                              if (_yenidenGonderiMesaj.isNotEmpty) ...[
+                                const SizedBox(height: 4),
+                                Text(_yenidenGonderiMesaj, style: kBody(context, size: 11, color: kGreen)),
+                              ],
+                            ]),
+                          ),
+                        ],
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity, height: 48,
+                          child: ElevatedButton(
+                            onPressed: _yukleniyor ? null : _girisYap,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: kRed,
+                              disabledBackgroundColor: kRed.withOpacity(0.5),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              elevation: 0,
+                            ),
+                            child: _yukleniyor
+                                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                                : Text('GİRİŞ YAP', style: kLabel(context, size: 13, color: Colors.white)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    Text('Hesabın yok mu? ', style: kBody(context, size: 13, color: kHint(context))),
+                    GestureDetector(
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const KayitEkrani())),
+                      child: Text('Kayıt Ol', style: kBody(context, size: 13, color: kRed, weight: FontWeight.w700)),
+                    ),
+                  ]),
+                  const SizedBox(height: 40),
                 ],
               ),
             ),
-          const Text('Email', style: TextStyle(color: Color(0xFF888888), fontSize: 13)),
-          const SizedBox(height: 6),
-          TextField(
-            controller: _emailController,
-            keyboardType: TextInputType.emailAddress,
-            style: const TextStyle(color: Colors.white),
-            decoration: _inputDecoration(),
           ),
-          const SizedBox(height: 16),
-          const Text('Şifre', style: TextStyle(color: Color(0xFF888888), fontSize: 13)),
-          const SizedBox(height: 6),
-          TextField(
-            controller: _sifreController,
-            obscureText: true,
-            style: const TextStyle(color: Colors.white),
-            decoration: _inputDecoration(),
-            onSubmitted: (_) => _girisYap(),
-          ),
-          const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: ElevatedButton(
-              onPressed: _yukleniyor ? null : _girisYap,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFE8313F),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              child: Text(
-                _yukleniyor ? 'Giriş Yapılıyor...' : 'Giriş Yap',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-          Center(
-            child: GestureDetector(
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const KayitEkrani())),
-              child: RichText(
-                text: const TextSpan(
-                  text: 'Hesabın yok mu? ',
-                  style: TextStyle(color: Color(0xFF888888), fontSize: 14),
-                  children: [TextSpan(text: 'Kayıt Ol', style: TextStyle(color: Color(0xFFE8313F), fontWeight: FontWeight.w600))],
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 32),
         ],
       ),
-    );
-  }
-
-  InputDecoration _inputDecoration() {
-    return InputDecoration(
-      filled: true,
-      fillColor: const Color(0xFF1A1A1A),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF333333))),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF333333))),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE8313F))),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     );
   }
 }

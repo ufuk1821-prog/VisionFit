@@ -1,19 +1,19 @@
 import '../main.dart';
 import 'package:flutter/material.dart';
+import '../tema.dart';
 import '../servisler/api_servisi.dart';
 import 'giris_ekrani.dart';
 
 class AyarlarEkrani extends StatefulWidget {
   const AyarlarEkrani({super.key});
-
   @override
   State<AyarlarEkrani> createState() => _AyarlarEkraniState();
 }
 
 class _AyarlarEkraniState extends State<AyarlarEkrani> {
-  final _mevcutSifreController = TextEditingController();
-  final _yeniSifreController = TextEditingController();
-  final _yeniSifreTekrarController = TextEditingController();
+  final _mevcutSifreCtrl = TextEditingController();
+  final _yeniSifreCtrl = TextEditingController();
+  final _yeniSifreTekrarCtrl = TextEditingController();
   String _sifreMesaj = '';
   bool _sifreHata = false;
   bool _sifreYukleniyor = false;
@@ -21,22 +21,22 @@ class _AyarlarEkraniState extends State<AyarlarEkrani> {
   bool _silYukleniyor = false;
 
   Future<void> _sifreDegistir() async {
-    if (_yeniSifreController.text != _yeniSifreTekrarController.text) {
+    if (_yeniSifreCtrl.text != _yeniSifreTekrarCtrl.text) {
       setState(() { _sifreMesaj = 'Yeni şifreler eşleşmiyor.'; _sifreHata = true; });
       return;
     }
     setState(() { _sifreYukleniyor = true; _sifreMesaj = ''; });
     try {
       await ApiServisi.putJson('/api/users/me/password', {
-        'mevcut_sifre': _mevcutSifreController.text,
-        'yeni_sifre': _yeniSifreController.text,
+        'mevcut_sifre': _mevcutSifreCtrl.text,
+        'yeni_sifre': _yeniSifreCtrl.text,
       });
-      setState(() { _sifreMesaj = 'Şifre başarıyla değiştirildi.'; _sifreHata = false; });
-      _mevcutSifreController.clear();
-      _yeniSifreController.clear();
-      _yeniSifreTekrarController.clear();
-    } catch (e) {
-      setState(() { _sifreMesaj = 'Şifre değiştirilemedi.'; _sifreHata = true; });
+      setState(() { _sifreMesaj = 'ok'; _sifreHata = false; });
+      _mevcutSifreCtrl.clear();
+      _yeniSifreCtrl.clear();
+      _yeniSifreTekrarCtrl.clear();
+    } catch (_) {
+      setState(() { _sifreMesaj = 'hata'; _sifreHata = true; });
     } finally {
       setState(() { _sifreYukleniyor = false; });
     }
@@ -49,158 +49,198 @@ class _AyarlarEkraniState extends State<AyarlarEkrani> {
       await ApiServisi.tokenSil();
       if (!mounted) return;
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const GirisEkrani()));
-    } catch (e) {
+    } catch (_) {
       setState(() { _silYukleniyor = false; _silModalAcik = false; });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Ayarlar', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 20),
-          _temaKarti(),
-          _sifreDegistirKarti(),
-          const SizedBox(height: 16),
-          _hesapSilKarti(),
-          if (_silModalAcik) _silModal(),
-        ],
-      ),
-    );
-  }
-  Widget _temaKarti() {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: const Color(0xFF1A1A1A), borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFF333333))),
-      child: Row(children: [
-        const Icon(Icons.palette_outlined, color: Color(0xFFE8313F), size: 20),
-        const SizedBox(width: 8),
-        const Expanded(child: Text('Tema', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700))),
-        GestureDetector(
-          onTap: () {
-            final app = VisionFitApp.of(context);
-          if (app != null) {
-            app.temaDegistir(app.themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark);
-          }
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            decoration: BoxDecoration(color: const Color(0xFFE8313F).withOpacity(0.15), borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFFE8313F))),
-            child: const Text('Temayı Değiştir', style: TextStyle(color: Color(0xFFE8313F), fontSize: 13, fontWeight: FontWeight.w600)),
+    final app = VisionFitApp.of(context);
+    final karanlikMi = app?.themeMode == ThemeMode.dark;
+
+    return Stack(
+      children: [
+        SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Ayarlar', style: kHeadline(context, size: 20, weight: FontWeight.w800)),
+              const SizedBox(height: 4),
+              Text('Hesap ve uygulama tercihleri', style: kBody(context, size: 13, color: kHint(context))),
+              const SizedBox(height: 24),
+              _bolumBasligi(context, 'Görünüm', Icons.palette_outlined),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(color: kSurfaceLow(context), borderRadius: BorderRadius.circular(12), border: Border.all(color: kBorderAlt(context))),
+                child: Row(children: [
+                  Container(
+                    width: 40, height: 40,
+                    decoration: BoxDecoration(color: kRed.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+                    child: Icon(karanlikMi ? Icons.dark_mode_outlined : Icons.light_mode_outlined, color: kRed, size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('Tema', style: kBody(context, size: 14, weight: FontWeight.w600, color: kText(context))),
+                    Text(karanlikMi ? 'Karanlık mod aktif' : 'Aydınlık mod aktif', style: kLabel(context, size: 10, color: kHint(context))),
+                  ])),
+                  GestureDetector(
+                    onTap: () {
+                      if (app != null) {
+                        app.temaDegistir(karanlikMi ? ThemeMode.light : ThemeMode.dark);
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(color: kRed.withOpacity(0.1), borderRadius: BorderRadius.circular(8), border: Border.all(color: kRed.withOpacity(0.4))),
+                      child: Text('DEĞİŞTİR', style: kLabel(context, size: 10, color: kRed)),
+                    ),
+                  ),
+                ]),
+              ),
+              const SizedBox(height: 24),
+              _bolumBasligi(context, 'Şifre Değiştir', Icons.lock_outline),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(color: kSurfaceLow(context), borderRadius: BorderRadius.circular(12), border: Border.all(color: kBorderAlt(context))),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  _inputAlani(context, 'MEVCUT ŞİFRE', _mevcutSifreCtrl, gizli: true),
+                  const SizedBox(height: 12),
+                  _inputAlani(context, 'YENİ ŞİFRE', _yeniSifreCtrl, gizli: true),
+                  const SizedBox(height: 12),
+                  _inputAlani(context, 'YENİ ŞİFRE TEKRAR', _yeniSifreTekrarCtrl, gizli: true),
+                  if (_sifreMesaj.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: _sifreHata ? kRed.withOpacity(0.1) : kGreen.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: _sifreHata ? kRed.withOpacity(0.3) : kGreen.withOpacity(0.3)),
+                      ),
+                      child: Row(children: [
+                        Icon(_sifreHata ? Icons.warning_amber_outlined : Icons.check_circle_outline, color: _sifreHata ? kRed : kGreen, size: 16),
+                        const SizedBox(width: 8),
+                        Text(_sifreMesaj == 'ok' ? 'Şifre başarıyla değiştirildi.' : 'Şifre değiştirilemedi.', style: kBody(context, size: 12, color: _sifreHata ? kRed : kGreen)),
+                      ]),
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity, height: 44,
+                    child: ElevatedButton(
+                      onPressed: _sifreYukleniyor ? null : _sifreDegistir,
+                      style: ElevatedButton.styleFrom(backgroundColor: kRed, disabledBackgroundColor: kRed.withOpacity(0.5), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), elevation: 0),
+                      child: _sifreYukleniyor
+                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                          : Text('ŞİFREYİ DEĞİŞTİR', style: kLabel(context, size: 11, color: Colors.white)),
+                    ),
+                  ),
+                ]),
+              ),
+              const SizedBox(height: 24),
+              _bolumBasligi(context, 'Tehlikeli Bölge', Icons.warning_amber_outlined),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(color: kRed.withOpacity(0.05), borderRadius: BorderRadius.circular(12), border: Border.all(color: kRed.withOpacity(0.3))),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Row(children: [
+                    const Icon(Icons.delete_outline, color: kRed, size: 20),
+                    const SizedBox(width: 8),
+                    Text('Hesabı Sil', style: kBody(context, size: 14, weight: FontWeight.w700, color: kText(context))),
+                  ]),
+                  const SizedBox(height: 8),
+                  Text('Hesabınızı sildiğinizde tüm verileriniz kalıcı olarak silinir. Bu işlem geri alınamaz.', style: kBody(context, size: 12, color: kHint(context))),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity, height: 44,
+                    child: OutlinedButton(
+                      onPressed: () => setState(() { _silModalAcik = true; }),
+                      style: OutlinedButton.styleFrom(side: const BorderSide(color: kRed), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+                      child: Text('HESABIMI SİL', style: kLabel(context, size: 11, color: kRed)),
+                    ),
+                  ),
+                ]),
+              ),
+              const SizedBox(height: 32),
+            ],
           ),
         ),
-      ]),
-    );
-  }
-  Widget _sifreDegistirKarti() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: const Color(0xFF1A1A1A), borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFF333333))),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Row(children: [
-          Icon(Icons.lock_outline, color: Color(0xFFE8313F), size: 20),
-          SizedBox(width: 8),
-          Text('Şifre Değiştir', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),
-        ]),
-        const SizedBox(height: 16),
-        _input('Mevcut Şifre', _mevcutSifreController, gizli: true),
-        const SizedBox(height: 12),
-        _input('Yeni Şifre', _yeniSifreController, gizli: true),
-        const SizedBox(height: 12),
-        _input('Yeni Şifre Tekrar', _yeniSifreTekrarController, gizli: true),
-        if (_sifreMesaj.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          Text(_sifreMesaj, style: TextStyle(color: _sifreHata ? const Color(0xFFE8313F) : const Color(0xFF4CAF50), fontSize: 13)),
-        ],
-        const SizedBox(height: 16),
-        SizedBox(
-          width: double.infinity, height: 44,
-          child: ElevatedButton(
-            onPressed: _sifreYukleniyor ? null : _sifreDegistir,
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFE8313F), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-            child: _sifreYukleniyor ? const CircularProgressIndicator(color: Colors.white, strokeWidth: 2) : const Text('Şifreyi Değiştir', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+        if (_silModalAcik)
+          GestureDetector(
+            onTap: () => setState(() { _silModalAcik = false; }),
+            child: Container(
+              color: Colors.black.withOpacity(0.7),
+              child: Center(
+                child: GestureDetector(
+                  onTap: () {},
+                  child: Container(
+                    margin: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(color: kSurfaceLow(context), borderRadius: BorderRadius.circular(16), border: Border.all(color: kRed.withOpacity(0.3))),
+                    child: Column(mainAxisSize: MainAxisSize.min, children: [
+                      Container(
+                        width: 56, height: 56,
+                        decoration: BoxDecoration(color: kRed.withOpacity(0.1), shape: BoxShape.circle, border: Border.all(color: kRed.withOpacity(0.3))),
+                        child: const Icon(Icons.warning_amber_outlined, color: kRed, size: 28),
+                      ),
+                      const SizedBox(height: 16),
+                      Text('Hesabı Sil', style: kHeadline(context, size: 18, weight: FontWeight.w700)),
+                      const SizedBox(height: 8),
+                      Text('Bu işlem geri alınamaz.\nTüm verileriniz kalıcı olarak silinecek.', style: kBody(context, size: 13, color: kHint(context)), textAlign: TextAlign.center),
+                      const SizedBox(height: 24),
+                      Row(children: [
+                        Expanded(child: OutlinedButton(
+                          onPressed: () => setState(() { _silModalAcik = false; }),
+                          style: OutlinedButton.styleFrom(side: BorderSide(color: kBorder(context)), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), padding: const EdgeInsets.symmetric(vertical: 12)),
+                          child: Text('İPTAL', style: kLabel(context, size: 11, color: kText(context))),
+                        )),
+                        const SizedBox(width: 12),
+                        Expanded(child: ElevatedButton(
+                          onPressed: _silYukleniyor ? null : _hesapSil,
+                          style: ElevatedButton.styleFrom(backgroundColor: kRed, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), padding: const EdgeInsets.symmetric(vertical: 12), elevation: 0),
+                          child: _silYukleniyor
+                              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                              : Text('SİL', style: kLabel(context, size: 11, color: Colors.white)),
+                        )),
+                      ]),
+                    ]),
+                  ),
+                ),
+              ),
+            ),
           ),
-        ),
-      ]),
+      ],
     );
   }
 
-  Widget _hesapSilKarti() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: const Color(0xFF1A1A1A), borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFF333333))),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Row(children: [
-          Icon(Icons.delete_outline, color: Color(0xFFE8313F), size: 20),
-          SizedBox(width: 8),
-          Text('Hesabı Sil', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),
-        ]),
-        const SizedBox(height: 8),
-        const Text('Hesabınızı sildiğinizde tüm verileriniz kalıcı olarak silinir.', style: TextStyle(color: Color(0xFF888888), fontSize: 13)),
-        const SizedBox(height: 12),
-        SizedBox(
-          width: double.infinity, height: 44,
-          child: OutlinedButton(
-            onPressed: () => setState(() { _silModalAcik = true; }),
-            style: OutlinedButton.styleFrom(side: const BorderSide(color: Color(0xFFE8313F)), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-            child: const Text('Hesabımı Sil', style: TextStyle(color: Color(0xFFE8313F), fontWeight: FontWeight.w700)),
-          ),
-        ),
-      ]),
-    );
+  Widget _bolumBasligi(BuildContext context, String baslik, IconData ikon) {
+    return Row(children: [
+      Icon(ikon, color: kRed, size: 18),
+      const SizedBox(width: 8),
+      Text(baslik, style: kBody(context, size: 15, weight: FontWeight.w700, color: kText(context))),
+    ]);
   }
 
-  Widget _silModal() {
-    return Container(
-      color: Colors.black54,
-      child: Center(
-        child: Container(
-          margin: const EdgeInsets.all(24),
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(color: const Color(0xFF1A1A1A), borderRadius: BorderRadius.circular(16)),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Icon(Icons.warning_amber_outlined, color: Color(0xFFE8313F), size: 48),
-            const SizedBox(height: 16),
-            const Text('Hesabı Sil', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 8),
-            const Text('Bu işlem geri alınamaz. Tüm verileriniz silinecek.', style: TextStyle(color: Color(0xFF888888), fontSize: 14), textAlign: TextAlign.center),
-            const SizedBox(height: 24),
-            Row(children: [
-              Expanded(child: OutlinedButton(
-                onPressed: () => setState(() { _silModalAcik = false; }),
-                style: OutlinedButton.styleFrom(side: const BorderSide(color: Color(0xFF333333))),
-                child: const Text('İptal', style: TextStyle(color: Colors.white)),
-              )),
-              const SizedBox(width: 12),
-              Expanded(child: ElevatedButton(
-                onPressed: _silYukleniyor ? null : _hesapSil,
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFE8313F)),
-                child: _silYukleniyor ? const CircularProgressIndicator(color: Colors.white, strokeWidth: 2) : const Text('Sil', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-              )),
-            ]),
-          ]),
-        ),
-      ),
-    );
-  }
-
-  Widget _input(String label, TextEditingController controller, {bool gizli = false}) {
+  Widget _inputAlani(BuildContext context, String label, TextEditingController ctrl, {bool gizli = false}) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: const TextStyle(color: Color(0xFF888888), fontSize: 13)),
+      Text(label, style: kLabel(context)),
       const SizedBox(height: 6),
-      TextField(controller: controller, obscureText: gizli, style: const TextStyle(color: Colors.white),
+      TextField(
+        controller: ctrl,
+        obscureText: gizli,
+        style: kBody(context, color: kText(context)),
         decoration: InputDecoration(
-          filled: true, fillColor: const Color(0xFF0F0F0F),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF333333))),
-          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF333333))),
-          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE8313F))),
+          filled: true, fillColor: kSurfaceContainer(context),
           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        )),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: kBorder(context))),
+          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: kRed, width: 1.5)),
+        ),
+      ),
     ]);
   }
 }

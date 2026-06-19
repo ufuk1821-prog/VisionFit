@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
+import '../tema.dart';
 import '../servisler/api_servisi.dart';
 
 const List<Map<String, dynamic>> hareketler = [
@@ -19,7 +20,6 @@ const List<Map<String, dynamic>> hareketler = [
 
 class FotografEkrani extends StatefulWidget {
   const FotografEkrani({super.key});
-
   @override
   State<FotografEkrani> createState() => _FotografEkraniState();
 }
@@ -49,18 +49,14 @@ class _FotografEkraniState extends State<FotografEkrani> {
       final inputImage = InputImage.fromFile(_foto!);
       final poses = await poseDetector.processImage(inputImage);
       poseDetector.close();
-
       if (poses.isEmpty) {
         setState(() { _hata = 'Fotoğrafta vücut tespit edilemedi. Lütfen tüm vücudunuzun göründüğü, yandan çekilmiş bir fotoğraf yükleyin.'; _yukleniyor = false; });
         return;
       }
-
       final pose = poses.first;
       final landmarks = pose.landmarks.values.map((lm) => [lm.x, lm.y, lm.z, lm.likelihood]).toList();
-
       final yanit = await ApiServisi.postJson('/api/analyze/${_hareket['endpoint']}', {'landmarks': landmarks});
       setState(() { _sonuc = Map<String, dynamic>.from(yanit); });
-
       if (_sonuc != null && _sonuc!['antrenor_notu'] != null) {
         final not = _sonuc!['antrenor_notu'] as String;
         final hedefHareket = _hareket['label'] as String;
@@ -79,9 +75,15 @@ class _FotografEkraniState extends State<FotografEkrani> {
   }
 
   Color _skorRengi(int skor) {
-    if (skor >= 75) return const Color(0xFF4CAF50);
-    if (skor >= 50) return const Color(0xFFF59E0B);
-    return const Color(0xFFE8313F);
+    if (skor >= 75) return kGreen;
+    if (skor >= 50) return kAmber;
+    return kRed;
+  }
+
+  String _skorEtiket(int skor) {
+    if (skor >= 75) return 'İyi Form ✓';
+    if (skor >= 50) return 'Geliştirilebilir';
+    return 'Form Düzeltmesi Gerekiyor';
   }
 
   @override
@@ -91,22 +93,24 @@ class _FotografEkraniState extends State<FotografEkrani> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Fotoğraflı Analiz', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)),
+          Text('Fotoğraflı Analiz', style: kHeadline(context, size: 20, weight: FontWeight.w800)),
+          const SizedBox(height: 4),
+          Text('Hareketi seç, fotoğraf çek, anında analiz al.', style: kBody(context, size: 13, color: kHint(context))),
           const SizedBox(height: 16),
-          _sekmeler(),
+          _sekmeler(context),
           const SizedBox(height: 16),
-          _fotoAlani(),
+          _fotoAlani(context),
           const SizedBox(height: 16),
-          if (_hata.isNotEmpty) _hataKarti(),
-          if (_sonuc != null) _sonucKarti(),
-          const SizedBox(height: 16),
-          _bilgiKarti(),
+          if (_hata.isNotEmpty) _hataKarti(context),
+          if (_sonuc != null) _sonucKarti(context),
+          _bilgiKarti(context),
+          const SizedBox(height: 24),
         ],
       ),
     );
   }
 
-  Widget _sekmeler() {
+  Widget _sekmeler(BuildContext context) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
@@ -118,13 +122,13 @@ class _FotografEkraniState extends State<FotografEkrani> {
               onTap: () => setState(() { _secili = h['id']; _sonuc = null; _hata = ''; _foto = null; }),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
-                  color: secili ? const Color(0xFFE8313F) : const Color(0xFF1A1A1A),
+                  color: secili ? kRed : kSurfaceLow(context),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: secili ? const Color(0xFFE8313F) : const Color(0xFF333333)),
+                  border: Border.all(color: secili ? kRed : kBorder(context)),
                 ),
-                child: Text(h['label'], style: TextStyle(color: secili ? Colors.white : const Color(0xFF888888), fontSize: 13, fontWeight: secili ? FontWeight.w600 : FontWeight.normal)),
+                child: Text(h['label'], style: kLabel(context, size: 11, color: secili ? Colors.white : kHint(context))),
               ),
             ),
           );
@@ -133,26 +137,31 @@ class _FotografEkraniState extends State<FotografEkrani> {
     );
   }
 
-  Widget _fotoAlani() {
+  Widget _fotoAlani(BuildContext context) {
     return Container(
       width: double.infinity,
-      decoration: BoxDecoration(color: const Color(0xFF1A1A1A), borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFF333333))),
+      decoration: BoxDecoration(color: kSurfaceLow(context), borderRadius: BorderRadius.circular(14), border: Border.all(color: kBorderAlt(context))),
       child: Column(children: [
         if (_foto != null)
-          ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            child: Image.file(_foto!, width: double.infinity, height: 280, fit: BoxFit.cover),
-          ),
-        if (_foto == null)
+          ClipRRect(borderRadius: const BorderRadius.vertical(top: Radius.circular(14)), child: Image.file(_foto!, width: double.infinity, height: 280, fit: BoxFit.cover))
+        else
           Container(
             height: 200,
-            decoration: const BoxDecoration(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
             child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              const Icon(Icons.add_photo_alternate_outlined, color: Color(0xFF888888), size: 48),
+              Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: kRed.withOpacity(0.1), shape: BoxShape.circle), child: const Icon(Icons.add_photo_alternate_outlined, color: kRed, size: 36)),
               const SizedBox(height: 12),
-              const Text('Fotoğraf seçin veya çekin', style: TextStyle(color: Color(0xFF888888), fontSize: 14)),
+              Text('Fotoğraf seçin veya çekin', style: kBody(context, size: 14, weight: FontWeight.w600, color: kText(context))),
               const SizedBox(height: 4),
-              const Text('Yandan çekilmiş, tüm vücudunuzun göründüğü bir fotoğraf', style: TextStyle(color: Color(0xFF555555), fontSize: 12), textAlign: TextAlign.center),
+              Text('Yandan çekilmiş, tüm vücudunuzun göründüğü bir fotoğraf', style: kBody(context, size: 12, color: kHint(context)), textAlign: TextAlign.center),
+            ]),
+          ),
+        if (_yukleniyor)
+          Container(
+            padding: const EdgeInsets.all(16),
+            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: kRed, strokeWidth: 2)),
+              const SizedBox(width: 10),
+              Text('Analiz yapılıyor...', style: kBody(context, size: 13, color: kHint(context))),
             ]),
           ),
         Padding(
@@ -160,16 +169,16 @@ class _FotografEkraniState extends State<FotografEkrani> {
           child: Row(children: [
             Expanded(child: OutlinedButton.icon(
               onPressed: _yukleniyor ? null : () => _fotoCek(ImageSource.gallery),
-              icon: const Icon(Icons.photo_library_outlined, size: 18, color: Color(0xFFE8313F)),
-              label: const Text('Galeriden Seç', style: TextStyle(color: Color(0xFFE8313F))),
-              style: OutlinedButton.styleFrom(side: const BorderSide(color: Color(0xFFE8313F)), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+              icon: const Icon(Icons.photo_library_outlined, size: 18, color: kRed),
+              label: Text('GALERİDEN SEÇ', style: kLabel(context, size: 10, color: kRed)),
+              style: OutlinedButton.styleFrom(side: const BorderSide(color: kRed), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), padding: const EdgeInsets.symmetric(vertical: 12)),
             )),
             const SizedBox(width: 8),
             Expanded(child: ElevatedButton.icon(
               onPressed: _yukleniyor ? null : () => _fotoCek(ImageSource.camera),
               icon: const Icon(Icons.camera_alt_outlined, size: 18, color: Colors.white),
-              label: Text(_yukleniyor ? 'Analiz...' : 'Kamera ile Çek', style: const TextStyle(color: Colors.white)),
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFE8313F), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+              label: Text('KAMERAYLA ÇEK', style: kLabel(context, size: 10, color: Colors.white)),
+              style: ElevatedButton.styleFrom(backgroundColor: kRed, disabledBackgroundColor: kRed.withOpacity(0.5), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), padding: const EdgeInsets.symmetric(vertical: 12), elevation: 0),
             )),
           ]),
         ),
@@ -177,93 +186,90 @@ class _FotografEkraniState extends State<FotografEkrani> {
     );
   }
 
-  Widget _hataKarti() {
+  Widget _hataKarti(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: const Color(0xFFE8313F).withOpacity(0.1), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE8313F).withOpacity(0.4))),
+      decoration: BoxDecoration(color: kRed.withOpacity(0.1), borderRadius: BorderRadius.circular(10), border: Border.all(color: kRed.withOpacity(0.4))),
       child: Row(children: [
-        const Icon(Icons.warning_amber_outlined, color: Color(0xFFE8313F), size: 20),
+        const Icon(Icons.warning_amber_outlined, color: kRed, size: 20),
         const SizedBox(width: 10),
-        Expanded(child: Text(_hata, style: const TextStyle(color: Color(0xFFE8313F), fontSize: 13))),
+        Expanded(child: Text(_hata, style: kBody(context, size: 13, color: kRed))),
       ]),
     );
   }
 
-  Widget _sonucKarti() {
+  Widget _sonucKarti(BuildContext context) {
     final skor = _sonuc!['eminlik_skoru'] as int? ?? 0;
     final not = _sonuc!['antrenor_notu'] as String? ?? '';
+    final renk = _skorRengi(skor);
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: const Color(0xFF1A1A1A), borderRadius: BorderRadius.circular(14), border: Border.all(color: _skorRengi(skor).withOpacity(0.4))),
+      decoration: BoxDecoration(color: kSurfaceLow(context), borderRadius: BorderRadius.circular(14), border: Border.all(color: renk.withOpacity(0.4))),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           Container(
-            width: 56, height: 56,
-            decoration: BoxDecoration(color: _skorRengi(skor).withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
-            child: Center(child: Text('$skor%', style: TextStyle(color: _skorRengi(skor), fontWeight: FontWeight.w800, fontSize: 16))),
+            width: 60, height: 60,
+            decoration: BoxDecoration(color: renk.withOpacity(0.12), borderRadius: BorderRadius.circular(12), border: Border.all(color: renk.withOpacity(0.3))),
+            child: Center(child: Text('$skor%', style: kHeadline(context, size: 18, weight: FontWeight.w900, color: renk))),
           ),
           const SizedBox(width: 14),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('${_hareket['label']} Analiz Sonucu', style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700)),
+            Text('${_hareket['label']} Analiz Sonucu', style: kBody(context, size: 14, weight: FontWeight.w700, color: kText(context))),
             const SizedBox(height: 4),
-            Text(skor >= 75 ? 'İyi Form ✓' : skor >= 50 ? 'Geliştirilebilir' : 'Form Düzeltmesi Gerekiyor', style: TextStyle(color: _skorRengi(skor), fontSize: 13)),
+            Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: renk.withOpacity(0.12), borderRadius: BorderRadius.circular(6)), child: Text(_skorEtiket(skor), style: kLabel(context, size: 10, color: renk))),
           ])),
         ]),
         if (not.isNotEmpty) ...[
           const SizedBox(height: 12),
-          const Divider(color: Color(0xFF333333)),
-          const SizedBox(height: 8),
-          Text(not, style: const TextStyle(color: Color(0xFFCCCCCC), fontSize: 13, height: 1.6)),
+          Container(height: 1, color: kBorder(context)),
+          const SizedBox(height: 10),
+          Text(not, style: kBody(context, size: 13, color: kText(context))),
         ],
       ]),
     );
   }
 
-  Widget _bilgiKarti() {
+  Widget _bilgiKarti(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: const Color(0xFF1A1A1A), borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFF333333))),
+      decoration: BoxDecoration(color: kSurfaceLow(context), borderRadius: BorderRadius.circular(14), border: Border.all(color: kBorder(context))),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('${_hareket['label']} — Doğru Form', style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700)),
+        Row(children: [
+          const Icon(Icons.check_circle_outline, color: kRed, size: 18),
+          const SizedBox(width: 8),
+          Text('${_hareket['label']} — Doğru Form', style: kBody(context, size: 14, weight: FontWeight.w700, color: kText(context))),
+        ]),
         const SizedBox(height: 8),
-        Text(_hareket['dogruForm'], style: const TextStyle(color: Color(0xFFCCCCCC), fontSize: 13, height: 1.6)),
-        const SizedBox(height: 12),
-        const Row(children: [
-          Icon(Icons.info_outline, color: Color(0xFF3B82F6), size: 16),
-          SizedBox(width: 6),
-          Text('Bu Analiz Nasıl Çalışır?', style: TextStyle(color: Color(0xFF3B82F6), fontSize: 13, fontWeight: FontWeight.w600)),
+        Text(_hareket['dogruForm'], style: kBody(context, size: 13, color: kText(context))),
+        const SizedBox(height: 14),
+        Row(children: [
+          const Icon(Icons.info_outline, color: kBlue, size: 16),
+          const SizedBox(width: 6),
+          Text('Bu Analiz Nasıl Çalışır?', style: kBody(context, size: 13, weight: FontWeight.w600, color: kBlue)),
         ]),
         const SizedBox(height: 6),
-        Text(_hareket['nasilCalisir'], style: const TextStyle(color: Color(0xFF888888), fontSize: 12, height: 1.5)),
-        const SizedBox(height: 12),
+        Text(_hareket['nasilCalisir'], style: kBody(context, size: 12, color: kHint(context))),
+        const SizedBox(height: 14),
         Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(color: const Color(0xFF0F0F0F), borderRadius: BorderRadius.circular(8)),
-          child: const Column(children: [
-            _ipucu('💡 Telefonu yere paralel, yandan bakacak şekilde konumlandırın.'),
-            _ipucu('📐 Baştan ayağa tüm vücudunuz kadrajda olsun.'),
-            _ipucu('☀️ Ortam aydınlık olsun, vücut hattınız net seçilsin.'),
-            _ipucu('👕 Dar kıyafet daha doğru sonuç verir.'),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(color: kSurfaceLowest(context), borderRadius: BorderRadius.circular(8), border: Border.all(color: kBorder(context))),
+          child: Column(children: [
+            _ipucuSatir(context, '💡 Telefonu yere paralel, yandan bakacak şekilde konumlandırın.'),
+            _ipucuSatir(context, '📐 Baştan ayağa tüm vücudunuz kadrajda olsun.'),
+            _ipucuSatir(context, '☀️ Ortam aydınlık olsun, vücut hattınız net seçilsin.'),
+            _ipucuSatir(context, '👕 Dar kıyafet daha doğru sonuç verir.'),
           ]),
         ),
       ]),
     );
   }
-}
 
-class _ipucu extends StatelessWidget {
-  final String metin;
-  const _ipucu(this.metin);
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _ipucuSatir(BuildContext context, String metin) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Expanded(child: Text(metin, style: const TextStyle(color: Color(0xFF888888), fontSize: 12, height: 1.4))),
-      ]),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Expanded(child: Text(metin, style: kBody(context, size: 12, color: kHint(context))))]),
     );
   }
 }

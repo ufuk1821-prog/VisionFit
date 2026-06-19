@@ -1,29 +1,21 @@
 import 'package:flutter/material.dart';
+import '../tema.dart';
 import '../servisler/api_servisi.dart';
 
 const Map<String, String> hareketEtiketler = {
-  'squat_session': 'Squat Oturum Analizi',
-  'dogru_squat': 'Squat Anlık',
-  'yanlis_squat': 'Squat Anlık',
-  'plank': 'Plank',
-  'sinav': 'Şınav',
-  'kopru': 'Köprü',
-  'yan_plank': 'Yan Plank',
-  'duvar_squat': 'Duvar Squat',
-  'supermen': 'Süpermen',
+  'squat_session': 'Squat Oturum Analizi', 'dogru_squat': 'Squat Anlık', 'yanlis_squat': 'Squat Anlık',
+  'plank': 'Plank', 'sinav': 'Şınav', 'kopru': 'Köprü', 'yan_plank': 'Yan Plank',
+  'duvar_squat': 'Duvar Squat', 'supermen': 'Süpermen',
 };
-
 const Map<String, String> hareketEmoji = {
   'squat_session': '🏋️', 'dogru_squat': '🏋️', 'yanlis_squat': '🏋️',
   'plank': '🧘', 'sinav': '💪', 'kopru': '🌉', 'yan_plank': '↔️',
   'duvar_squat': '🧱', 'supermen': '🦸',
 };
-
 const List<String> aciGostermeyenHareketler = ['plank', 'sinav', 'kopru', 'yan_plank', 'supermen'];
 
 class GecmisEkrani extends StatefulWidget {
   const GecmisEkrani({super.key});
-
   @override
   State<GecmisEkrani> createState() => _GecmisEkraniState();
 }
@@ -38,18 +30,13 @@ class _GecmisEkraniState extends State<GecmisEkrani> {
   bool _analizYukleniyor = false;
 
   @override
-  void initState() {
-    super.initState();
-    _yukle();
-  }
+  void initState() { super.initState(); _yukle(); }
 
   Future<void> _yukle() async {
     try {
       final veri = await ApiServisi.getJson('/api/analyze/history');
       setState(() { _kayitlar = veri is List ? veri : []; _yukleniyor = false; });
-    } catch (_) {
-      setState(() { _yukleniyor = false; });
-    }
+    } catch (_) { setState(() { _yukleniyor = false; }); }
   }
 
   Future<void> _sil(int id) async {
@@ -70,9 +57,9 @@ class _GecmisEkraniState extends State<GecmisEkrani> {
   }
 
   Color _skorRengi(int skor) {
-    if (skor >= 75) return const Color(0xFF4CAF50);
-    if (skor >= 50) return const Color(0xFFF59E0B);
-    return const Color(0xFFE8313F);
+    if (skor >= 75) return kGreen;
+    if (skor >= 50) return kAmber;
+    return kRed;
   }
 
   String _skorEtiket(int skor) {
@@ -89,12 +76,11 @@ class _GecmisEkraniState extends State<GecmisEkrani> {
 
   @override
   Widget build(BuildContext context) {
-    if (_yukleniyor) return const Center(child: CircularProgressIndicator(color: Color(0xFFE8313F)));
-
+    if (_yukleniyor) return const Center(child: CircularProgressIndicator(color: kRed));
     final liste = _filtreliKayitlar;
 
     return RefreshIndicator(
-      color: const Color(0xFFE8313F),
+      color: kRed,
       onRefresh: _yukle,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -103,114 +89,141 @@ class _GecmisEkraniState extends State<GecmisEkrani> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              const Text('Geçmiş Antrenmanlar', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)),
-              Text('${_kayitlar.length} kayıt', style: const TextStyle(color: Color(0xFF888888), fontSize: 13)),
+              Text('Geçmiş Antrenmanlar', style: kHeadline(context, size: 20, weight: FontWeight.w800)),
+              Text('${_kayitlar.length} KAYIT', style: kLabel(context)),
             ]),
+            const SizedBox(height: 4),
+            Text('Geçmiş performansını ve AI analizlerini incele.', style: kBody(context, size: 13, color: kHint(context))),
             const SizedBox(height: 16),
-            _filtreSatiri(),
+            _filtreSatiri(context),
             const SizedBox(height: 16),
-            _analizKarti(),
+            _analizKarti(context),
             const SizedBox(height: 16),
-            if (liste.isEmpty)
-              _bosEkran()
-            else
-              ...liste.map((k) => _kayitKarti(k)),
+            if (liste.isEmpty) _bosEkran(context) else ...liste.map((k) => _kayitKarti(context, k)),
           ],
         ),
       ),
     );
   }
 
-  Widget _bosEkran() {
-    return Center(child: Padding(
-      padding: const EdgeInsets.all(40),
-      child: Column(children: [
-        Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: const Color(0xFF333333), shape: BoxShape.circle), child: const Text('🏋️', style: TextStyle(fontSize: 40))),
-        const SizedBox(height: 20),
-        const Text('Henüz antrenman kaydı yok', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
-        const SizedBox(height: 8),
-        const Text('Kamera veya fotoğraflı analiz yaparak\nilk kaydını oluştur!', style: TextStyle(color: Color(0xFF888888), fontSize: 13), textAlign: TextAlign.center),
-      ]),
-    ));
-  }
-
-  Widget _filtreSatiri() {
-    final filtreler = [('tumu', 'Tümü', _kayitlar.length), ('oturum', 'Oturum', _kayitlar.where((k) => k['hareket_adi'] == 'squat_session').length), ('anlik', 'Anlık', _kayitlar.where((k) => k['hareket_adi'] != 'squat_session').length)];
-    return Row(
-      children: filtreler.map((f) => Expanded(child: Padding(
-        padding: const EdgeInsets.only(right: 8),
-        child: GestureDetector(
-          onTap: () => setState(() { _filtre = f.$1; }),
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            decoration: BoxDecoration(
-              color: _filtre == f.$1 ? const Color(0xFFE8313F) : const Color(0xFF1A1A1A),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: _filtre == f.$1 ? const Color(0xFFE8313F) : const Color(0xFF333333)),
-            ),
-            child: Column(children: [
-              Text('${f.$3}', style: TextStyle(color: _filtre == f.$1 ? Colors.white : const Color(0xFF888888), fontSize: 16, fontWeight: FontWeight.w700)),
-              Text(f.$2, style: TextStyle(color: _filtre == f.$1 ? Colors.white70 : const Color(0xFF666666), fontSize: 11)),
-            ]),
+  Widget _bosEkran(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(40),
+        child: Column(children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(color: kSurface(context), shape: BoxShape.circle, border: Border.all(color: kBorder(context))),
+            child: const Text('🏋️', style: TextStyle(fontSize: 40)),
           ),
-        ),
-      ))).toList(),
+          const SizedBox(height: 20),
+          Text('Henüz antrenman kaydı yok', style: kHeadline(context, size: 16)),
+          const SizedBox(height: 8),
+          Text('Kamera veya fotoğraflı analiz yaparak\nilk kaydını oluştur!', style: kBody(context, size: 13, color: kHint(context)), textAlign: TextAlign.center),
+        ]),
+      ),
     );
   }
 
-  Widget _analizKarti() {
+  Widget _filtreSatiri(BuildContext context) {
+    final filtreler = [
+      ('tumu', 'Tümü', _kayitlar.length),
+      ('oturum', 'Oturum', _kayitlar.where((k) => k['hareket_adi'] == 'squat_session').length),
+      ('anlik', 'Anlık', _kayitlar.where((k) => k['hareket_adi'] != 'squat_session').length),
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: kSurfaceContainer(context),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: kBorder(context)),
+      ),
+      child: Row(
+        children: filtreler.map((f) => Expanded(
+          child: GestureDetector(
+            onTap: () => setState(() { _filtre = f.$1; }),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              decoration: BoxDecoration(
+                color: _filtre == f.$1 ? kRed : Colors.transparent,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(children: [
+                Text('${f.$3}', style: kHeadline(context, size: 16, weight: FontWeight.w700, color: _filtre == f.$1 ? Colors.white : kHint(context))),
+                Text(f.$2, style: kLabel(context, size: 10, color: _filtre == f.$1 ? Colors.white70 : kHint(context))),
+              ]),
+            ),
+          ),
+        )).toList(),
+      ),
+    );
+  }
+
+  Widget _analizKarti(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFF333333)),
+        color: kSurfaceLow(context),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: kBorderAlt(context)),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Row(children: [
-          Icon(Icons.auto_awesome, color: Color(0xFFE8313F), size: 18),
-          SizedBox(width: 8),
-          Text('AI Antrenman Analizi', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+        Row(children: [
+          const Icon(Icons.auto_awesome, color: kPurple, size: 18),
+          const SizedBox(width: 8),
+          Text('AI ANTRENMAN ANALİZİ', style: kLabel(context, color: kText(context))),
         ]),
         const SizedBox(height: 4),
-        const Text('Son antrenmalarını yapay zeka ile analiz et', style: TextStyle(color: Color(0xFF888888), fontSize: 12)),
-        const SizedBox(height: 12),
+        Text('Son antrenmalarını yapay zeka ile analiz et', style: kBody(context, size: 12, color: kHint(context))),
+        const SizedBox(height: 14),
         Row(children: [
-          const Text('Son ', style: TextStyle(color: Color(0xFF888888), fontSize: 13)),
+          Text('Son ', style: kBody(context, size: 13, color: kHint(context))),
           SizedBox(
-            width: 56,
+            width: 52,
             child: TextFormField(
               initialValue: '$_analizSayi',
               keyboardType: TextInputType.number,
-              style: const TextStyle(color: Colors.white, fontSize: 13),
+              style: kBody(context, color: kText(context)),
               textAlign: TextAlign.center,
               decoration: InputDecoration(
-                filled: true, fillColor: const Color(0xFF0F0F0F),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF333333))),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF333333))),
+                filled: true, fillColor: kSurfaceLowest(context),
                 contentPadding: const EdgeInsets.symmetric(vertical: 6),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: kBorder(context))),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: kBorder(context))),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: kRed, width: 1.5)),
               ),
               onChanged: (v) { final n = int.tryParse(v); if (n != null && n >= 1 && n <= 30) setState(() { _analizSayi = n; }); },
             ),
           ),
-          const Text(' antrenmanı', style: TextStyle(color: Color(0xFF888888), fontSize: 13)),
+          Text(' antrenmanı', style: kBody(context, size: 13, color: kHint(context))),
           const Spacer(),
-          ElevatedButton.icon(
-            onPressed: _analizYukleniyor ? null : _analizEt,
-            icon: _analizYukleniyor ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Icon(Icons.play_arrow, size: 16),
-            label: Text(_analizYukleniyor ? 'Analiz...' : 'Analiz Et'),
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFE8313F), padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+          SizedBox(
+            height: 36,
+            child: ElevatedButton.icon(
+              onPressed: _analizYukleniyor ? null : _analizEt,
+              icon: _analizYukleniyor
+                  ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : const Icon(Icons.play_arrow, size: 16),
+              label: Text(_analizYukleniyor ? 'ANALİZ...' : 'ANALİZ ET', style: kLabel(context, size: 10, color: Colors.white)),
+              style: ElevatedButton.styleFrom(backgroundColor: kRed, padding: const EdgeInsets.symmetric(horizontal: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), elevation: 0),
+            ),
           ),
         ]),
         if (_analizSonuc.isNotEmpty) ...[
           const SizedBox(height: 12),
-          Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: const Color(0xFF0F0F0F), borderRadius: BorderRadius.circular(8)), child: Text(_analizSonuc, style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.6))),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(color: kSurfaceLowest(context), borderRadius: BorderRadius.circular(8), border: Border.all(color: kBorder(context))),
+            child: Text(_analizSonuc, style: kBody(context, size: 13, color: kText(context))),
+          ),
         ],
       ]),
     );
   }
 
-  Widget _kayitKarti(Map kayit) {
+  Widget _kayitKarti(BuildContext context, Map kayit) {
     final id = kayit['id'] as int;
     final hareket = kayit['hareket_adi'] as String? ?? '';
     final etiket = hareketEtiketler[hareket] ?? hareket;
@@ -226,9 +239,9 @@ class _GecmisEkraniState extends State<GecmisEkrani> {
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
         decoration: BoxDecoration(
-          color: const Color(0xFF1A1A1A),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: acik ? const Color(0xFFE8313F).withOpacity(0.4) : const Color(0xFF333333)),
+          color: kSurfaceLow(context),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: acik ? kRed.withOpacity(0.4) : kBorder(context)),
         ),
         child: Column(children: [
           Padding(
@@ -236,31 +249,37 @@ class _GecmisEkraniState extends State<GecmisEkrani> {
             child: Row(children: [
               Container(
                 width: 44, height: 44,
-                decoration: BoxDecoration(color: renk.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
+                decoration: BoxDecoration(color: renk.withOpacity(0.12), borderRadius: BorderRadius.circular(10)),
                 child: Center(child: Text(emoji, style: const TextStyle(fontSize: 20))),
               ),
               const SizedBox(width: 12),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(etiket, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
-                const SizedBox(height: 2),
-                Row(children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(color: renk.withOpacity(0.15), borderRadius: BorderRadius.circular(6)),
-                    child: Text('$skor% — ${_skorEtiket(skor)}', style: TextStyle(color: renk, fontSize: 11, fontWeight: FontWeight.w600)),
-                  ),
-                ]),
-                if (tarih != null) Text('${tarih.day}.${tarih.month}.${tarih.year} ${tarih.hour.toString().padLeft(2, '0')}:${tarih.minute.toString().padLeft(2, '0')}', style: const TextStyle(color: Color(0xFF666666), fontSize: 11)),
+                Text(etiket, style: kBody(context, size: 14, weight: FontWeight.w600, color: kText(context))),
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(color: renk.withOpacity(0.12), borderRadius: BorderRadius.circular(6)),
+                  child: Text('$skor% — ${_skorEtiket(skor)}', style: kLabel(context, size: 10, color: renk)),
+                ),
+                if (tarih != null) ...[
+                  const SizedBox(height: 2),
+                  Text('${tarih.day}.${tarih.month}.${tarih.year}  ${tarih.hour.toString().padLeft(2, '0')}:${tarih.minute.toString().padLeft(2, '0')}', style: kLabel(context, size: 10, color: kHint(context))),
+                ],
               ])),
-              Icon(acik ? Icons.expand_less : Icons.expand_more, color: const Color(0xFF888888)),
+              Icon(acik ? Icons.expand_less : Icons.expand_more, color: kHint(context), size: 20),
               const SizedBox(width: 4),
               PopupMenuButton(
-                icon: const Icon(Icons.more_vert, color: Color(0xFF888888), size: 20),
-                color: const Color(0xFF1A1A1A),
+                icon: Icon(Icons.more_vert, color: kHint(context), size: 20),
+                color: kSurface(context),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10), side: BorderSide(color: kBorder(context))),
                 itemBuilder: (_) => [
                   PopupMenuItem(
                     onTap: () => _sil(id),
-                    child: const Row(children: [Icon(Icons.delete_outline, color: Color(0xFFE8313F), size: 18), SizedBox(width: 8), Text('Sil', style: TextStyle(color: Color(0xFFE8313F)))]),
+                    child: Row(children: [
+                      const Icon(Icons.delete_outline, color: kRed, size: 18),
+                      const SizedBox(width: 8),
+                      Text('Kaydı Sil', style: kBody(context, size: 13, color: kRed)),
+                    ]),
                   ),
                 ],
               ),
@@ -271,16 +290,16 @@ class _GecmisEkraniState extends State<GecmisEkrani> {
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Divider(color: Color(0xFF333333)),
+                Divider(color: kBorder(context).withOpacity(0.5)),
                 const SizedBox(height: 6),
                 if (!aciGostermeyenHareketler.contains(hareket) && kayit['diz_acisi'] != null)
-                  _detay('📐 Diz Açısı', '${(kayit['diz_acisi'] as num).round()}°'),
+                  _detay(context, '📐 Diz Açısı', '${(kayit['diz_acisi'] as num).round()}°'),
                 if (not.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(color: const Color(0xFF0F0F0F), borderRadius: BorderRadius.circular(8)),
-                    child: Text(not, style: const TextStyle(color: Color(0xFFCCCCCC), fontSize: 12, height: 1.5)),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(color: kSurfaceLowest(context), borderRadius: BorderRadius.circular(8), border: Border.all(color: kBorder(context))),
+                    child: Text(not, style: kBody(context, size: 12, color: kText(context))),
                   ),
                 ],
               ]),
@@ -290,11 +309,11 @@ class _GecmisEkraniState extends State<GecmisEkrani> {
     );
   }
 
-  Widget _detay(String baslik, String deger) {
+  Widget _detay(BuildContext context, String baslik, String deger) {
     return Row(children: [
-      Text(baslik, style: const TextStyle(color: Color(0xFF888888), fontSize: 12)),
+      Text(baslik, style: kBody(context, size: 12, color: kHint(context))),
       const SizedBox(width: 8),
-      Text(deger, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+      Text(deger, style: kBody(context, size: 12, weight: FontWeight.w600, color: kText(context))),
     ]);
   }
 }

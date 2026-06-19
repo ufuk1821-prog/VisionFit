@@ -36,16 +36,16 @@ class VisionFitAppState extends State<VisionFitApp> {
       themeMode: themeMode,
       theme: ThemeData(
         brightness: Brightness.light,
-        scaffoldBackgroundColor: const Color(0xFFF0F0F0),
+        scaffoldBackgroundColor: const Color(0xFFF5F3F2),
         colorScheme: const ColorScheme.light(primary: Color(0xFFE8313F), surface: Color(0xFFFFFFFF)),
-        appBarTheme: const AppBarTheme(backgroundColor: Color(0xFFFFFFFF), foregroundColor: Colors.black),
+        appBarTheme: const AppBarTheme(backgroundColor: Color(0xFFFFFFFF), foregroundColor: Colors.black, elevation: 0),
         drawerTheme: const DrawerThemeData(backgroundColor: Color(0xFFFFFFFF)),
       ),
       darkTheme: ThemeData(
         brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF0F0F0F),
+        scaffoldBackgroundColor: const Color(0xFF131313),
         colorScheme: const ColorScheme.dark(primary: Color(0xFFE8313F), surface: Color(0xFF1A1A1A)),
-        appBarTheme: const AppBarTheme(backgroundColor: Color(0xFF1A1A1A), foregroundColor: Colors.white),
+        appBarTheme: const AppBarTheme(backgroundColor: Color(0xFF1A1A1A), foregroundColor: Colors.white, elevation: 0),
         drawerTheme: const DrawerThemeData(backgroundColor: Color(0xFF1A1A1A)),
       ),
       home: const BaslangicEkrani(),
@@ -55,7 +55,6 @@ class VisionFitAppState extends State<VisionFitApp> {
 
 class BaslangicEkrani extends StatefulWidget {
   const BaslangicEkrani({super.key});
-
   @override
   State<BaslangicEkrani> createState() => _BaslangicEkraniState();
 }

@@ -787,3 +787,31 @@ def test_55_yeni_hareketler_gecmis_kaydina_ekleniyor():
         response = client.delete(f"/api/analyze/history/{kid}", headers=headers)
         assert response.status_code == 200
 
+def test_56_lunge_endpoint():
+    token = get_token("test@test.com")
+    headers = {"Authorization": f"Bearer {token}"}
+    landmarks = [0.0] * 132
+    response = client.post("/api/analyze/lunge", json={"landmarks": landmarks}, headers=headers)
+    assert response.status_code in [200, 400]
+
+def test_57_omuz_acikligi_endpoint():
+    token = get_token("test@test.com")
+    headers = {"Authorization": f"Bearer {token}"}
+    landmarks = [0.0] * 132
+    response = client.post("/api/analyze/omuz-acikligi", json={"landmarks": landmarks}, headers=headers)
+    assert response.status_code in [200, 400]
+
+def test_58_one_egilme_endpoint():
+    token = get_token("test@test.com")
+    headers = {"Authorization": f"Bearer {token}"}
+    landmarks = [0.0] * 132
+    response = client.post("/api/analyze/one-egilme", json={"landmarks": landmarks}, headers=headers)
+    assert response.status_code in [200, 400]
+
+def test_59_ters_kopru_endpoint():
+    token = get_token("test@test.com")
+    headers = {"Authorization": f"Bearer {token}"}
+    landmarks = [0.0] * 132
+    response = client.post("/api/analyze/ters-kopru", json={"landmarks": landmarks}, headers=headers)
+    assert response.status_code in [200, 400]
+

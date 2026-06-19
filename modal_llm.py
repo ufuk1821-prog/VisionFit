@@ -1,22 +1,36 @@
 import modal
 from fastapi import Request
 
-app = modal.App("visionfit-llm")
+MODEL_ID = "213asdfdws/visionfit-llm"
 
-image = modal.Image.debian_slim().pip_install(
-    "transformers",
-    "torch",
-    "accelerate",
-    "huggingface_hub",
-    "fastapi[standard]",
+def model_indir():
+    from huggingface_hub import snapshot_download
+    snapshot_download(MODEL_ID)
+
+image = (
+    modal.Image.debian_slim()
+    .pip_install(
+        "transformers",
+        "torch",
+        "accelerate",
+        "huggingface_hub",
+        "fastapi[standard]",
+        "bitsandbytes",
+    )
+    .run_function(
+        model_indir,
+        secrets=[modal.Secret.from_name("huggingface")],
+    )
 )
 
+app = modal.App("visionfit-llm")
 
 @app.cls(
     image=image,
     gpu="T4",
-    timeout=300,
-    scaledown_window=300,
+    timeout=120,
+    scaledown_window=600,
+    min_containers=0,
     secrets=[modal.Secret.from_name("huggingface")],
 )
 class VisionFitLLM:
@@ -25,13 +39,13 @@ class VisionFitLLM:
         from transformers import AutoModelForCausalLM, AutoTokenizer
         import torch
 
-        MODEL_ID = "213asdfdws/visionfit-llm"
         self.tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
         self.model = AutoModelForCausalLM.from_pretrained(
             MODEL_ID,
-            torch_dtype=torch.float32,
+            torch_dtype=torch.float16,
+            device_map="cuda",
+            load_in_4bit=True,
         )
-        self.model = self.model.cpu()
         self.model.eval()
 
     @modal.method()
@@ -45,22 +59,19 @@ class VisionFitLLM:
             add_generation_prompt=True,
             return_tensors="pt",
             return_dict=True,
-        )
-
-        input_ids = girdiler["input_ids"].cpu()
-        attention_mask = girdiler["attention_mask"].cpu()
+        ).to("cuda")
 
         with torch.no_grad():
             cikti = self.model.generate(
-                input_ids=input_ids,
-                attention_mask=attention_mask,
-                max_new_tokens=300,
-                temperature=0.7,
-                do_sample=True,
+                input_ids=girdiler["input_ids"],
+                attention_mask=girdiler["attention_mask"],
+                max_new_tokens=120,
+                do_sample=False,
                 pad_token_id=self.tokenizer.eos_token_id,
+                repetition_penalty=1.1,
             )
         return self.tokenizer.decode(
-            cikti[0][input_ids.shape[1]:],
+            cikti[0][girdiler["input_ids"].shape[1]:],
             skip_special_tokens=True
         ).strip()
 

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import '../tema.dart';
 import '../servisler/api_servisi.dart';
 
 class AnaSayfaIcerik extends StatefulWidget {
   final void Function(String) sayfayaGit;
   const AnaSayfaIcerik({super.key, required this.sayfayaGit});
-
   @override
   State<AnaSayfaIcerik> createState() => _AnaSayfaIcerikState();
 }
@@ -19,10 +19,7 @@ class _AnaSayfaIcerikState extends State<AnaSayfaIcerik> {
   bool _yukleniyor = true;
 
   @override
-  void initState() {
-    super.initState();
-    _veriYukle();
-  }
+  void initState() { super.initState(); _veriYukle(); }
 
   Future<void> _veriYukle() async {
     try {
@@ -49,39 +46,31 @@ class _AnaSayfaIcerikState extends State<AnaSayfaIcerik> {
         _bugunSu = (suKayitlari as List).fold<double>(0, (s, k) => s + (k['miktar_ml'] as num? ?? 0));
         _yukleniyor = false;
       });
-    } catch (_) {
-      setState(() { _yukleniyor = false; });
-    }
+    } catch (_) { setState(() { _yukleniyor = false; }); }
   }
 
   String _selamlama() {
-    final saat = DateTime.now().hour;
-    if (saat < 12) return 'Günaydın';
-    if (saat < 18) return 'İyi günler';
-    return 'İyi akşamlar';
+    final s = DateTime.now().hour;
+    if (s < 12) return 'Günaydın';
+    if (s < 18) return 'İyi Günler';
+    return 'İyi Akşamlar';
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_yukleniyor) return const Center(child: CircularProgressIndicator(color: Color(0xFFE8313F)));
-
+    if (_yukleniyor) return const Center(child: CircularProgressIndicator(color: kRed));
     final ad = _profil?['ad'] ?? 'Sporcu';
     final bugun = DateTime.now();
-    const aylar = ['', 'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
-    const gunler = ['', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
-    final tarih = '${gunler[bugun.weekday]}, ${bugun.day} ${aylar[bugun.month]}';
-
-    final buHaftaBasi = bugun.subtract(Duration(days: bugun.weekday - 1));
-    final buHaftaAntrenman = _antrenmanlar.where((a) {
-      final t = DateTime.tryParse(a['tarih'] ?? '');
-      return t != null && t.isAfter(buHaftaBasi.subtract(const Duration(days: 1)));
-    }).length;
-
-    final sonAntrenman = _antrenmanlar.isNotEmpty ? _antrenmanlar.first : null;
-    final profilTam = _profil != null && _profil!['boy'] != null && _profil!['kilo'] != null;
+    const aylar = ['', 'OCA', 'ŞUB', 'MAR', 'NİS', 'MAY', 'HAZ', 'TEM', 'AĞU', 'EYL', 'EKİ', 'KAS', 'ARA'];
+    const gunler = ['', 'PAZARTESİ', 'SALI', 'ÇARŞAMBA', 'PERŞEMBE', 'CUMA', 'CUMARTESİ', 'PAZAR'];
+    final tarihStr = 'BUGÜN ${bugun.day} ${aylar[bugun.month]} ${gunler[bugun.weekday]}';
+    final profilTam = _profil?['boy'] != null && _profil?['kilo'] != null;
+    final bmi = _diyet?['bmi'];
+    final bmiKategori = _diyet?['bmi_kategori'] ?? '';
+    final hedefKalori = _diyet?['hedef_kalori'];
 
     return RefreshIndicator(
-      color: const Color(0xFFE8313F),
+      color: kRed,
       onRefresh: _veriYukle,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -89,216 +78,188 @@ class _AnaSayfaIcerikState extends State<AnaSayfaIcerik> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _baslik(ad, tarih),
+            _baslik(context, ad, tarihStr),
             const SizedBox(height: 16),
-            if (!profilTam) _profilUyarisi(),
-            _ozet4lu(),
-            const SizedBox(height: 20),
-            _haftalikOzet(buHaftaAntrenman, sonAntrenman),
-            const SizedBox(height: 20),
-            _motivasyonKarti(),
-            const SizedBox(height: 20),
-            _hizliErisim(),
+            if (!profilTam) _profilUyarisi(context),
+            _seriKarti(context),
             const SizedBox(height: 16),
+            _metrikler(context, bmi, bmiKategori, hedefKalori),
+            const SizedBox(height: 20),
+            _motivasyonKarti(context),
+            const SizedBox(height: 20),
+            _hizliErisim(context),
+            const SizedBox(height: 20),
           ],
         ),
       ),
     );
   }
 
-  Widget _baslik(String ad, String tarih) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('${_selamlama()}, $ad! 👋', style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 2),
-          Text(tarih, style: const TextStyle(color: Color(0xFF888888), fontSize: 13)),
-        ]),
-        GestureDetector(
-          onTap: () => widget.sayfayaGit('profil'),
-          child: Container(
-            width: 42, height: 42,
-            decoration: BoxDecoration(color: const Color(0xFFE8313F).withOpacity(0.15), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE8313F).withOpacity(0.4))),
-            child: const Icon(Icons.person_outline, color: Color(0xFFE8313F), size: 22),
-          ),
-        ),
-      ],
-    );
+  Widget _baslik(BuildContext context, String ad, String tarih) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text('${_selamlama()}, $ad 👋', style: kHeadline(context, size: 20, weight: FontWeight.w800)),
+      const SizedBox(height: 2),
+      Text(tarih, style: kLabel(context)),
+    ]);
   }
 
-  Widget _profilUyarisi() {
+  Widget _profilUyarisi(BuildContext context) {
     return GestureDetector(
       onTap: () => widget.sayfayaGit('profil'),
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          gradient: LinearGradient(colors: [const Color(0xFFE8313F).withOpacity(0.2), const Color(0xFFE8313F).withOpacity(0.05)]),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFE8313F).withOpacity(0.4)),
+          color: kRed.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: kRed.withOpacity(0.3)),
         ),
-        child: const Row(children: [
-          Icon(Icons.info_outline, color: Color(0xFFE8313F), size: 20),
-          SizedBox(width: 10),
-          Expanded(child: Text('Profili tamamla → Kişisel diyet planı al', style: TextStyle(color: Colors.white, fontSize: 13))),
-          Icon(Icons.chevron_right, color: Color(0xFFE8313F), size: 18),
+        child: Row(children: [
+          const Icon(Icons.info_outline, color: kRed, size: 16),
+          const SizedBox(width: 8),
+          Expanded(child: Text('PROFİLİ TAMAMLA → KİŞİSEL DİYET PLANI AL', style: kLabel(context, color: kRed))),
+          const Icon(Icons.chevron_right, color: kRed, size: 18),
         ]),
       ),
     );
   }
 
-  Widget _ozet4lu() {
-    final bmi = _diyet?['bmi'];
-    final bmiKategori = _diyet?['bmi_kategori'] ?? '';
-    final hedefKalori = _diyet?['hedef_kalori'];
+  Widget _seriKarti(BuildContext context) {
+    final toplam = _antrenmanlar.length;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: kRed.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: kRed.withOpacity(0.2)),
+      ),
+      child: Row(children: [
+        const Icon(Icons.local_fire_department_outlined, color: kRed, size: 18),
+        const SizedBox(width: 8),
+        Text('$toplam TOPLAM ANTRENMAN', style: kLabel(context, color: kRed)),
+        const Spacer(),
+        Text('GEÇMİŞİ GÖR →', style: kLabel(context, size: 10, color: kHint(context))),
+      ]),
+    );
+  }
 
-    final bmiRenk = bmiKategori == 'Normal' ? const Color(0xFF4CAF50) :
-                    bmiKategori == 'Kilolu' ? const Color(0xFFF59E0B) :
-                    bmiKategori == 'Obez' ? const Color(0xFFE8313F) : const Color(0xFF3B82F6);
-
-    final suYuzde = (_bugunSu / 2500).clamp(0.0, 1.0);
+  Widget _metrikler(BuildContext context, dynamic bmi, String bmiKat, dynamic hedefKalori) {
+    final bmiRenk = bmiKat == 'Normal' ? kGreen : bmiKat == 'Kilolu' ? kAmber : kRed;
+    final adimYuzde = (_bugunAdim / 10000).clamp(0.0, 1.0);
+    final suYuzde = (_bugunSu / 3000).clamp(0.0, 1.0);
 
     return GridView.count(
-      crossAxisCount: 2, crossAxisSpacing: 12, mainAxisSpacing: 12,
+      crossAxisCount: 2, crossAxisSpacing: 10, mainAxisSpacing: 10,
       shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
-      childAspectRatio: 1.5,
+      childAspectRatio: 1.35,
       children: [
-        _ozetKart('BMI', bmi != null ? '$bmi' : '—', Icons.monitor_weight_outlined, bmiRenk, alt: bmiKategori == 'Normal' ? 'Normal ✓' : bmiKategori),
-        _ozetKart('Hedef Kalori', hedefKalori != null ? '$hedefKalori kcal' : '—', Icons.local_fire_department_outlined, const Color(0xFFE8313F)),
-        _ozetKart('Bugün Adım', '$_bugunAdim', Icons.directions_walk_outlined, const Color(0xFF3B82F6), alt: '$_bugunKalori kcal yakıldı'),
-        _ozetKart('Günlük Su', '${_bugunSu.round()} ml', Icons.water_drop_outlined, const Color(0xFF06B6D4), alt: '%${(suYuzde * 100).round()} hedef'),
+        _bentoKart(context, baslik: 'VKİ (BMI)', deger: bmi != null ? '$bmi' : '—', alt: bmiKat.isEmpty ? '' : bmiKat.toUpperCase(), renk: bmiRenk),
+        _bentoKart(context, baslik: 'KALORİ HEDEFİ', deger: hedefKalori != null ? '$hedefKalori' : '—', alt: 'KCAL / GÜN', renk: kRed),
+        _bentoKart(context, baslik: 'ADIMLAR', deger: '$_bugunAdim', alt: '$_bugunKalori KCAL', renk: kBlue, progress: adimYuzde),
+        _bentoKart(context, baslik: 'SU TÜKETİMİ', deger: '${(_bugunSu / 1000).toStringAsFixed(1)}L', alt: '/ 3L  %${(suYuzde * 100).round()}', renk: const Color(0xFF70D6D8), progress: suYuzde),
       ],
     );
   }
 
-  Widget _ozetKart(String baslik, String deger, IconData ikon, Color renk, {String? alt}) {
-    final gosterilecek = deger == 'null' || deger == 'null kcal' ? '—' : deger;
+  Widget _bentoKart(BuildContext context, {required String baslik, required String deger, required String alt, required Color renk, double? progress}) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF333333)),
+        color: kSurfaceLow(context),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: kBorderAlt(context)),
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Container(padding: const EdgeInsets.all(6), decoration: BoxDecoration(color: renk.withOpacity(0.15), borderRadius: BorderRadius.circular(8)), child: Icon(ikon, color: renk, size: 16)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(baslik, style: kLabel(context)),
           const Spacer(),
-        ]),
-        const SizedBox(height: 8),
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 400),
-          child: Text(gosterilecek, key: ValueKey(gosterilecek), style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800)),
-        ),
-        Text(baslik, style: const TextStyle(color: Color(0xFF888888), fontSize: 11)),
-        if (alt != null && alt != 'null') Text(alt, style: TextStyle(color: renk, fontSize: 10, fontWeight: FontWeight.w500)),
-      ]),
-    );
-  }
-
-  Widget _haftalikOzet(int antrenmanSayisi, dynamic sonAntrenman) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: const Color(0xFF1A1A1A), borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFF333333))),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Row(children: [
-          Icon(Icons.bar_chart_outlined, color: Color(0xFFE8313F), size: 18),
-          SizedBox(width: 8),
-          Text('Bu Hafta', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),
-        ]),
-        const SizedBox(height: 14),
-        Row(children: [
-          Expanded(child: _haftaItem('🏋️', 'Antrenman', '$antrenmanSayisi kez')),
-          Container(width: 1, height: 40, color: const Color(0xFF333333)),
-          Expanded(child: _haftaItem('👟', 'Toplam Adım', '$_bugunAdim')),
-          Container(width: 1, height: 40, color: const Color(0xFF333333)),
-          Expanded(child: _haftaItem('🔥', 'Kalori', '$_bugunKalori kcal')),
-        ]),
-        if (sonAntrenman != null) ...[
-          const SizedBox(height: 12),
-          const Divider(color: Color(0xFF333333)),
-          const SizedBox(height: 8),
-          Row(children: [
-            const Icon(Icons.access_time_outlined, color: Color(0xFF888888), size: 14),
-            const SizedBox(width: 6),
-            Text('Son antrenman: %${sonAntrenman['eminlik_skoru'] ?? 0} skor', style: const TextStyle(color: Color(0xFF888888), fontSize: 12)),
-          ]),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 400),
+            child: Text(deger, key: ValueKey(deger), style: kHeadline(context, size: 26, weight: FontWeight.w900, color: renk)),
+          ),
+          if (alt.isNotEmpty) Text(alt, style: kLabel(context, size: 10)),
+          if (progress != null) ...[
+            const SizedBox(height: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(99),
+              child: LinearProgressIndicator(
+                value: progress, minHeight: 3,
+                backgroundColor: kBorder(context),
+                valueColor: AlwaysStoppedAnimation<Color>(renk),
+              ),
+            ),
+          ],
         ],
-      ]),
+      ),
     );
   }
 
-  Widget _haftaItem(String emoji, String baslik, String deger) {
-    return Column(children: [
-      Text(emoji, style: const TextStyle(fontSize: 20)),
-      const SizedBox(height: 4),
-      Text(deger, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w700)),
-      Text(baslik, style: const TextStyle(color: Color(0xFF888888), fontSize: 10)),
-    ]);
-  }
-
-  Widget _motivasyonKarti() {
+  Widget _motivasyonKarti(BuildContext context) {
     final sayi = _antrenmanlar.length;
-    String mesaj;
-    String emoji;
-    if (sayi == 0) { mesaj = 'İlk antrenmanını yap ve yolculuğunu başlat!'; emoji = '🚀'; }
-    else if (sayi < 5) { mesaj = 'Harika başlangıç! Düzenli antrenmana devam et.'; emoji = '💪'; }
-    else if (sayi < 20) { mesaj = 'Ritme giriyorsun, bu tempoyu koru!'; emoji = '🔥'; }
-    else { mesaj = 'Tutarlılık şampiyonusun, devam et!'; emoji = '🏆'; }
+    String mesaj; String emoji;
+    if (sayi == 0) { mesaj = 'İLK ANTRENMANINI YAP VE YOLCULUĞUNU BAŞLAT'; emoji = '🚀'; }
+    else if (sayi < 5) { mesaj = 'HARIKA BAŞLANGIÇ! DÜZENLİ ANTRENMANA DEVAM ET'; emoji = '💪'; }
+    else if (sayi < 20) { mesaj = 'RİTME GİRİYORSUN, BU TEMPOYU KORU'; emoji = '🔥'; }
+    else { mesaj = 'TUTARLILIK ŞAMPİYONUSUN, DEVAM ET'; emoji = '🏆'; }
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: [Color(0xFFE8313F), Color(0xFFB91C1C)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-        borderRadius: BorderRadius.circular(16),
+        gradient: const LinearGradient(colors: [kRed, Color(0xFFB91C1C)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(children: [
-        Text(emoji, style: const TextStyle(fontSize: 32)),
+        Text(emoji, style: const TextStyle(fontSize: 28)),
         const SizedBox(width: 14),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Motivasyon', style: TextStyle(color: Colors.white70, fontSize: 11)),
+          Text('MOTİVASYON', style: kLabel(context, size: 10, color: Colors.white70)),
           const SizedBox(height: 4),
-          Text(mesaj, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600, height: 1.4)),
+          Text(mesaj, style: kLabel(context, size: 11, color: Colors.white)),
         ])),
       ]),
     );
   }
 
-  Widget _hizliErisim() {
+  Widget _hizliErisim(BuildContext context) {
     final butonlar = [
-      ('kamera', Icons.videocam_outlined, 'Kamera\nAnalizi', const Color(0xFFE8313F)),
-      ('fotograf', Icons.image_outlined, 'Fotoğraflı\nAnaliz', const Color(0xFF8B5CF6)),
-      ('diyet', Icons.restaurant_menu_outlined, 'Diyet\nÖnerisi', const Color(0xFF10B981)),
-      ('defter', Icons.book_outlined, 'Antrenman\nDefteri', const Color(0xFFF59E0B)),
-      ('beslenme', Icons.food_bank_outlined, 'Beslenme\nTakibi', const Color(0xFF06B6D4)),
-      ('adim', Icons.directions_walk_outlined, 'Adım\nSayacı', const Color(0xFF3B82F6)),
+      ('kamera', Icons.videocam_outlined, 'KAMERA ANALİZİ', kRed),
+      ('fotograf', Icons.image_outlined, 'FOTOĞRAF ANALİZİ', const Color(0xFF8B5CF6)),
+      ('gecmis', Icons.history_outlined, 'GEÇMİŞ', kGreen),
+      ('diyet', Icons.restaurant_outlined, 'DİYET', kAmber),
+      ('beslenme', Icons.food_bank_outlined, 'BESLENME', const Color(0xFF70D6D8)),
+      ('rozetler', Icons.workspace_premium_outlined, 'ROZETLER', kBlue),
     ];
 
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const Text('Hızlı Erişim', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
-      const SizedBox(height: 12),
-      GridView.count(
-        crossAxisCount: 3, crossAxisSpacing: 10, mainAxisSpacing: 10,
-        shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
-        childAspectRatio: 1.1,
-        children: butonlar.map((b) => GestureDetector(
-          onTap: () => widget.sayfayaGit(b.$1),
-          child: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1A1A1A),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: b.$4.withOpacity(0.3)),
-            ),
-            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: b.$4.withOpacity(0.15), borderRadius: BorderRadius.circular(10)), child: Icon(b.$2, color: b.$4, size: 20)),
-              const SizedBox(height: 6),
-              Text(b.$3, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600), textAlign: TextAlign.center),
-            ]),
+      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+        Text('HIZLI ERİŞİM', style: kLabel(context)),
+        Text('TÜMÜ', style: kLabel(context, size: 10, color: kRed)),
+      ]),
+      const SizedBox(height: 10),
+      ...butonlar.map((b) => GestureDetector(
+        onTap: () => widget.sayfayaGit(b.$1),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: kSurfaceLow(context),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: b.$4.withOpacity(0.2)),
           ),
-        )).toList(),
-      ),
+          child: Row(children: [
+            Container(
+              width: 40, height: 40,
+              decoration: BoxDecoration(color: b.$4.withOpacity(0.12), borderRadius: BorderRadius.circular(10)),
+              child: Icon(b.$2, color: b.$4, size: 20),
+            ),
+            const SizedBox(width: 14),
+            Text(b.$3, style: kLabel(context, size: 11, color: kText(context))),
+            const Spacer(),
+            Icon(Icons.chevron_right, color: kHint(context), size: 18),
+          ]),
+        ),
+      )),
     ]);
   }
 }

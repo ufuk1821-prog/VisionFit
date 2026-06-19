@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
+import '../tema.dart';
 import '../servisler/api_servisi.dart';
 
 class DiyetEkrani extends StatefulWidget {
   const DiyetEkrani({super.key});
-
   @override
   State<DiyetEkrani> createState() => _DiyetEkraniState();
 }
 
 class _DiyetEkraniState extends State<DiyetEkrani> {
-  final _boyController = TextEditingController();
-  final _kiloController = TextEditingController();
-  final _yasController = TextEditingController();
-  final _istekController = TextEditingController();
+  final _boyCtrl = TextEditingController();
+  final _kiloCtrl = TextEditingController();
+  final _yasCtrl = TextEditingController();
+  final _istekCtrl = TextEditingController();
+  final _scrollCtrl = ScrollController();
   String _cinsiyet = '';
   String _aktiflik = '';
   String _hedef = '';
@@ -21,43 +22,37 @@ class _DiyetEkraniState extends State<DiyetEkrani> {
   String _hata = '';
   String _aiOneri = '';
   bool _aiYukleniyor = false;
-  final _scrollController = ScrollController();
 
-  final List<Map<String, String>> _aktiflikSecenekler = [
+  final List<Map<String, String>> _aktiflikler = [
     {'value': 'sedanter', 'label': 'Hareketsiz (ofis işi)'},
     {'value': 'az_hareketli', 'label': 'Az Hareketli (haftada 1-3 gün)'},
     {'value': 'orta_hareketli', 'label': 'Orta Hareketli (haftada 3-5 gün)'},
     {'value': 'cok_hareketli', 'label': 'Çok Hareketli (haftada 6-7 gün)'},
     {'value': 'asiri_hareketli', 'label': 'Aşırı Hareketli (günde 2 kez)'},
   ];
-
-  final List<Map<String, String>> _hedefSecenekler = [
-    {'value': 'kilo_verme', 'label': 'Kilo Ver'},
-    {'value': 'kilo_koruma', 'label': 'Kiloyu Koru'},
-    {'value': 'kilo_alma', 'label': 'Kilo Al'},
+  final List<Map<String, String>> _hedefler = [
+    {'value': 'kilo_verme', 'label': 'Kilo Ver', 'emoji': '📉'},
+    {'value': 'kilo_koruma', 'label': 'Koru', 'emoji': '⚖️'},
+    {'value': 'kilo_alma', 'label': 'Kilo Al', 'emoji': '📈'},
   ];
 
   Future<void> _hesapla() async {
-    if (_boyController.text.isEmpty || _kiloController.text.isEmpty || _yasController.text.isEmpty || _cinsiyet.isEmpty || _aktiflik.isEmpty || _hedef.isEmpty) {
+    if (_boyCtrl.text.isEmpty || _kiloCtrl.text.isEmpty || _yasCtrl.text.isEmpty || _cinsiyet.isEmpty || _aktiflik.isEmpty || _hedef.isEmpty) {
       setState(() { _hata = 'Lütfen tüm alanları doldurun.'; });
       return;
     }
     setState(() { _yukleniyor = true; _hata = ''; _sonuc = null; _aiOneri = ''; });
     try {
       final yanit = await ApiServisi.postJson('/api/users/diet/calculate', {
-        'boy': double.tryParse(_boyController.text) ?? 0,
-        'kilo': double.tryParse(_kiloController.text) ?? 0,
-        'yas': int.tryParse(_yasController.text) ?? 0,
-        'cinsiyet': _cinsiyet,
-        'aktiflik_seviyesi': _aktiflik,
-        'hedef': _hedef,
-        'istek': _istekController.text.trim(),
+        'boy': double.tryParse(_boyCtrl.text) ?? 0, 'kilo': double.tryParse(_kiloCtrl.text) ?? 0,
+        'yas': int.tryParse(_yasCtrl.text) ?? 0, 'cinsiyet': _cinsiyet,
+        'aktiflik_seviyesi': _aktiflik, 'hedef': _hedef, 'istek': _istekCtrl.text.trim(),
       });
       setState(() { _sonuc = Map<String, dynamic>.from(yanit); });
       Future.delayed(const Duration(milliseconds: 300), () {
-        _scrollController.animateTo(_scrollController.position.maxScrollExtent, duration: const Duration(milliseconds: 500), curve: Curves.easeOut);
+        _scrollCtrl.animateTo(_scrollCtrl.position.maxScrollExtent, duration: const Duration(milliseconds: 500), curve: Curves.easeOut);
       });
-    } catch (e) {
+    } catch (_) {
       setState(() { _hata = 'Hesaplama başarısız.'; });
     } finally {
       setState(() { _yukleniyor = false; });
@@ -71,17 +66,12 @@ class _DiyetEkraniState extends State<DiyetEkrani> {
       final planlar = _sonuc!['planlar'] as List?;
       final plan = planlar?.isNotEmpty == true ? planlar!.first : {};
       final yanit = await ApiServisi.postJson('/api/yerel-ai/diyet-onerisi', {
-        'bmi': _sonuc!['bmi'],
-        'bmi_kategori': _sonuc!['bmi_kategori'],
-        'hedef': _sonuc!['hedef'],
-        'hedef_kalori': _sonuc!['hedef_kalori'],
-        'protein_g': plan['protein_g'] ?? 0,
-        'karbonhidrat_g': plan['karbonhidrat_g'] ?? 0,
-        'yag_g': plan['yag_g'] ?? 0,
-        'istek': _istekController.text.trim(),
+        'bmi': _sonuc!['bmi'], 'bmi_kategori': _sonuc!['bmi_kategori'], 'hedef': _sonuc!['hedef'],
+        'hedef_kalori': _sonuc!['hedef_kalori'], 'protein_g': plan['protein_g'] ?? 0,
+        'karbonhidrat_g': plan['karbonhidrat_g'] ?? 0, 'yag_g': plan['yag_g'] ?? 0, 'istek': _istekCtrl.text.trim(),
       });
       setState(() { _aiOneri = yanit['yorum'] ?? ''; });
-    } catch (e) {
+    } catch (_) {
       setState(() { _aiOneri = 'AI önerisi alınamadı.'; });
     } finally {
       setState(() { _aiYukleniyor = false; });
@@ -91,219 +81,275 @@ class _DiyetEkraniState extends State<DiyetEkrani> {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      controller: _scrollController,
+      controller: _scrollCtrl,
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Diyet Önerisi', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 16),
-          _formKarti(),
+          Text('Diyet Önerisi', style: kHeadline(context, size: 20, weight: FontWeight.w800)),
+          const SizedBox(height: 4),
+          Text('Kişisel verilerinle kalori ve makro hesapla.', style: kBody(context, size: 13, color: kHint(context))),
+          const SizedBox(height: 20),
+          _formKarti(context),
           if (_hata.isNotEmpty) ...[
             const SizedBox(height: 12),
-            Text(_hata, style: const TextStyle(color: Color(0xFFE8313F), fontSize: 13)),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: kRed.withOpacity(0.1), borderRadius: BorderRadius.circular(8), border: Border.all(color: kRed.withOpacity(0.3))),
+              child: Row(children: [
+                const Icon(Icons.warning_amber_outlined, color: kRed, size: 16),
+                const SizedBox(width: 8),
+                Text(_hata, style: kBody(context, size: 12, color: kRed)),
+              ]),
+            ),
           ],
           if (_sonuc != null) ...[
             const SizedBox(height: 20),
-            _sonucKarti(),
+            _sonucKarti(context),
             const SizedBox(height: 12),
-            _aiKarti(),
+            _aiKarti(context),
           ],
+          const SizedBox(height: 24),
         ],
       ),
     );
   }
 
-  Widget _formKarti() {
+  Widget _formKarti(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: const Color(0xFF1A1A1A), borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFF333333))),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(children: [
-            Expanded(child: _sayiInput('Boy (cm)', _boyController)),
-            const SizedBox(width: 12),
-            Expanded(child: _sayiInput('Kilo (kg)', _kiloController)),
-          ]),
-          const SizedBox(height: 12),
-          _sayiInput('Yaş', _yasController),
-          const SizedBox(height: 12),
-          const Text('Cinsiyet', style: TextStyle(color: Color(0xFF888888), fontSize: 13)),
-          const SizedBox(height: 6),
-          Row(children: [
-            Expanded(child: _secimButonu('Erkek', _cinsiyet == 'Erkek', () => setState(() { _cinsiyet = 'Erkek'; }))),
-            const SizedBox(width: 8),
-            Expanded(child: _secimButonu('Kadın', _cinsiyet == 'Kadın', () => setState(() { _cinsiyet = 'Kadın'; }))),
-          ]),
-          const SizedBox(height: 12),
-          const Text('Aktivite Seviyesi', style: TextStyle(color: Color(0xFF888888), fontSize: 13)),
-          const SizedBox(height: 6),
-          _dropdown(_aktiflikSecenekler, _aktiflik, (v) => setState(() { _aktiflik = v!; })),
-          const SizedBox(height: 12),
-          const Text('Hedef', style: TextStyle(color: Color(0xFF888888), fontSize: 13)),
-          const SizedBox(height: 6),
-          Row(children: _hedefSecenekler.map((h) => Expanded(child: Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: _secimButonu(h['label']!, _hedef == h['value'], () => setState(() { _hedef = h['value']!; })),
-          ))).toList()),
-          const SizedBox(height: 12),
-          const Text('Özel İstek (opsiyonel)', style: TextStyle(color: Color(0xFF888888), fontSize: 13)),
-          const SizedBox(height: 6),
-          TextField(
-            controller: _istekController,
-            style: const TextStyle(color: Colors.white, fontSize: 13),
-            decoration: _inputDeko('Örn: vejetaryenim, yumurtaya alerjim var...'),
-            maxLines: 2,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(color: kSurfaceLow(context), borderRadius: BorderRadius.circular(14), border: Border.all(color: kBorderAlt(context))),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Expanded(child: _inputAlani(context, 'BOY (CM)', _boyCtrl)),
+          const SizedBox(width: 12),
+          Expanded(child: _inputAlani(context, 'KİLO (KG)', _kiloCtrl)),
+        ]),
+        const SizedBox(height: 14),
+        _inputAlani(context, 'YAŞ', _yasCtrl),
+        const SizedBox(height: 14),
+        Text('CİNSİYET', style: kLabel(context)),
+        const SizedBox(height: 8),
+        Row(children: [
+          Expanded(child: _secimButonu(context, 'Erkek', _cinsiyet == 'Erkek', () => setState(() { _cinsiyet = 'Erkek'; }))),
+          const SizedBox(width: 8),
+          Expanded(child: _secimButonu(context, 'Kadın', _cinsiyet == 'Kadın', () => setState(() { _cinsiyet = 'Kadın'; }))),
+        ]),
+        const SizedBox(height: 14),
+        Text('AKTİVİTE SEVİYESİ', style: kLabel(context)),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          value: _aktiflik.isEmpty ? null : _aktiflik,
+          dropdownColor: kSurfaceLow(context),
+          style: kBody(context, size: 13, color: kText(context)),
+          hint: Text('Seçin...', style: kBody(context, size: 13, color: kHint(context))),
+          decoration: InputDecoration(
+            filled: true, fillColor: kSurfaceContainer(context),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: kBorder(context))),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: kRed, width: 1.5)),
           ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity, height: 48,
-            child: ElevatedButton(
-              onPressed: _yukleniyor ? null : _hesapla,
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFE8313F), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-              child: _yukleniyor ? const CircularProgressIndicator(color: Colors.white, strokeWidth: 2) : const Text('Hesapla', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+          items: _aktiflikler.map((a) => DropdownMenuItem(value: a['value'], child: Text(a['label']!, style: kBody(context, size: 12, color: kText(context))))).toList(),
+          onChanged: (v) => setState(() { _aktiflik = v!; }),
+        ),
+        const SizedBox(height: 14),
+        Text('HEDEF', style: kLabel(context)),
+        const SizedBox(height: 8),
+        Row(children: _hedefler.map((h) => Expanded(child: Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: GestureDetector(
+            onTap: () => setState(() { _hedef = h['value']!; }),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: _hedef == h['value'] ? kRed : kSurfaceContainer(context),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: _hedef == h['value'] ? kRed : kBorder(context)),
+              ),
+              child: Column(children: [
+                Text(h['emoji']!, style: const TextStyle(fontSize: 20)),
+                const SizedBox(height: 4),
+                Text(h['label']!, style: kLabel(context, size: 10, color: _hedef == h['value'] ? Colors.white : kHint(context))),
+              ]),
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _sonucKarti() {
-    final bmi = _sonuc!['bmi'];
-    final bmiKategori = _sonuc!['bmi_kategori'] ?? '';
-    final hedefKalori = _sonuc!['hedef_kalori'];
-    final planlar = _sonuc!['planlar'] as List? ?? [];
-
-    final bmiRenkler = {'Zayif': Colors.blue, 'Normal': const Color(0xFF4CAF50), 'Kilolu': Colors.orange, 'Obez': const Color(0xFFE8313F)};
-    final bmiEtiketler = {'Zayif': 'Zayıf', 'Normal': 'Normal', 'Kilolu': 'Kilolu', 'Obez': 'Obez'};
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(children: [
-          Expanded(child: _ozet('BMI', '$bmi', Icons.monitor_weight_outlined,
-            alt: bmiEtiketler[bmiKategori] ?? bmiKategori,
-            renk: bmiRenkler[bmiKategori] ?? const Color(0xFFE8313F))),
-          const SizedBox(width: 12),
-          Expanded(child: _ozet('Hedef Kalori', '$hedefKalori kcal', Icons.local_fire_department_outlined)),
-        ]),
-        const SizedBox(height: 12),
-        ...planlar.map((plan) => _planKarti(plan)),
-      ],
-    );
-  }
-
-  Widget _planKarti(dynamic plan) {
-    final ogunler = plan['ornek_ogunler'] as List? ?? [];
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: const Color(0xFF1A1A1A), borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFF333333))),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(plan['baslik'] ?? '', style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 4),
-          Text('${plan['kalori']} kcal • P: ${plan['protein_g']}g • K: ${plan['karbonhidrat_g']}g • Y: ${plan['yag_g']}g',
-            style: const TextStyle(color: Color(0xFF888888), fontSize: 12)),
-          const SizedBox(height: 12),
-          ...ogunler.map((o) => Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Text('• $o', style: const TextStyle(color: Color(0xFFCCCCCC), fontSize: 13, height: 1.5)),
-          )),
-        ],
-      ),
-    );
-  }
-
-  Widget _aiKarti() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: const Color(0xFF1A1A1A), borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFF333333))),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(children: [
-            Icon(Icons.auto_awesome, color: Color(0xFFE8313F), size: 18),
-            SizedBox(width: 8),
-            Text('AI Diyet Önerisi', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
-          ]),
-          const SizedBox(height: 12),
-          if (_aiOneri.isEmpty)
-            SizedBox(
-              width: double.infinity, height: 44,
-              child: ElevatedButton(
-                onPressed: _aiYukleniyor ? null : _aiOneriAl,
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFE8313F), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                child: _aiYukleniyor ? const CircularProgressIndicator(color: Colors.white, strokeWidth: 2) : const Text('AI Önerisi Al', style: TextStyle(color: Colors.white)),
-              ),
-            )
-          else
-            Text(_aiOneri, style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.6)),
-        ],
-      ),
-    );
-  }
-
-  Widget _ozet(String baslik, String deger, IconData ikon, {String? alt, Color? renk}) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: const Color(0xFF1A1A1A), borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFF333333))),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Icon(ikon, color: renk ?? const Color(0xFFE8313F), size: 18),
+        ))).toList()),
+        const SizedBox(height: 14),
+        Text('ÖZEL İSTEK (OPSİYONEL)', style: kLabel(context)),
         const SizedBox(height: 8),
-        Text(deger, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
-        Text(baslik, style: const TextStyle(color: Color(0xFF888888), fontSize: 11)),
-        if (alt != null) Text(alt, style: TextStyle(color: renk ?? const Color(0xFFE8313F), fontSize: 12, fontWeight: FontWeight.w600)),
+        TextField(
+          controller: _istekCtrl,
+          style: kBody(context, color: kText(context)),
+          maxLines: 2,
+          decoration: InputDecoration(
+            hintText: 'Örn: vejetaryenim, yumurtaya alerjim var...', hintStyle: kBody(context, size: 13, color: kHint(context)),
+            filled: true, fillColor: kSurfaceContainer(context),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: kBorder(context))),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: kRed, width: 1.5)),
+          ),
+        ),
+        const SizedBox(height: 20),
+        SizedBox(
+          width: double.infinity, height: 48,
+          child: ElevatedButton(
+            onPressed: _yukleniyor ? null : _hesapla,
+            style: ElevatedButton.styleFrom(backgroundColor: kRed, disabledBackgroundColor: kRed.withOpacity(0.5), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), elevation: 0),
+            child: _yukleniyor ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : Text('HESAPLA', style: kLabel(context, size: 12, color: Colors.white)),
+          ),
+        ),
       ]),
     );
   }
 
-  Widget _sayiInput(String label, TextEditingController controller) {
+  Widget _sonucKarti(BuildContext context) {
+    final bmi = _sonuc!['bmi'];
+    final bmiKategori = _sonuc!['bmi_kategori'] ?? '';
+    final hedefKalori = _sonuc!['hedef_kalori'];
+    final planlar = _sonuc!['planlar'] as List? ?? [];
+    final bmiRenkler = {'Zayif': kBlue, 'Normal': kGreen, 'Kilolu': kAmber, 'Obez': kRed};
+    final bmiEtiketler = {'Zayif': 'Zayıf', 'Normal': 'Normal', 'Kilolu': 'Kilolu', 'Obez': 'Obez'};
+    final bmiRenk = bmiRenkler[bmiKategori] ?? kRed;
+
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: const TextStyle(color: Color(0xFF888888), fontSize: 13)),
-      const SizedBox(height: 6),
-      TextField(controller: controller, keyboardType: TextInputType.number, style: const TextStyle(color: Colors.white), decoration: _inputDeko(''),),
+      Row(children: [
+        Text('SONUÇLAR', style: kLabel(context)),
+        const SizedBox(width: 8),
+        Expanded(child: Container(height: 1, color: kBorder(context))),
+      ]),
+      const SizedBox(height: 12),
+      Row(children: [
+        Expanded(child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(color: kSurfaceLow(context), borderRadius: BorderRadius.circular(12), border: Border.all(color: bmiRenk.withOpacity(0.4))),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('VKİ (BMI)', style: kLabel(context)),
+            const SizedBox(height: 8),
+            Text('$bmi', style: kHeadline(context, size: 28, weight: FontWeight.w900, color: bmiRenk)),
+            Container(
+              margin: const EdgeInsets.only(top: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(color: bmiRenk.withOpacity(0.12), borderRadius: BorderRadius.circular(6)),
+              child: Text(bmiEtiketler[bmiKategori] ?? bmiKategori, style: kLabel(context, size: 10, color: bmiRenk)),
+            ),
+          ]),
+        )),
+        const SizedBox(width: 12),
+        Expanded(child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(color: kSurfaceLow(context), borderRadius: BorderRadius.circular(12), border: Border.all(color: kRed.withOpacity(0.4))),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('HEDEF KALORİ', style: kLabel(context)),
+            const SizedBox(height: 8),
+            Text('$hedefKalori', style: kHeadline(context, size: 28, weight: FontWeight.w900, color: kRed)),
+            Text('kcal / gün', style: kLabel(context, size: 10)),
+          ]),
+        )),
+      ]),
+      const SizedBox(height: 12),
+      ...planlar.map((plan) => _planKarti(context, plan)),
     ]);
   }
 
-  Widget _secimButonu(String label, bool secili, VoidCallback onTap) {
+  Widget _planKarti(BuildContext context, dynamic plan) {
+    final ogunler = plan['ornek_ogunler'] as List? ?? [];
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: kSurfaceLow(context), borderRadius: BorderRadius.circular(12), border: Border.all(color: kBorderAlt(context))),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(plan['baslik'] ?? '', style: kBody(context, size: 15, weight: FontWeight.w700, color: kText(context))),
+        const SizedBox(height: 6),
+        Row(children: [
+          _makroCip(context, '${plan['kalori']} kcal', kRed),
+          const SizedBox(width: 6),
+          _makroCip(context, 'P: ${plan['protein_g']}g', kBlue),
+          const SizedBox(width: 6),
+          _makroCip(context, 'K: ${plan['karbonhidrat_g']}g', kGreen),
+          const SizedBox(width: 6),
+          _makroCip(context, 'Y: ${plan['yag_g']}g', kAmber),
+        ]),
+        if (ogunler.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Container(height: 1, color: kBorder(context)),
+          const SizedBox(height: 10),
+          ...ogunler.map((o) => Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Icon(Icons.arrow_right, color: kRed, size: 18),
+              const SizedBox(width: 4),
+              Expanded(child: Text('$o', style: kBody(context, size: 13, color: kText(context)))),
+            ]),
+          )),
+        ],
+      ]),
+    );
+  }
+
+  Widget _makroCip(BuildContext context, String label, Color renk) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(color: renk.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
+      child: Text(label, style: kLabel(context, size: 9, color: renk)),
+    );
+  }
+
+  Widget _aiKarti(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: kSurfaceLow(context), borderRadius: BorderRadius.circular(12), border: Border.all(color: kPurple.withOpacity(0.4))),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          const Icon(Icons.auto_awesome, color: kPurple, size: 18),
+          const SizedBox(width: 8),
+          Text('AI DİYET ÖNERİSİ', style: kLabel(context, color: kText(context))),
+        ]),
+        const SizedBox(height: 4),
+        Text('Kişiselleştirilmiş beslenme önerisi al', style: kBody(context, size: 12, color: kHint(context))),
+        const SizedBox(height: 14),
+        if (_aiOneri.isEmpty)
+          SizedBox(
+            width: double.infinity, height: 44,
+            child: ElevatedButton(
+              onPressed: _aiYukleniyor ? null : _aiOneriAl,
+              style: ElevatedButton.styleFrom(backgroundColor: kPurple, disabledBackgroundColor: kPurple.withOpacity(0.5), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), elevation: 0),
+              child: _aiYukleniyor ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : Text('AI ÖNERİSİ AL', style: kLabel(context, size: 11, color: Colors.white)),
+            ),
+          )
+        else
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(color: kSurfaceLowest(context), borderRadius: BorderRadius.circular(8), border: Border.all(color: kBorder(context))),
+            child: Text(_aiOneri, style: kBody(context, size: 13, color: kText(context))),
+          ),
+      ]),
+    );
+  }
+
+  Widget _inputAlani(BuildContext context, String label, TextEditingController ctrl) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(label, style: kLabel(context)),
+      const SizedBox(height: 6),
+      TextField(
+        controller: ctrl, keyboardType: TextInputType.number, style: kBody(context, color: kText(context)),
+        decoration: InputDecoration(
+          filled: true, fillColor: kSurfaceContainer(context),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: kBorder(context))),
+          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: kRed, width: 1.5)),
+        ),
+      ),
+    ]);
+  }
+
+  Widget _secimButonu(BuildContext context, String label, bool secili, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color: secili ? const Color(0xFFE8313F) : const Color(0xFF0F0F0F),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: secili ? const Color(0xFFE8313F) : const Color(0xFF333333)),
-        ),
-        child: Center(child: Text(label, style: TextStyle(color: secili ? Colors.white : const Color(0xFF888888), fontSize: 13, fontWeight: secili ? FontWeight.w600 : FontWeight.normal))),
+        decoration: BoxDecoration(color: secili ? kRed : kSurfaceContainer(context), borderRadius: BorderRadius.circular(8), border: Border.all(color: secili ? kRed : kBorder(context))),
+        child: Center(child: Text(label, style: kBody(context, size: 13, weight: secili ? FontWeight.w600 : FontWeight.w400, color: secili ? Colors.white : kHint(context)))),
       ),
-    );
-  }
-
-  Widget _dropdown(List<Map<String, String>> secenekler, String value, void Function(String?) onChanged) {
-    return DropdownButtonFormField<String>(
-      value: value.isEmpty ? null : value,
-      dropdownColor: const Color(0xFF1A1A1A),
-      style: const TextStyle(color: Colors.white, fontSize: 13),
-      hint: const Text('Seçin...', style: TextStyle(color: Color(0xFF555555))),
-      decoration: _inputDeko(''),
-      items: secenekler.map((s) => DropdownMenuItem(value: s['value'], child: Text(s['label']!))).toList(),
-      onChanged: onChanged,
-    );
-  }
-
-  InputDecoration _inputDeko(String hint) {
-    return InputDecoration(
-      hintText: hint, hintStyle: const TextStyle(color: Color(0xFF555555)),
-      filled: true, fillColor: const Color(0xFF0F0F0F),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF333333))),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF333333))),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE8313F))),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
     );
   }
 }
