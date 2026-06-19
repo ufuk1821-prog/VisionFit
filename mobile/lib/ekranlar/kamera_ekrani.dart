@@ -3,12 +3,37 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:camera/camera.dart';
-import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
+import 'package:flutter_pose_detection/flutter_pose_detection.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:video_player/video_player.dart';
 import 'package:path_provider/path_provider.dart';
 import '../tema.dart';
 import '../servisler/api_servisi.dart';
+
+const List<LandmarkType> mediapipeSirasi = [
+  LandmarkType.nose, LandmarkType.leftEyeInner, LandmarkType.leftEye, LandmarkType.leftEyeOuter,
+  LandmarkType.rightEyeInner, LandmarkType.rightEye, LandmarkType.rightEyeOuter,
+  LandmarkType.leftEar, LandmarkType.rightEar, LandmarkType.mouthLeft, LandmarkType.mouthRight,
+  LandmarkType.leftShoulder, LandmarkType.rightShoulder, LandmarkType.leftElbow, LandmarkType.rightElbow,
+  LandmarkType.leftWrist, LandmarkType.rightWrist, LandmarkType.leftPinky, LandmarkType.rightPinky,
+  LandmarkType.leftIndex, LandmarkType.rightIndex, LandmarkType.leftThumb, LandmarkType.rightThumb,
+  LandmarkType.leftHip, LandmarkType.rightHip, LandmarkType.leftKnee, LandmarkType.rightKnee,
+  LandmarkType.leftAnkle, LandmarkType.rightAnkle, LandmarkType.leftHeel, LandmarkType.rightHeel,
+  LandmarkType.leftFootIndex, LandmarkType.rightFootIndex,
+];
+
+List<double> pozuFlatListeCevirSenkron(Pose pose, double genislik, double yukseklik) {
+  final liste = <double>[];
+  for (final tip in mediapipeSirasi) {
+    final lm = pose.getLandmark(tip);
+    if (lm != null) {
+      liste.addAll([lm.x / genislik, lm.y / yukseklik, lm.z / genislik, lm.visibility]);
+    } else {
+      liste.addAll([0.0, 0.0, 0.0, 0.0]);
+    }
+  }
+  return liste;
+}
 
 class KameraEkrani extends StatefulWidget {
   final VoidCallback? geriDon;
@@ -69,10 +94,15 @@ class _CanliAnalizSekmeState extends State<_CanliAnalizSekme> {
   bool _analizYukleniyor = false;
   String _hata = '';
   bool _iptalEdildi = false;
-  final _poseDetector = PoseDetector(options: PoseDetectorOptions(mode: PoseDetectionMode.single));
+  NpuPoseDetector? _detector;
 
   @override
-  void initState() { super.initState(); _kamerayiBaslat(); }
+  void initState() { super.initState(); _kamerayiBaslat(); _detectorBaslat(); }
+
+  Future<void> _detectorBaslat() async {
+    _detector = NpuPoseDetector(config: PoseDetectorConfig.realtime());
+    await _detector!.initialize();
+  }
 
   Future<void> _kamerayiBaslat() async {
     try {
@@ -118,27 +148,17 @@ class _CanliAnalizSekmeState extends State<_CanliAnalizSekme> {
   }
 
   Future<void> _kareCek() async {
-    if (_controller == null || !_controller!.value.isInitialized) return;
+    if (_controller == null || !_controller!.value.isInitialized || _detector == null) return;
     try {
       final foto = await _controller!.takePicture();
-      final poses = await _poseDetector.processImage(InputImage.fromFilePath(foto.path));
-      if (poses.isNotEmpty) {
-        final boyutBytes = await File(foto.path).readAsBytes();
-        final codec = await ui.instantiateImageCodec(boyutBytes);
+      final goruntuBaytlari = await File(foto.path).readAsBytes();
+      final sonuc = await _detector!.detectPose(goruntuBaytlari);
+      if (sonuc.hasPoses) {
+        final codec = await ui.instantiateImageCodec(goruntuBaytlari);
         final frame = await codec.getNextFrame();
         final genislik = frame.image.width.toDouble();
         final yukseklik = frame.image.height.toDouble();
-
-        final pose = poses.first;
-        final lms = <double>[];
-        for (int i = 0; i < 33; i++) {
-          final lm = pose.landmarks[PoseLandmarkType.values[i]];
-          if (lm != null) {
-            lms.addAll([lm.x / genislik, lm.y / yukseklik, lm.z / genislik, lm.likelihood]);
-          } else {
-            lms.addAll([0.0, 0.0, 0.0, 0.0]);
-          }
-        }
+        final lms = pozuFlatListeCevirSenkron(sonuc.firstPose!, genislik, yukseklik);
         if (mounted) setState(() { _kareler.add(lms); _toplananKare++; });
       }
       try { File(foto.path).deleteSync(); } catch (_) {}
@@ -158,7 +178,7 @@ class _CanliAnalizSekmeState extends State<_CanliAnalizSekme> {
   void _iptalEt() { setState(() { _iptalEdildi = true; _baslatildi = false; _geriSayim = 0; _kareler = []; _hata = ''; }); }
 
   @override
-  void dispose() { _controller?.dispose(); _poseDetector.close(); super.dispose(); }
+  void dispose() { _controller?.dispose(); _detector?.dispose(); super.dispose(); }
 
   @override
   Widget build(BuildContext context) {
@@ -332,8 +352,15 @@ class _VideoAnalizSekmeState extends State<_VideoAnalizSekme> {
   String _hata = '';
   int _ilerleme = 0;
   int _toplamKare = 0;
-  final _poseDetector = PoseDetector(options: PoseDetectorOptions(mode: PoseDetectionMode.single));
+  NpuPoseDetector? _detector;
   final GlobalKey _repaintKey = GlobalKey();
+
+  Future<NpuPoseDetector> _detectorAl() async {
+    if (_detector != null) return _detector!;
+    _detector = NpuPoseDetector();
+    await _detector!.initialize();
+    return _detector!;
+  }
 
   Future<void> _videoSec() async {
     final picker = ImagePicker();
@@ -347,6 +374,7 @@ class _VideoAnalizSekmeState extends State<_VideoAnalizSekme> {
     if (_video == null) return;
     setState(() { _yukleniyor = true; _hata = ''; _ilerleme = 0; _toplamKare = 0; });
     try {
+      final detector = await _detectorAl();
       setState(() { _hata = 'Video hazırlanıyor...'; });
       final controller = VideoPlayerController.file(_video!);
       await controller.initialize();
@@ -370,34 +398,22 @@ class _VideoAnalizSekmeState extends State<_VideoAnalizSekme> {
         final zamanMs = ((sureMs - 300) * i / (toplamKareSayisi - 1)).round().clamp(0, sureMs);
         try {
           await controller.seekTo(Duration(milliseconds: zamanMs));
-          await Future.delayed(const Duration(milliseconds: 200));
+          await controller.play();
+          await Future.delayed(const Duration(milliseconds: 80));
+          await controller.pause();
+          await Future.delayed(const Duration(milliseconds: 150));
 
           final boundary = _repaintKey.currentContext?.findRenderObject();
           if (boundary is RenderRepaintBoundary) {
-            final image = await boundary.toImage(pixelRatio: 1.0);
+            final image = await boundary.toImage(pixelRatio: 3.0);
             final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
             if (byteData != null) {
-              final dosyaYolu = '${geciciKlasor.path}/vf_kare_$i.png';
-              final dosya = File(dosyaYolu);
-              await dosya.writeAsBytes(byteData.buffer.asUint8List());
-
-              final poses = await _poseDetector.processImage(InputImage.fromFilePath(dosyaYolu));
-              if (poses.isNotEmpty) {
-                final genislik = image.width.toDouble();
-                final yukseklik = image.height.toDouble();
-                final pose = poses.first;
-                final lms = <double>[];
-                for (int j = 0; j < 33; j++) {
-                  final lm = pose.landmarks[PoseLandmarkType.values[j]];
-                  if (lm != null) {
-                    lms.addAll([lm.x / genislik, lm.y / yukseklik, lm.z / genislik, lm.likelihood]);
-                  } else {
-                    lms.addAll([0.0, 0.0, 0.0, 0.0]);
-                  }
-                }
+              final goruntuBaytlari = byteData.buffer.asUint8List();
+              final sonuc = await detector.detectPose(goruntuBaytlari);
+              if (sonuc.hasPoses) {
+                final lms = pozuFlatListeCevirSenkron(sonuc.firstPose!, image.width.toDouble(), image.height.toDouble());
                 kareler.add(lms);
               }
-              try { dosya.deleteSync(); } catch (_) {}
             }
           }
         } catch (_) {}
@@ -422,7 +438,7 @@ class _VideoAnalizSekmeState extends State<_VideoAnalizSekme> {
 
   @override
   void dispose() {
-    _poseDetector.close();
+    _detector?.dispose();
     _playerController?.dispose();
     super.dispose();
   }

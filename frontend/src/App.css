@@ -1,10 +1,13 @@
 :root {
-  --bg: #0c0c0e;
-  --surface: #181818;
-  --surface-2: #1f1f1f;
-  --border: #2e2e2e;
-  --text: #f5f5f5;
-  --text-muted: #9a9a9a;
+  --bg: #131313;
+  --surface: #1c1b1b;
+  --surface-2: #20201f;
+  --surface-3: #2a2a29;
+  --surface-lowest: #0e0e0e;
+  --border: #353534;
+  --border-outline: #5c403e;
+  --text: #e5e2e1;
+  --text-muted: #ac8886;
   --accent: #e8313f;
   --accent-soft: rgba(232, 49, 63, 0.14);
   --accent-2: #f5f5f5;
@@ -15,9 +18,9 @@
   --silver: #b8becb;
   --gold: #ffd166;
   --danger: #c1121f;
-  --font-display: 'Outfit', sans-serif;
+  --font-display: 'Hanken Grotesk', sans-serif;
   --font-body: 'Inter', 'Segoe UI', sans-serif;
-  --font-mono: 'Outfit', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
 }
 
 * {
@@ -91,15 +94,15 @@ body {
   position: fixed;
   top: 0;
   left: -320px;
-  width: 300px;
+  width: 280px;
   height: 100vh;
-  background: var(--surface);
+  background: var(--surface-2);
   border-right: 1px solid var(--border);
   z-index: 1000;
   transition: left 0.25s ease;
   display: flex;
   flex-direction: column;
-  padding: 24px 20px 20px;
+  padding: 32px 0 20px;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--accent) var(--surface-2);
@@ -126,32 +129,37 @@ body {
   left: 0;
 }
 
-.sidebar-header {
-  font-family: var(--font-display);
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: var(--accent);
-  margin-bottom: 4px;
-  text-align: center;
+.sidebar-brand {
+  padding: 0 24px;
+  margin-bottom: 40px;
 }
 
-.sidebar-tagline {
-  font-family: var(--font-body);
-  font-size: 0.7rem;
-  font-weight: 600;
+.sidebar-brand-title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: var(--accent);
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.sidebar-brand-sub {
+  font-family: var(--font-mono);
+  font-size: 10px;
   color: var(--text-muted);
-  letter-spacing: 1.5px;
-  text-align: center;
-  margin-bottom: 24px;
+  letter-spacing: 2px;
+  opacity: 0.6;
+  margin-top: 4px;
   text-transform: uppercase;
 }
 
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 2px;
   flex: 1;
-  margin-bottom: 16px;
+  overflow-y: auto;
 }
 
 .sidebar-nav button {
@@ -159,46 +167,96 @@ body {
   align-items: center;
   gap: 12px;
   text-align: left;
-  padding: 12px 14px;
+  padding: 12px 24px;
   background: transparent;
   color: var(--text-muted);
-  border: 1px solid transparent;
-  border-radius: 8px;
+  border: none;
+  border-left: 3px solid transparent;
+  border-radius: 0;
   cursor: pointer;
-  font-size: 0.95rem;
-  font-family: var(--font-body);
+  font-size: 11px;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   transition: all 0.15s;
 }
 
 .sidebar-nav button:hover {
-  background: var(--surface-2);
+  background: var(--surface-3);
   color: var(--text);
 }
 
 .sidebar-nav button.active {
-  background: var(--accent-soft);
-  border-color: var(--accent);
+  background: var(--surface-3);
+  border-left-color: var(--accent);
   color: var(--accent);
-  font-weight: 600;
+  font-weight: 700;
+}
+
+.sidebar-footer {
+  padding: 24px 24px 0;
+  margin-top: auto;
+}
+
+.sidebar-profile-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--surface-3);
+  border-radius: 10px;
+  margin-bottom: 14px;
+}
+
+.sidebar-profile-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-family: var(--font-display);
+  flex-shrink: 0;
+}
+
+.sidebar-profile-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+.sidebar-profile-sub {
+  font-size: 10px;
+  color: var(--text-muted);
+  opacity: 0.7;
+  margin: 2px 0 0;
 }
 
 .sidebar-logout {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  padding: 12px;
+  gap: 8px;
+  width: 100%;
+  padding: 10px;
   background: transparent;
-  color: var(--danger);
+  color: var(--text-muted);
   border: 1px solid var(--border);
   border-radius: 8px;
   cursor: pointer;
-  font-weight: 600;
-  font-family: var(--font-body);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
 }
 
 .sidebar-logout:hover {
-  background: rgba(239, 68, 68, 0.1);
+  background: var(--danger);
+  color: #fff;
   border-color: var(--danger);
 }
 
