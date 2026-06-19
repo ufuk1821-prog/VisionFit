@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Plus, Trash2, Save, Calendar, Sparkles, Dumbbell } from 'lucide-react';
 import Sidebar from '../components/sidebar';
 
 const GUN_ADLARI = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
@@ -14,10 +13,7 @@ function formatDateDisplay(dateStr) {
 
 function todayISO() {
   const d = new Date();
-  const yil = d.getFullYear();
-  const ay = String(d.getMonth() + 1).padStart(2, '0');
-  const gun = String(d.getDate()).padStart(2, '0');
-  return `${yil}-${ay}-${gun}`;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 const emptyRow = () => ({ hareket: '', set_sayisi: '', tekrar_sayisi: '', agirlik: '' });
@@ -36,28 +32,17 @@ function WorkoutNotebook() {
   const apiUrl = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
-    axios
-      .get(`${apiUrl}/api/workout-notes/dates`, { headers })
-      .then((res) => setAvailableDates(res.data))
-      .catch(() => {});
+    axios.get(`${apiUrl}/api/workout-notes/dates`, { headers }).then((res) => setAvailableDates(res.data)).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     setLoading(true);
     setSavedMessage('');
-    axios
-      .get(`${apiUrl}/api/workout-notes/${selectedDate}`, { headers })
+    axios.get(`${apiUrl}/api/workout-notes/${selectedDate}`, { headers })
       .then((res) => {
         if (res.data.length > 0) {
-          setRows(
-            res.data.map((r) => ({
-              hareket: r.hareket,
-              set_sayisi: r.set_sayisi ?? '',
-              tekrar_sayisi: r.tekrar_sayisi ?? '',
-              agirlik: r.agirlik ?? '',
-            }))
-          );
+          setRows(res.data.map((r) => ({ hareket: r.hareket, set_sayisi: r.set_sayisi ?? '', tekrar_sayisi: r.tekrar_sayisi ?? '', agirlik: r.agirlik ?? '' })));
         } else {
           setRows([emptyRow()]);
         }
@@ -72,42 +57,25 @@ function WorkoutNotebook() {
   };
 
   const handleAddRow = () => setRows((prev) => [...prev, emptyRow()]);
-
-  const handleDeleteRow = (index) => {
-    setRows((prev) => prev.filter((_, i) => i !== index));
-  };
+  const handleDeleteRow = (index) => setRows((prev) => prev.filter((_, i) => i !== index));
 
   const handleSave = async () => {
     setSaving(true);
     setSavedMessage('');
-
-    const payload = rows
-      .filter((r) => r.hareket.trim() !== '')
-      .map((r) => ({
-        hareket: r.hareket.trim(),
-        set_sayisi: r.set_sayisi === '' ? null : Number(r.set_sayisi),
-        tekrar_sayisi: r.tekrar_sayisi === '' ? null : Number(r.tekrar_sayisi),
-        agirlik: r.agirlik === '' ? null : Number(r.agirlik),
-      }));
-
+    const payload = rows.filter((r) => r.hareket.trim() !== '').map((r) => ({
+      hareket: r.hareket.trim(),
+      set_sayisi: r.set_sayisi === '' ? null : Number(r.set_sayisi),
+      tekrar_sayisi: r.tekrar_sayisi === '' ? null : Number(r.tekrar_sayisi),
+      agirlik: r.agirlik === '' ? null : Number(r.agirlik),
+    }));
     try {
       const res = await axios.put(`${apiUrl}/api/workout-notes/${selectedDate}`, payload, { headers });
-
       if (res.data.length > 0) {
-        setRows(
-          res.data.map((r) => ({
-            hareket: r.hareket,
-            set_sayisi: r.set_sayisi ?? '',
-            tekrar_sayisi: r.tekrar_sayisi ?? '',
-            agirlik: r.agirlik ?? '',
-          }))
-        );
+        setRows(res.data.map((r) => ({ hareket: r.hareket, set_sayisi: r.set_sayisi ?? '', tekrar_sayisi: r.tekrar_sayisi ?? '', agirlik: r.agirlik ?? '' })));
       } else {
         setRows([emptyRow()]);
       }
-
       setSavedMessage('Kaydedildi.');
-
       if (payload.length > 0 && !availableDates.includes(selectedDate)) {
         setAvailableDates((prev) => [selectedDate, ...prev].sort((a, b) => b.localeCompare(a)));
       }
@@ -128,16 +96,9 @@ function WorkoutNotebook() {
       if (!hareketGruplari[r.hareket]) hareketGruplari[r.hareket] = [];
       hareketGruplari[r.hareket].push(parseFloat(r.agirlik));
     });
-    const hareketListesi = Object.entries(hareketGruplari).map(([hareket, agirliklar]) => ({
-      hareket,
-      agirliklar: agirliklar.filter((a) => !isNaN(a)),
-    }));
+    const hareketListesi = Object.entries(hareketGruplari).map(([hareket, agirliklar]) => ({ hareket, agirliklar: agirliklar.filter((a) => !isNaN(a)) }));
     try {
-      const res = await axios.post(
-        `${apiUrl}/api/yerel-ai/defter-analizi`,
-        { hareketler: hareketListesi },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await axios.post(`${apiUrl}/api/yerel-ai/defter-analizi`, { hareketler: hareketListesi }, { headers: { Authorization: `Bearer ${token}` } });
       setAiAnaliz(res.data.yorum);
     } catch {
       setAiAnaliz('AI analizi alınamadı, lütfen tekrar deneyin.');
@@ -149,167 +110,135 @@ function WorkoutNotebook() {
   return (
     <div>
       <Sidebar />
-
-      <header style={{ marginBottom: '32px', display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: '20px' }}>
-        <div>
-          <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: '1.8rem', textTransform: 'uppercase', lineHeight: 1 }}>ANTRENMAN GÜNLÜĞÜ</h2>
-          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: 'var(--accent-2)', marginTop: '8px', textTransform: 'uppercase' }}>
-            Yaptığınız hareketleri kaydedin, gelişiminizi takip edin
-          </p>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text)', padding: '10px 16px', borderRadius: '10px', fontFamily: 'var(--font-mono)', fontSize: '0.78rem' }}
-          />
-          {availableDates.length > 0 && (
-            <select
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)', padding: '10px 16px', borderRadius: '10px', fontFamily: 'var(--font-mono)', fontSize: '0.78rem' }}
-            >
-              {!availableDates.includes(selectedDate) && (
-                <option value={selectedDate}>{formatDateDisplay(selectedDate)}</option>
-              )}
-              {availableDates.map((d) => (
-                <option key={d} value={d}>
-                  {formatDateDisplay(d)}
-                </option>
-              ))}
-            </select>
-          )}
-        </div>
-      </header>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '8fr 4fr', gap: '16px' }} className="notebook-grid">
-        <section style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', overflow: 'hidden' }}>
-          <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1.05rem' }}>
-              <Dumbbell size={20} color="var(--accent)" />
-              {formatDateDisplay(selectedDate)}
-            </h3>
-            <button
-              onClick={handleAddRow}
-              style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(232,49,63,0.12)', color: 'var(--accent)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-            >
-              <Plus size={18} />
-            </button>
+      <main className="md:ml-64 pt-20 md:pt-10 px-gutter md:px-10 pb-24 md:pb-10 min-h-screen">
+        <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div>
+            <h2 className="font-display-lg text-display-lg-mobile md:text-display-lg text-on-surface leading-none">ANTRENMAN GÜNLÜĞÜ</h2>
+            <p className="font-label-mono text-label-mono text-primary-container mt-2">{formatDateDisplay(selectedDate)}</p>
           </div>
-
-          {loading ? (
-            <div className="loading-text">Yükleniyor...</div>
-          ) : (
-            <>
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr style={{ background: 'var(--surface-2)', textAlign: 'left' }}>
-                      <th style={{ padding: '14px 16px', fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--border)' }}>Egzersiz</th>
-                      <th style={{ padding: '14px 16px', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', borderBottom: '1px solid var(--border)' }}>Set</th>
-                      <th style={{ padding: '14px 16px', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', borderBottom: '1px solid var(--border)' }}>Tekrar</th>
-                      <th style={{ padding: '14px 16px', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', borderBottom: '1px solid var(--border)' }}>Ağırlık (kg)</th>
-                      <th style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)' }}></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map((row, i) => (
-                      <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                        <td style={{ padding: '12px 16px' }}>
-                          <input
-                            type="text"
-                            placeholder="Örn: Barbell Bench Press"
-                            value={row.hareket}
-                            onChange={(e) => handleRowChange(i, 'hareket', e.target.value)}
-                            style={{ width: '100%', background: 'transparent', border: 'none', color: 'var(--text)', fontSize: '0.9rem', outline: 'none' }}
-                          />
-                        </td>
-                        <td style={{ padding: '12px 16px', textAlign: 'center' }}>
-                          <input
-                            type="number"
-                            min="0"
-                            value={row.set_sayisi}
-                            onChange={(e) => handleRowChange(i, 'set_sayisi', e.target.value)}
-                            style={{ width: '48px', background: 'var(--surface-lowest, #0e0e0e)', border: '1px solid var(--border)', color: 'var(--text)', textAlign: 'center', borderRadius: '6px', padding: '6px', fontFamily: 'var(--font-mono)', fontSize: '0.85rem' }}
-                          />
-                        </td>
-                        <td style={{ padding: '12px 16px', textAlign: 'center' }}>
-                          <input
-                            type="number"
-                            min="0"
-                            value={row.tekrar_sayisi}
-                            onChange={(e) => handleRowChange(i, 'tekrar_sayisi', e.target.value)}
-                            style={{ width: '48px', background: 'var(--surface-lowest, #0e0e0e)', border: '1px solid var(--border)', color: 'var(--text)', textAlign: 'center', borderRadius: '6px', padding: '6px', fontFamily: 'var(--font-mono)', fontSize: '0.85rem' }}
-                          />
-                        </td>
-                        <td style={{ padding: '12px 16px', textAlign: 'center' }}>
-                          <input
-                            type="number"
-                            min="0"
-                            step="0.5"
-                            value={row.agirlik}
-                            onChange={(e) => handleRowChange(i, 'agirlik', e.target.value)}
-                            style={{ width: '64px', background: 'var(--surface-lowest, #0e0e0e)', border: '1px solid var(--border)', color: 'var(--text)', textAlign: 'center', borderRadius: '6px', padding: '6px', fontFamily: 'var(--font-mono)', fontSize: '0.85rem' }}
-                          />
-                        </td>
-                        <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                          <button
-                            onClick={() => handleDeleteRow(i)}
-                            disabled={rows.length === 1}
-                            style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: rows.length === 1 ? 'not-allowed' : 'pointer', opacity: rows.length === 1 ? 0.4 : 1 }}
-                          >
-                            <Trash2 size={18} />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              <div style={{ padding: '20px 24px', display: 'flex', justifyContent: 'flex-end', gap: '12px', background: 'var(--surface-2)' }}>
-                <button
-                  onClick={handleSave}
-                  disabled={saving}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 24px', borderRadius: '8px',
-                    background: 'var(--accent)', color: '#fff', border: 'none', fontFamily: 'var(--font-mono)',
-                    fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', cursor: 'pointer',
-                  }}
-                >
-                  <Save size={16} />
-                  {saving ? 'Kaydediliyor...' : 'Günlüğü Tamamla'}
-                </button>
-              </div>
-
-              {savedMessage && <div className="info-banner" style={{ margin: '16px 24px' }}>{savedMessage}</div>}
-            </>
-          )}
-        </section>
-
-        <aside style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '24px' }}>
-            <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: '#8d99ae', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '16px' }}>
-              <Sparkles size={16} /> AI İLERLEME ANALİZİ
-            </h4>
-            {!aiAnaliz && (
-              <button
-                onClick={aiAnalizAl}
-                disabled={aiYukleniyor}
-                style={{
-                  width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                  padding: '12px', borderRadius: '10px', background: '#8d99ae', color: '#fff', border: 'none',
-                  fontFamily: 'var(--font-mono)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', cursor: 'pointer',
-                }}
+          <div className="flex items-center gap-3">
+            <input
+              type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)}
+              className="bg-surface-container-low border border-outline-variant text-on-surface px-4 py-2 rounded-lg font-label-mono text-xs focus:border-primary-container focus:ring-0"
+            />
+            {availableDates.length > 0 && (
+              <select
+                value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)}
+                className="bg-surface-container-high border border-outline-variant text-on-surface px-4 py-2 rounded-lg font-label-mono text-xs"
               >
-                <Sparkles size={16} /> {aiYukleniyor ? 'Analiz Hazırlanıyor...' : 'AI ile Analiz Et'}
-              </button>
+                {!availableDates.includes(selectedDate) && <option value={selectedDate}>{formatDateDisplay(selectedDate)}</option>}
+                {availableDates.map((d) => <option key={d} value={d}>{formatDateDisplay(d)}</option>)}
+              </select>
             )}
-            {aiAnaliz && <p style={{ fontSize: '0.85rem', color: 'var(--text)', lineHeight: '1.6', fontStyle: 'italic' }}>{aiAnaliz}</p>}
           </div>
-        </aside>
-      </div>
+        </header>
+
+        <div className="grid grid-cols-12 gap-bento-gap">
+          <section className="col-span-12 lg:col-span-8 bg-surface-container rounded-xl border border-outline-variant overflow-hidden">
+            <div className="p-6 border-b border-outline-variant flex justify-between items-center">
+              <h3 className="font-headline-md text-on-surface flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary">fitness_center</span>
+                Bugünkü Antrenman
+              </h3>
+              <button onClick={handleAddRow} className="p-2 bg-primary-container text-on-primary-container rounded-lg hover:opacity-90 transition-opacity">
+                <span className="material-symbols-outlined">add</span>
+              </button>
+            </div>
+
+            {loading ? (
+              <div className="loading-text p-8 text-center">Yükleniyor...</div>
+            ) : (
+              <>
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="bg-surface-container-low text-left font-label-mono text-[10px] text-on-surface-variant uppercase tracking-widest">
+                        <th className="p-4 border-b border-outline-variant">Egzersiz</th>
+                        <th className="p-4 border-b border-outline-variant text-center">Set</th>
+                        <th className="p-4 border-b border-outline-variant text-center">Tekrar</th>
+                        <th className="p-4 border-b border-outline-variant text-center">Ağırlık (kg)</th>
+                        <th className="p-4 border-b border-outline-variant text-right">Eylem</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.map((row, i) => (
+                        <tr key={i} className="group hover:bg-surface-container-high transition-colors border-b border-outline-variant/30">
+                          <td className="p-4">
+                            <input
+                              type="text" placeholder="Egzersiz adı" value={row.hareket}
+                              onChange={(e) => handleRowChange(i, 'hareket', e.target.value)}
+                              className="w-full bg-transparent border-0 text-on-surface font-body-md focus:ring-0 p-0 outline-none"
+                            />
+                          </td>
+                          <td className="p-4 text-center">
+                            <input
+                              type="number" min="0" value={row.set_sayisi}
+                              onChange={(e) => handleRowChange(i, 'set_sayisi', e.target.value)}
+                              className="w-12 bg-surface-container-lowest border border-outline-variant text-center text-on-surface font-label-mono rounded text-sm py-1"
+                            />
+                          </td>
+                          <td className="p-4 text-center">
+                            <input
+                              type="number" min="0" value={row.tekrar_sayisi}
+                              onChange={(e) => handleRowChange(i, 'tekrar_sayisi', e.target.value)}
+                              className="w-12 bg-surface-container-lowest border border-outline-variant text-center text-on-surface font-label-mono rounded text-sm py-1"
+                            />
+                          </td>
+                          <td className="p-4 text-center">
+                            <input
+                              type="number" min="0" step="0.5" value={row.agirlik}
+                              onChange={(e) => handleRowChange(i, 'agirlik', e.target.value)}
+                              className="w-16 bg-surface-container-lowest border border-outline-variant text-center text-on-surface font-label-mono rounded text-sm py-1"
+                            />
+                          </td>
+                          <td className="p-4 text-right">
+                            <button
+                              onClick={() => handleDeleteRow(i)} disabled={rows.length === 1}
+                              className="text-on-surface-variant hover:text-primary transition-colors disabled:opacity-30"
+                            >
+                              <span className="material-symbols-outlined text-[20px]">delete_outline</span>
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="p-6 flex justify-end gap-4 bg-surface-container-low">
+                  <button
+                    onClick={handleSave} disabled={saving}
+                    className="px-6 py-2 bg-primary text-on-primary font-label-mono text-xs uppercase font-bold hover:brightness-110 transition-all disabled:opacity-50"
+                  >
+                    {saving ? 'Kaydediliyor...' : 'Günlüğü Tamamla'}
+                  </button>
+                </div>
+
+                {savedMessage && <div className="mx-6 mb-4 p-3 bg-primary-container/10 border border-primary-container/30 rounded-lg text-sm">{savedMessage}</div>}
+              </>
+            )}
+          </section>
+
+          <aside className="col-span-12 lg:col-span-4 flex flex-col gap-bento-gap">
+            <div className="bg-surface-container rounded-xl border border-outline-variant p-6">
+              <h4 className="font-label-mono text-xs text-secondary-container font-bold uppercase tracking-widest mb-4 flex items-center gap-2">
+                <span className="material-symbols-outlined text-secondary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
+                AI Gelişim Analizi
+              </h4>
+
+              {!aiAnaliz && (
+                <button
+                  onClick={aiAnalizAl} disabled={aiYukleniyor}
+                  className="w-full py-3 bg-secondary-container text-white rounded-lg font-label-mono text-label-mono uppercase hover:brightness-110 transition-all disabled:opacity-50"
+                >
+                  {aiYukleniyor ? 'Analiz Hazırlanıyor...' : 'AI ile Analiz Et'}
+                </button>
+              )}
+              {aiAnaliz && <p className="text-body-sm text-on-surface-variant italic leading-relaxed">{aiAnaliz}</p>}
+            </div>
+          </aside>
+        </div>
+      </main>
     </div>
   );
 }

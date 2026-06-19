@@ -1,24 +1,22 @@
 import { useState, useRef } from 'react';
 import axios from 'axios';
-import { Sparkles, BarChart3, Bot } from 'lucide-react';
 import Sidebar from '../components/sidebar';
 
-const BMI_LABELS = { Zayif: 'Zayıf', Normal: 'Normal', Kilolu: 'Kilolu', Obez: 'Obez' };
-const HEDEF_LABELS = { kilo_verme: 'Kilo Verme', kilo_koruma: 'Kilo Koruma', kilo_alma: 'Kilo Alma' };
-
 const AKTIFLIK_OPTIONS = [
-  { value: 'sedanter', label: 'Hareketsiz (ofis işi, az egzersiz)' },
-  { value: 'az_hareketli', label: 'Az Hareketli (haftada 1-3 gün)' },
-  { value: 'orta_hareketli', label: 'Orta Hareketli (haftada 3-5 gün)' },
-  { value: 'cok_hareketli', label: 'Çok Hareketli (haftada 6-7 gün)' },
-  { value: 'asiri_hareketli', label: 'Aşırı Hareketli (günde 2 kez antrenman)' },
+  { value: 'sedanter', label: 'Sedanter (Hareketsiz)' },
+  { value: 'az_hareketli', label: 'Az Hareketli (Haftada 1-3)' },
+  { value: 'orta_hareketli', label: 'Orta Derece (Haftada 3-5)' },
+  { value: 'cok_hareketli', label: 'Çok Hareketli (Haftada 6-7)' },
+  { value: 'asiri_hareketli', label: 'Ekstra Aktif (Profesyonel)' },
 ];
 
 const HEDEF_OPTIONS = [
-  { value: 'kilo_verme', label: 'Kilo Ver', desc: 'Yağ yakımı odaklı kalori açığı.', emoji: '📉' },
-  { value: 'kilo_koruma', label: 'Formu Koru', desc: 'Stabil metabolizma ve enerji dengesi.', emoji: '⚖️' },
-  { value: 'kilo_alma', label: 'Kilo Al', desc: 'Kas kütlesi için kalori fazlası.', emoji: '💪' },
+  { value: 'kilo_verme', label: 'Kilo Ver', desc: 'Yağ yakımı odaklı kalori açığı.', icon: 'trending_down' },
+  { value: 'kilo_koruma', label: 'Formu Koru', desc: 'Stabil metabolizma ve enerji dengesi.', icon: 'balance' },
+  { value: 'kilo_alma', label: 'Kilo Al', desc: 'Kas kütlesi için kalori fazlası.', icon: 'fitness_center' },
 ];
+
+const OGUN_GORSEL = { kahvalti: 'KAHVALTI', ogle: 'ÖĞLE YEMEĞİ', aksam: 'AKŞAM YEMEĞİ' };
 
 function Diet() {
   const [boy, setBoy] = useState('');
@@ -43,58 +41,32 @@ function Diet() {
     const val = e.target.value;
     setBoy(val);
     const num = parseFloat(val);
-    if (val !== '' && (isNaN(num) || num < 50 || num > 300)) {
-      setBoyHata('Boy 50 ile 300 cm arasında olmalıdır.');
-    } else {
-      setBoyHata('');
-    }
+    setBoyHata(val !== '' && (isNaN(num) || num < 50 || num > 300) ? 'Boy 50 ile 300 cm arasında olmalıdır.' : '');
   };
 
   const handleKiloChange = (e) => {
     const val = e.target.value;
     setKilo(val);
     const num = parseFloat(val);
-    if (val !== '' && (isNaN(num) || num < 20 || num > 500)) {
-      setKiloHata('Kilo 20 ile 500 kg arasında olmalıdır.');
-    } else {
-      setKiloHata('');
-    }
+    setKiloHata(val !== '' && (isNaN(num) || num < 20 || num > 500) ? 'Kilo 20 ile 500 kg arasında olmalıdır.' : '');
   };
 
   const handleYasChange = (e) => {
     const val = e.target.value;
     setYas(val);
     const num = parseInt(val, 10);
-    if (val !== '' && (isNaN(num) || num < 1 || num > 120)) {
-      setYasHata('Yaş 1 ile 120 arasında olmalıdır.');
-    } else {
-      setYasHata('');
-    }
+    setYasHata(val !== '' && (isNaN(num) || num < 1 || num > 120) ? 'Yaş 1 ile 120 arasında olmalıdır.' : '');
   };
 
   const handleGenerate = async () => {
     setError('');
-    if (!boy || !kilo || !yas || !cinsiyet || !aktiflik || !hedef) {
-      setError('Lütfen tüm alanları doldurun.');
-      return;
-    }
-    if (boyHata || kiloHata || yasHata) {
-      setError('Lütfen geçerli değerler girin.');
-      return;
-    }
+    if (!boy || !kilo || !yas || !cinsiyet || !aktiflik || !hedef) { setError('Lütfen tüm alanları doldurun.'); return; }
+    if (boyHata || kiloHata || yasHata) { setError('Lütfen geçerli değerler girin.'); return; }
     setLoading(true);
     try {
       const response = await axios.post(
         `${import.meta.env.VITE_API_URL}/api/users/diet/calculate`,
-        {
-          boy: Number(boy),
-          kilo: Number(kilo),
-          yas: Number(yas),
-          cinsiyet,
-          aktiflik_seviyesi: aktiflik,
-          hedef,
-          istek,
-        },
+        { boy: Number(boy), kilo: Number(kilo), yas: Number(yas), cinsiyet, aktiflik_seviyesi: aktiflik, hedef, istek },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setDiet(response.data);
@@ -115,19 +87,13 @@ function Diet() {
       const res = await axios.post(
         `${import.meta.env.VITE_API_URL}/api/yerel-ai/diyet-onerisi`,
         {
-          bmi: diet.bmi,
-          bmi_kategori: diet.bmi_kategori,
-          hedef: hedef,
-          hedef_kalori: diet.hedef_kalori,
-          protein_g: diet.planlar?.[0]?.protein_g ?? 0,
-          karbonhidrat_g: diet.planlar?.[0]?.karbonhidrat_g ?? 0,
-          yag_g: diet.planlar?.[0]?.yag_g ?? 0,
+          bmi: diet.bmi, bmi_kategori: diet.bmi_kategori, hedef, hedef_kalori: diet.hedef_kalori,
+          protein_g: diet.planlar?.[0]?.protein_g ?? 0, karbonhidrat_g: diet.planlar?.[0]?.karbonhidrat_g ?? 0, yag_g: diet.planlar?.[0]?.yag_g ?? 0,
           istek: istek || 'genel öneri',
         },
-        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       setAiOneri(res.data.yorum);
-      setTimeout(() => sonucRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
     } catch {
       setAiOneri('AI önerisi alınamadı, lütfen tekrar deneyin.');
     } finally {
@@ -140,196 +106,191 @@ function Diet() {
   return (
     <div>
       <Sidebar />
-
-      <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: '1.8rem', textTransform: 'uppercase' }}>DİYET ÖNERİSİ</h1>
-        <p style={{ color: 'var(--text-muted)', maxWidth: '640px', marginTop: '8px' }}>
-          Biyometrik verilerinize ve hedeflerinize göre yapay zeka tarafından optimize edilmiş beslenme planınızı inceleyin.
-        </p>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '4fr 8fr', gap: '16px' }} className="diet-grid">
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <BarChart3 size={20} color="var(--accent)" />
-            <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1.1rem' }}>Ölçümler</h2>
+      <main className="md:ml-64 pt-20 md:pt-10 px-gutter md:px-12 pb-24">
+        <div className="max-w-6xl mx-auto">
+          <div className="mb-8">
+            <h1 className="font-display-lg text-display-lg-mobile md:text-display-lg text-on-surface mb-2">DİYET ÖNERİSİ</h1>
+            <p className="font-body-md text-on-surface-variant max-w-2xl">Biyometrik verilerinize ve hedeflerinize göre yapay zeka tarafından optimize edilmiş beslenme planınızı inceleyin.</p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label>Boy (cm)</label>
-              <input type="number" step="0.1" value={boy} onChange={handleBoyChange} placeholder="180" min="50" max="300" style={{ borderColor: boyHata ? 'var(--danger)' : undefined }} />
-              {boyHata && <span style={{ color: 'var(--danger)', fontSize: '0.72rem', marginTop: '4px' }}>{boyHata}</span>}
-            </div>
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label>Kilo (kg)</label>
-              <input type="number" step="0.1" value={kilo} onChange={handleKiloChange} placeholder="75" min="20" max="500" style={{ borderColor: kiloHata ? 'var(--danger)' : undefined }} />
-              {kiloHata && <span style={{ color: 'var(--danger)', fontSize: '0.72rem', marginTop: '4px' }}>{kiloHata}</span>}
-            </div>
-          </div>
-
-          <div className="form-group" style={{ marginBottom: 0 }}>
-            <label>Yaş</label>
-            <input type="number" value={yas} onChange={handleYasChange} placeholder="28" min="1" max="120" style={{ borderColor: yasHata ? 'var(--danger)' : undefined }} />
-            {yasHata && <span style={{ color: 'var(--danger)', fontSize: '0.72rem', marginTop: '4px' }}>{yasHata}</span>}
-          </div>
-
-          <div className="form-group" style={{ marginBottom: 0 }}>
-            <label>Cinsiyet</label>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button
-                onClick={() => setCinsiyet('Erkek')}
-                style={{ flex: 1, padding: '10px', borderRadius: '8px', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '0.72rem', textTransform: 'uppercase', border: cinsiyet === 'Erkek' ? '1px solid var(--accent)' : '1px solid var(--border)', background: cinsiyet === 'Erkek' ? 'var(--surface-2)' : 'transparent', color: cinsiyet === 'Erkek' ? 'var(--accent)' : 'var(--text-muted)' }}
-              >
-                Erkek
-              </button>
-              <button
-                onClick={() => setCinsiyet('Kadin')}
-                style={{ flex: 1, padding: '10px', borderRadius: '8px', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '0.72rem', textTransform: 'uppercase', border: cinsiyet === 'Kadin' ? '1px solid var(--accent)' : '1px solid var(--border)', background: cinsiyet === 'Kadin' ? 'var(--surface-2)' : 'transparent', color: cinsiyet === 'Kadin' ? 'var(--accent)' : 'var(--text-muted)' }}
-              >
-                Kadın
-              </button>
-            </div>
-          </div>
-
-          <div className="form-group" style={{ marginBottom: 0 }}>
-            <label>Aktivite Seviyesi</label>
-            <select value={aktiflik} onChange={(e) => setAktiflik(e.target.value)}>
-              <option value="">Seçin</option>
-              {AKTIFLIK_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }} className="diet-goal-grid">
-            {HEDEF_OPTIONS.map((h) => {
-              const active = hedef === h.value;
-              return (
-                <div
-                  key={h.value}
-                  onClick={() => setHedef(h.value)}
-                  style={{
-                    background: active ? 'var(--surface-2)' : 'var(--surface)', padding: '24px', borderRadius: '16px', cursor: 'pointer',
-                    border: active ? '2px solid var(--accent)' : '1px solid var(--border)', position: 'relative', overflow: 'hidden', transition: 'all 0.2s',
-                  }}
-                >
-                  {active && <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', background: 'var(--accent)' }} />}
-                  <div style={{ fontSize: '2.2rem', marginBottom: '12px' }}>{h.emoji}</div>
-                  <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1.05rem', marginBottom: '4px' }}>{h.label}</h3>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{h.desc}</p>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="form-group" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '20px', marginBottom: 0 }}>
-            <label>Özel İstekler (Vejetaryen, Alerjen vb.)</label>
-            <textarea
-              value={istek}
-              onChange={(e) => setIstek(e.target.value)}
-              placeholder="Örn: Süt ürünleri tüketmiyorum, yüksek proteinli tarifler tercih ederim..."
-            />
-          </div>
-
-          <button
-            className="submit-btn"
-            disabled={loading || !!boyHata || !!kiloHata || !!yasHata}
-            onClick={handleGenerate}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '16px' }}
-          >
-            <Sparkles size={18} />
-            {loading ? 'Hesaplanıyor...' : 'DİYET PLANINI OLUŞTUR'}
-          </button>
-        </div>
-      </div>
-
-      {error && <p className="error-text">{error}</p>}
-
-      {diet && (
-        <div ref={sonucRef}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginTop: '24px' }} className="diet-stats-grid">
-            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Vücut Kitle Endeksi (BMI)</span>
-              <div style={{ marginTop: '16px', display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-                <span style={{ fontFamily: 'var(--font-display)', fontSize: '2.4rem', fontWeight: 900 }}>{diet.bmi}</span>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: '#4CAF50' }}>{(BMI_LABELS[diet.bmi_kategori] ?? diet.bmi_kategori).toUpperCase()}</span>
+          <div className="grid grid-cols-12 gap-bento-gap">
+            <div className="col-span-12 lg:col-span-4 bg-surface-container rounded-2xl p-6 border border-outline-variant flex flex-col gap-6">
+              <div className="flex items-center gap-3">
+                <span className="material-symbols-outlined text-primary">analytics</span>
+                <h2 className="font-headline-md text-headline-md text-on-surface">Ölçümler</h2>
               </div>
-              <div style={{ marginTop: '20px', height: '6px', width: '100%', background: 'var(--surface-2)', borderRadius: '999px', overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${bmiPercent}%`, background: '#4CAF50', borderRadius: '999px' }} />
-              </div>
-            </div>
 
-            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '24px' }}>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Günlük Kalori Hedefi</span>
-              <div style={{ marginTop: '16px', display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-                <span style={{ fontFamily: 'var(--font-display)', fontSize: '2.4rem', fontWeight: 900, color: 'var(--accent)' }}>{diet.hedef_kalori}</span>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: 'var(--text-muted)' }}>kcal</span>
-              </div>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '10px' }}>Bazal metabolizma: {diet.bmr} kcal</p>
-            </div>
-
-            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '24px', position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center' }}>
-              <div style={{ position: 'absolute', top: 0, right: 0, opacity: 0.06 }}>
-                <Bot size={120} />
-              </div>
-              <div style={{ position: 'relative', zIndex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-                  <Sparkles size={14} color="#8d99ae" />
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: '#8d99ae', letterSpacing: '0.1em', textTransform: 'uppercase' }}>TOPLAM GÜNLÜK HARCAMA</span>
-                </div>
-                <p style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 700, fontStyle: 'italic' }}>{diet.tdee} kcal</p>
-              </div>
-            </div>
-          </div>
-
-          <div style={{ marginTop: '24px' }}>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', fontWeight: 700, marginBottom: '16px', textTransform: 'uppercase' }}>
-              Önerilen Planlar ({HEDEF_LABELS[diet.hedef] ?? diet.hedef})
-            </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
-              {diet.planlar.map((plan, index) => {
-                const pKcal = plan.protein_g * 4;
-                const cKcal = plan.karbonhidrat_g * 4;
-                const fKcal = plan.yag_g * 9;
-                const total = pKcal + cKcal + fKcal;
-                return (
-                  <div className="plan-card" key={index}>
-                    <h3>{plan.baslik}</h3>
-                    <div className="macro-bar">
-                      <div className="macro-bar-segment protein" style={{ width: `${(pKcal / total) * 100}%` }} />
-                      <div className="macro-bar-segment carb" style={{ width: `${(cKcal / total) * 100}%` }} />
-                      <div className="macro-bar-segment fat" style={{ width: `${(fKcal / total) * 100}%` }} />
-                    </div>
-                    <div className="plan-macros">
-                      <span>{plan.kalori} kcal</span>
-                      <span><span className="dot protein" />Protein: {plan.protein_g} g</span>
-                      <span><span className="dot carb" />Karbonhidrat: {plan.karbonhidrat_g} g</span>
-                      <span><span className="dot fat" />Yağ: {plan.yag_g} g</span>
-                    </div>
-                    <ul className="plan-meals">
-                      {plan.ornek_ogunler.map((ogun, i) => <li key={i}>• {ogun}</li>)}
-                    </ul>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="font-label-mono text-label-mono text-on-surface-variant uppercase">Boy (cm)</label>
+                    <input
+                      className="w-full bg-surface-container-lowest border border-outline-variant rounded-lg p-3 text-on-surface focus:border-primary-container focus:ring-0 outline-none transition-all"
+                      placeholder="180" type="number" min="50" max="300"
+                      value={boy} onChange={handleBoyChange}
+                      style={{ borderColor: boyHata ? '#E8313F' : undefined }}
+                    />
+                    {boyHata && <span className="text-brand-red text-xs">{boyHata}</span>}
                   </div>
-                );
-              })}
-            </div>
-          </div>
+                  <div className="space-y-2">
+                    <label className="font-label-mono text-label-mono text-on-surface-variant uppercase">Kilo (kg)</label>
+                    <input
+                      className="w-full bg-surface-container-lowest border border-outline-variant rounded-lg p-3 text-on-surface focus:border-primary-container focus:ring-0 outline-none transition-all"
+                      placeholder="75" type="number" min="20" max="500"
+                      value={kilo} onChange={handleKiloChange}
+                      style={{ borderColor: kiloHata ? '#E8313F' : undefined }}
+                    />
+                    {kiloHata && <span className="text-brand-red text-xs">{kiloHata}</span>}
+                  </div>
+                </div>
 
-          <div className="card" style={{ marginTop: '24px' }}>
-            <div className="card-header">
-              <div className="card-icon"><Sparkles size={18} /></div>
-              <div className="card-title">AI Diyet Önerisi</div>
+                <div className="space-y-2">
+                  <label className="font-label-mono text-label-mono text-on-surface-variant uppercase">Yaş</label>
+                  <input
+                    className="w-full bg-surface-container-lowest border border-outline-variant rounded-lg p-3 text-on-surface focus:border-primary-container focus:ring-0 outline-none transition-all"
+                    placeholder="28" type="number" min="1" max="120"
+                    value={yas} onChange={handleYasChange}
+                    style={{ borderColor: yasHata ? '#E8313F' : undefined }}
+                  />
+                  {yasHata && <span className="text-brand-red text-xs">{yasHata}</span>}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="font-label-mono text-label-mono text-on-surface-variant uppercase">Cinsiyet</label>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => setCinsiyet('Erkek')}
+                      className={`flex-1 py-2 rounded-lg border font-label-mono text-label-mono uppercase transition-all ${cinsiyet === 'Erkek' ? 'border-primary-container bg-surface-container-high text-primary' : 'border-outline-variant text-on-surface-variant hover:border-primary-container'}`}
+                    >
+                      Erkek
+                    </button>
+                    <button
+                      onClick={() => setCinsiyet('Kadin')}
+                      className={`flex-1 py-2 rounded-lg border font-label-mono text-label-mono uppercase transition-all ${cinsiyet === 'Kadin' ? 'border-primary-container bg-surface-container-high text-primary' : 'border-outline-variant text-on-surface-variant hover:border-primary-container'}`}
+                    >
+                      Kadın
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="font-label-mono text-label-mono text-on-surface-variant uppercase">Aktivite Seviyesi</label>
+                  <select
+                    value={aktiflik} onChange={(e) => setAktiflik(e.target.value)}
+                    className="w-full bg-surface-container-lowest border border-outline-variant rounded-lg p-3 text-on-surface focus:border-primary-container focus:ring-0 outline-none cursor-pointer"
+                  >
+                    <option value="">Seçin</option>
+                    {AKTIFLIK_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                </div>
+              </div>
             </div>
-            {!aiOneri && (
-              <button className="timer-btn" style={{ marginTop: '8px', justifyContent: 'center', width: '100%' }} onClick={aiOneriAl} disabled={aiYukleniyor}>
-                <Sparkles size={16} /> {aiYukleniyor ? 'Öneri Hazırlanıyor...' : 'AI Önerisi Al'}
+
+            <div className="col-span-12 lg:col-span-8 flex flex-col gap-bento-gap">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-bento-gap">
+                {HEDEF_OPTIONS.map((h) => {
+                  const active = hedef === h.value;
+                  return (
+                    <div
+                      key={h.value}
+                      onClick={() => setHedef(h.value)}
+                      className={`p-6 rounded-2xl cursor-pointer relative overflow-hidden transition-all ${active ? 'bg-surface-container-high border-[2px] border-primary' : 'bg-surface-container border border-outline-variant hover:border-primary'}`}
+                    >
+                      {active && <div className="absolute top-0 left-0 w-1 h-full bg-primary"></div>}
+                      <span className="material-symbols-outlined text-4xl mb-4 text-primary inline-block">{h.icon}</span>
+                      <h3 className="font-headline-md text-headline-md mb-1 text-on-surface">{h.label}</h3>
+                      <p className="font-body-sm text-body-sm text-on-surface-variant">{h.desc}</p>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="bg-surface-container rounded-2xl p-6 border border-outline-variant">
+                <label className="font-label-mono text-label-mono text-on-surface-variant uppercase mb-3 block">Özel İstekler (Vejetaryen, Alerjen vb.)</label>
+                <textarea
+                  className="w-full bg-surface-container-lowest border border-outline-variant rounded-lg p-4 text-on-surface focus:border-primary-container focus:ring-0 outline-none resize-none transition-all placeholder:text-surface-variant"
+                  placeholder="Örn: Süt ürünleri tüketmiyorum, yüksek proteinli tarifler tercih ederim..." rows="3"
+                  value={istek} onChange={(e) => setIstek(e.target.value)}
+                />
+              </div>
+
+              <button
+                onClick={handleGenerate} disabled={loading || !!boyHata || !!kiloHata || !!yasHata}
+                className="w-full py-4 bg-primary-container text-on-primary-container font-headline-md text-headline-md rounded-xl hover:scale-[1.01] transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+              >
+                <span className="material-symbols-outlined">auto_awesome</span>
+                {loading ? 'HESAPLANIYOR...' : 'DİYET PLANINI OLUŞTUR'}
               </button>
+            </div>
+
+            {error && <p className="col-span-12 text-brand-red text-sm">{error}</p>}
+
+            {diet && (
+              <div ref={sonucRef} className="col-span-12 grid grid-cols-12 gap-bento-gap">
+                <div className="col-span-12 md:col-span-4 bg-surface-container rounded-2xl p-6 border border-outline-variant flex flex-col justify-between">
+                  <span className="font-label-mono text-label-mono text-on-surface-variant uppercase">Vücut Kitle Endeksi (BMI)</span>
+                  <div className="mt-4 flex items-baseline gap-2">
+                    <span className="font-stat-lg text-stat-lg text-on-surface">{diet.bmi}</span>
+                    <span className="font-label-mono text-label-mono text-tertiary">{diet.bmi_kategori?.toUpperCase()}</span>
+                  </div>
+                  <div className="mt-6 h-2 w-full bg-surface-container-highest rounded-full overflow-hidden">
+                    <div className="h-full bg-tertiary-container" style={{ width: `${bmiPercent}%` }}></div>
+                  </div>
+                </div>
+
+                <div className="col-span-12 md:col-span-4 bg-surface-container rounded-2xl p-6 border border-outline-variant">
+                  <span className="font-label-mono text-label-mono text-on-surface-variant uppercase">Günlük Kalori Hedefi</span>
+                  <div className="mt-4 flex items-baseline gap-2">
+                    <span className="font-stat-lg text-stat-lg text-primary-container">{diet.hedef_kalori}</span>
+                    <span className="font-label-mono text-label-mono text-on-surface-variant">kcal</span>
+                  </div>
+                  <p className="font-body-sm text-body-sm text-on-surface-variant mt-2">Bazal metabolizma: {diet.bmr} kcal</p>
+                </div>
+
+                <div className="col-span-12 md:col-span-4 bg-surface-container rounded-2xl p-6 border border-outline-variant relative overflow-hidden flex items-center">
+                  <div className="absolute top-0 right-0 p-2 opacity-10">
+                    <span className="material-symbols-outlined text-[120px]">smart_toy</span>
+                  </div>
+                  <div className="relative z-10 flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-secondary text-sm">bolt</span>
+                      <span className="font-label-mono text-[10px] text-secondary tracking-widest uppercase">AI ÖNERİSİ</span>
+                    </div>
+                    {!aiOneri ? (
+                      <button onClick={aiOneriAl} disabled={aiYukleniyor} className="text-left font-headline-md text-[16px] text-on-surface leading-tight italic underline disabled:opacity-50">
+                        {aiYukleniyor ? 'Öneri hazırlanıyor...' : 'AI önerisi al →'}
+                      </button>
+                    ) : (
+                      <p className="font-headline-md text-[16px] text-on-surface leading-tight italic">"{aiOneri}"</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="col-span-12 grid grid-cols-1 lg:grid-cols-3 gap-bento-gap">
+                  {diet.planlar.map((plan, index) => (
+                    <div key={index} className="bg-surface-container rounded-2xl border border-outline-variant overflow-hidden flex flex-col">
+                      <div className="h-12 relative flex items-end p-4 bg-surface-container-low">
+                        <span className="font-label-mono text-label-mono text-primary-container uppercase">{plan.baslik}</span>
+                      </div>
+                      <div className="p-6 pt-2">
+                        <ul className="text-on-surface-variant font-body-sm space-y-1 mb-4">
+                          {plan.ornek_ogunler.map((ogun, i) => <li key={i}>• {ogun}</li>)}
+                        </ul>
+                        <div className="flex flex-wrap gap-2">
+                          <span className="px-2 py-1 bg-surface-container-highest rounded text-[10px] font-label-mono text-primary-container">P: {plan.protein_g}g</span>
+                          <span className="px-2 py-1 bg-surface-container-highest rounded text-[10px] font-label-mono text-on-tertiary-container">K: {plan.karbonhidrat_g}g</span>
+                          <span className="px-2 py-1 bg-surface-container-highest rounded text-[10px] font-label-mono text-secondary">Y: {plan.yag_g}g</span>
+                        </div>
+                        <p className="font-label-mono text-label-mono text-on-surface-variant mt-3">{plan.kalori} kcal</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
-            {aiOneri && <p style={{ fontSize: '0.85rem', color: 'var(--text)', marginTop: '8px', lineHeight: '1.6' }}>{aiOneri}</p>}
           </div>
         </div>
-      )}
+      </main>
     </div>
   );
 }

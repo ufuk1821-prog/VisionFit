@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
-import { Dumbbell, Salad, Footprints, BarChart3 } from 'lucide-react';
 import logoImg from '../assets/logo.png';
 
 function Login() {
@@ -38,6 +37,7 @@ function Login() {
       setYukleniyor(false);
     }
   };
+
   const handleResend = async () => {
     setResending(true);
     setResendMessage('');
@@ -52,63 +52,78 @@ function Login() {
   };
 
   return (
-    <div className="auth-layout">
-      <div className="auth-side-panel">
-        <img src={logoImg} alt="VisionFit" className="auth-side-logo" />
-        <h2>En İyi Haline Ulaş</h2>
-        <p>Yapay zeka destekli antrenman analizi, kişiye özel diyet planı ve gelişim takibi tek platformda.</p>
-        <div className="auth-feature-list">
-          <div className="auth-feature-item"><Dumbbell size={18} /> Kamera ile Form Analizi</div>
-          <div className="auth-feature-item"><Salad size={18} /> Kişiye Özel Diyet Önerisi</div>
-          <div className="auth-feature-item"><Footprints size={18} /> Adım ve Aktivite Takibi</div>
-          <div className="auth-feature-item"><BarChart3 size={18} /> Gelişim Grafikleri</div>
-        </div>
-      </div>
+    <main className="relative z-10 min-h-screen flex items-center justify-center p-gutter">
+      <div className="fixed inset-0 pointer-events-none" style={{ background: 'radial-gradient(circle at 0% 0%, rgba(232, 49, 63, 0.08) 0%, transparent 50%)' }}></div>
+      <div className="fixed inset-0 pointer-events-none" style={{ background: 'radial-gradient(circle at 100% 100%, rgba(232, 49, 63, 0.08) 0%, transparent 50%)' }}></div>
 
-      <div className="auth-form-panel">
-        <div className="auth-box fade-in">
-          <h2>Giriş Yap</h2>
-          {error && <p className="error-text">{error}</p>}
-          {needsVerification && (
-            <div style={{ textAlign: 'center', marginBottom: '16px' }}>
-              <button type="button" className="link-text" style={{ background: 'none', border: 'none', cursor: 'pointer' }} onClick={handleResend} disabled={resending}>
-                {resending ? 'Gönderiliyor...' : 'Doğrulama E-postasını Yeniden Gönder'}
-              </button>
-              {resendMessage && <p style={{ color: 'var(--accent)', fontSize: '0.85rem', marginTop: '8px' }}>{resendMessage}</p>}
-            </div>
-          )}
-          <form onSubmit={handleLogin}>
-            <div className="form-group">
-              <label>E-posta</label>
-              <input
-                type="email"
-                placeholder="ornek@visionfit.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                <label style={{ marginBottom: 0 }}>Şifre</label>
-                <a href="#" className="link-text" style={{ margin: 0, fontSize: '0.7rem' }}>Şifremi Unuttum</a>
-              </div>
-              <input
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            <button type="submit" className="submit-btn" disabled={yukleniyor}>
-              {yukleniyor ? 'Giriş Yapılıyor...' : 'Giriş Yap'}
+      <div className="w-full max-w-[420px] bg-surface-container border border-outline-variant p-10 rounded-lg shadow-2xl relative">
+        <div className="flex flex-col items-center mb-8">
+          <div className="w-20 h-20 mb-6 transition-transform hover:scale-105 duration-500" style={{ filter: 'drop-shadow(0 0 20px rgba(232,49,63,0.5))' }}>
+            <img alt="VisionFit Logo" className="w-full h-full object-contain" src={logoImg} />
+          </div>
+          <h1 className="font-display-lg text-display-lg-mobile md:text-headline-md uppercase tracking-tight text-white">VisionFit</h1>
+          <p className="font-label-mono text-label-mono text-outline tracking-[0.3em] mt-2">EN İYİ HALİNE ULAŞ.</p>
+        </div>
+
+        {error && <p className="text-brand-red text-sm text-center mb-4">{error}</p>}
+        {needsVerification && (
+          <div className="text-center mb-4">
+            <button type="button" className="font-label-mono text-label-mono text-brand-red hover:underline uppercase bg-transparent border-none cursor-pointer" onClick={handleResend} disabled={resending}>
+              {resending ? 'Gönderiliyor...' : 'Doğrulama E-postasını Yeniden Gönder'}
             </button>
-          </form>
-          <Link to="/register" className="link-text">Hesabın yok mu? Kayıt Ol</Link>
+            {resendMessage && <p className="text-brand-red text-sm mt-2">{resendMessage}</p>}
+          </div>
+        )}
+
+        <form className="space-y-6" onSubmit={handleLogin}>
+          <div className="space-y-2">
+            <label className="font-label-mono text-label-mono text-outline-variant uppercase">E-posta</label>
+            <div className="relative">
+              <input
+                className="w-full bg-surface-container-low border border-outline-variant text-on-surface px-4 py-3 rounded-md transition-all focus:border-brand-red placeholder:text-surface-variant"
+                placeholder="ornek@visionfit.com" type="email"
+                value={email} onChange={(e) => setEmail(e.target.value)} required
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <label className="font-label-mono text-label-mono text-outline-variant uppercase">Şifre</label>
+              <a className="font-label-mono text-label-mono text-brand-red hover:underline uppercase" href="#">Şifremi Unuttum</a>
+            </div>
+            <div className="relative">
+              <input
+                className="w-full bg-surface-container-low border border-outline-variant text-on-surface px-4 py-3 rounded-md transition-all focus:border-brand-red placeholder:text-surface-variant"
+                placeholder="••••••••" type="password"
+                value={password} onChange={(e) => setPassword(e.target.value)} required
+              />
+            </div>
+          </div>
+
+          <button
+            className="group relative w-full bg-brand-red hover:bg-brand-red/90 text-white font-label-mono font-bold py-4 rounded-md transition-all active:scale-[0.98] overflow-hidden shadow-[0_0_20px_rgba(232,49,63,0.2)]"
+            type="submit" disabled={yukleniyor}
+          >
+            <span className="relative z-10">{yukleniyor ? 'GİRİŞ YAPILIYOR...' : 'GİRİŞ YAP'}</span>
+            <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+          </button>
+        </form>
+
+        <div className="mt-8 text-center">
+          <p className="text-on-surface-variant font-body-sm">
+            Hesabın yok mu?
+            <Link className="text-brand-red font-bold hover:text-white transition-colors ml-1" to="/register">Kayıt Ol</Link>
+          </p>
+        </div>
+
+        <div className="absolute -bottom-4 -right-4 pointer-events-none">
+          <p className="font-label-mono text-[10px] text-outline-variant/30 uppercase tracking-widest" style={{ transform: 'rotate(90deg)', transformOrigin: 'left' }}>
+            Auth_Ver_4.02 // Secure_Layer
+          </p>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
 

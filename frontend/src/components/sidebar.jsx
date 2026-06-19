@@ -1,26 +1,31 @@
-import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Menu, X, Home, Camera, History, Dumbbell, ClipboardList, Salad, Utensils, Footprints, Timer, Award, Settings, User, LogOut, Image } from 'lucide-react';
 import logoImg from '../assets/logo.png';
 
 const NAV_ITEMS = [
-  { path: '/', label: 'Ana Sayfa', icon: Home },
-  { path: '/dashboard', label: 'Kamera', icon: Camera },
-  { path: '/plank', label: 'Fotoğraflı Analiz', icon: Image },
-  { path: '/history', label: 'Geçmiş Antrenmanlar', icon: History },
-  { path: '/exercises', label: 'Egzersiz Kütüphanesi', icon: Dumbbell },
-  { path: '/workout-notebook', label: 'Antrenman Defteri', icon: ClipboardList },
-  { path: '/diet', label: 'Diyet Önerisi', icon: Salad },
-  { path: '/nutrition', label: 'Beslenme Takibi', icon: Utensils },
-  { path: '/steps', label: 'Adım Sayacı', icon: Footprints },
-  { path: '/timer', label: 'Kronometre & Zamanlayıcı', icon: Timer },
-  { path: '/badges', label: 'Rozetlerim', icon: Award },
-  { path: '/settings', label: 'Ayarlar', icon: Settings },
-  { path: '/profile', label: 'Profilim', icon: User },
+  { path: '/', label: 'PANEL', icon: 'dashboard' },
+  { path: '/dashboard', label: 'KAMERA ANALİZİ', icon: 'videocam' },
+  { path: '/plank', label: 'FOTOĞRAF ANALİZİ', icon: 'photo_camera' },
+  { path: '/history', label: 'GEÇMİŞ', icon: 'history' },
+  { path: '/exercises', label: 'KÜTÜPHANE', icon: 'menu_book' },
+  { path: '/workout-notebook', label: 'GÜNLÜK', icon: 'edit_note' },
+  { path: '/diet', label: 'DİYET', icon: 'restaurant' },
+  { path: '/nutrition', label: 'BESLENME', icon: 'nutrition' },
+  { path: '/steps', label: 'ADIMLAR', icon: 'directions_run' },
+  { path: '/timer', label: 'ZAMANLAYICI', icon: 'timer' },
+  { path: '/badges', label: 'ROZETLER', icon: 'military_tech' },
+  { path: '/settings', label: 'AYARLAR', icon: 'settings' },
+  { path: '/profile', label: 'PROFİLİM', icon: 'person' },
+];
+
+const MOBILE_NAV_ITEMS = [
+  { path: '/', label: 'PANEL', icon: 'dashboard' },
+  { path: '/dashboard', label: 'ANALİZ', icon: 'videocam' },
+  { path: '/diet', label: 'DİYET', icon: 'restaurant' },
+  { path: '/history', label: 'GEÇMİŞ', icon: 'history' },
+  { path: '/profile', label: 'PROFİL', icon: 'person' },
 ];
 
 function Sidebar() {
-  const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -29,40 +34,80 @@ function Sidebar() {
     window.location.href = '/login';
   };
 
-  const go = (path) => {
-    setOpen(false);
-    navigate(path);
-  };
+  const ad = (() => {
+    try {
+      const cached = localStorage.getItem('kullaniciAdi');
+      return cached || 'Sporcu';
+    } catch {
+      return 'Sporcu';
+    }
+  })();
 
-  const toggleOpen = () => setOpen((prev) => !prev);
+  const navButtonClass = (active) => {
+    const base = 'flex items-center w-full text-left px-6 py-3 border-l-[3px] transition-all duration-200 cursor-pointer';
+    const activeClass = 'border-primary bg-surface-container-high text-primary font-bold';
+    const inactiveClass = 'border-transparent text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest';
+    return `${base} ${active ? activeClass : inactiveClass}`;
+  };
 
   return (
     <>
-      <button className="menu-btn" onClick={toggleOpen}>
-        {open ? <X size={20} color="var(--accent)" /> : <Menu size={20} color="var(--accent)" />}
-      </button>
+      <aside className="hidden md:flex flex-col h-screen fixed left-0 top-0 py-section-padding bg-surface-container border-r border-outline-variant w-64 z-50">
+        <div className="px-6 mb-10">
+          <h1 className="text-headline-md font-display-lg font-black text-primary tracking-tighter uppercase cursor-pointer" onClick={() => navigate('/')}>VisionFit</h1>
+          <p className="text-[10px] font-label-mono text-on-surface-variant tracking-widest mt-1 opacity-60">PERFORMANS TELEMETRİSİ</p>
+        </div>
 
-      {open && <div className="sidebar-overlay" onClick={() => setOpen(false)} />}
-
-      <div className={`sidebar ${open ? 'open' : ''}`}>
-        <img src={logoImg} alt="VisionFit" className="sidebar-logo-img" />
-        <nav className="sidebar-nav">
-          {NAV_ITEMS.map(({ path, label, icon: Icon }) => (
-            <button
-              key={path}
-              className={location.pathname === path ? 'active' : ''}
-              onClick={() => go(path)}
-            >
-              <Icon size={18} />
-              {label}
-            </button>
-          ))}
+        <nav className="flex-1 overflow-y-auto scrollbar-hide">
+          <div className="space-y-1">
+            {NAV_ITEMS.map((item) => {
+              const active = location.pathname === item.path;
+              return (
+                <button key={item.path} type="button" className={navButtonClass(active)} onClick={() => navigate(item.path)}>
+                  <span className="material-symbols-outlined mr-3">{item.icon}</span>
+                  <span className="font-label-mono text-label-mono uppercase">{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </nav>
-        <button className="sidebar-logout" onClick={handleLogout} style={{ flexShrink: 0 }}>
-          <LogOut size={18} />
-          Çıkış Yap
-        </button>
-      </div>
+
+        <div className="px-6 mt-auto pt-10">
+          <div className="flex items-center gap-3 p-3 bg-surface-container-low rounded-lg mb-4">
+            <div className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold">
+              {ad.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <p className="text-body-sm font-bold">{ad}</p>
+              <p className="text-[10px] text-on-surface-variant opacity-70">VisionFit Üyesi</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="w-full py-2 border border-outline-variant text-label-mono uppercase tracking-widest text-[10px] hover:bg-error-container hover:text-white transition-colors duration-200"
+            onClick={handleLogout}
+          >
+            ÇIKIŞ YAP
+          </button>
+        </div>
+      </aside>
+
+      <nav className="fixed bottom-0 left-0 w-full md:hidden bg-surface-container border-t border-outline-variant grid grid-cols-5 h-16 z-50">
+        {MOBILE_NAV_ITEMS.map((item) => {
+          const active = location.pathname === item.path;
+          return (
+            <button
+              key={item.path}
+              type="button"
+              className={`flex flex-col items-center justify-center cursor-pointer ${active ? 'text-primary' : 'text-on-surface-variant'}`}
+              onClick={() => navigate(item.path)}
+            >
+              <span className="material-symbols-outlined" style={active ? { fontVariationSettings: "'FILL' 1" } : undefined}>{item.icon}</span>
+              <span className="text-[8px] font-label-mono mt-1">{item.label}</span>
+            </button>
+          );
+        })}
+      </nav>
     </>
   );
 }

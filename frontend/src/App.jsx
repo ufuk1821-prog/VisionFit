@@ -1,7 +1,5 @@
-import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import logoImg from './assets/logo.png';
 import Login from './pages/login';
 import Register from './pages/register';
 import VerifyEmail from './pages/verify-email';
@@ -19,15 +17,7 @@ import Timer from './pages/timer';
 import WorkoutNotebook from './pages/workout-notebook';
 import Plank from './pages/plank';
 import './App.css';
-
-
-function VisionFitLogo() {
-  return (
-    <Link to="/" className="brand-logo">
-      <img src={logoImg} alt="VisionFit" className="brand-logo-img" />
-    </Link>
-  );
-}
+import './tailwind.css';
 
 const pageVariants = {
   initial: { opacity: 0 },
@@ -80,17 +70,9 @@ function AnimatedRoutes({ isAuthenticated }) {
 function App() {
   const isAuthenticated = !!localStorage.getItem('token');
 
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') || 'dark';
-    document.documentElement.setAttribute('data-theme', savedTheme);
-  }, []);
-
   return (
     <BrowserRouter>
-      <div className="app-container">
-        <VisionFitLogo />
-        <AnimatedRoutes isAuthenticated={isAuthenticated} />
-      </div>
+      <AnimatedRoutes isAuthenticated={isAuthenticated} />
     </BrowserRouter>
   );
 }

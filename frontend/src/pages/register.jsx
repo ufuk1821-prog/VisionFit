@@ -1,13 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { Dumbbell, Salad, Footprints, BarChart3, Mail } from 'lucide-react';
-import logoImg from '../assets/logo.png';
 
 const PASSWORD_RULES = [
-  { test: (p) => p.length >= 8, label: 'En az 8 karakter' },
-  { test: (p) => /[A-Z]/.test(p), label: 'En az 1 büyük harf' },
-  { test: (p) => /[!@#$%^&*(),.?":{}|<>_\-+=]/.test(p), label: 'En az 1 özel karakter (!@#$% vb.)' },
+  { test: (p) => p.length >= 8, label: 'Minimum 8 karakter' },
+  { test: (p) => /[A-Z]/.test(p), label: 'En az bir büyük harf' },
+  { test: (p) => /[@$!%*?&]/.test(p), label: 'En az bir özel karakter (@$!%*?&)' },
 ];
 
 function Register() {
@@ -27,17 +25,14 @@ function Register() {
   const handleRegister = async (e) => {
     e.preventDefault();
     setError('');
-
     if (!passwordValid) {
       setError('Şifre gereksinimleri karşılanmıyor.');
       return;
     }
-
     if (password !== passwordConfirm) {
       setError('Şifreler eşleşmiyor.');
       return;
     }
-
     setLoading(true);
     try {
       await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/register`, {
@@ -70,93 +65,127 @@ function Register() {
   };
 
   return (
-    <div className="auth-layout">
-      <div className="auth-side-panel">
-        <img src={logoImg} alt="VisionFit" className="auth-side-logo" />
-        <h2>En İyi Haline Ulaş</h2>
-        <p>Yapay zeka destekli antrenman analizi, kişiye özel diyet planı ve gelişim takibi tek platformda.</p>
-        <div className="auth-feature-list">
-          <div className="auth-feature-item"><Dumbbell size={18} /> Kamera ile Form Analizi</div>
-          <div className="auth-feature-item"><Salad size={18} /> Kişiye Özel Diyet Önerisi</div>
-          <div className="auth-feature-item"><Footprints size={18} /> Adım ve Aktivite Takibi</div>
-          <div className="auth-feature-item"><BarChart3 size={18} /> Gelişim Grafikleri</div>
+    <main className="relative z-10 w-full max-w-[500px] mx-auto my-10">
+      <div className="bg-surface-container rounded-xl border border-outline-variant shadow-2xl overflow-hidden">
+        <div className="px-8 pt-10 pb-6 text-center">
+          <h1 className="font-display-lg text-display-lg-mobile md:text-display-lg text-primary mb-2 uppercase tracking-tighter">VisionFit</h1>
+          <p className="font-label-mono text-label-mono text-on-surface-variant uppercase tracking-widest">Performans Telemetrisi Kayıt Sistemi</p>
         </div>
+
+        {success ? (
+          <div className="px-8 pb-10 text-center">
+            <span className="material-symbols-outlined text-primary" style={{ fontSize: '48px' }}>mail</span>
+            <h2 className="font-headline-md text-headline-md mt-4 mb-2">E-postanı Kontrol Et</h2>
+            <p className="text-on-surface-variant font-body-sm mb-6">
+              <strong>{email}</strong> adresine bir doğrulama bağlantısı gönderdik. Hesabını aktifleştirmek için e-postandaki bağlantıya tıkla, ardından giriş yapabilirsin.
+            </p>
+            <Link to="/login" className="w-full bg-primary-container text-on-primary-container font-headline-md py-4 rounded-lg hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 uppercase no-underline">
+              Giriş Sayfasına Git
+            </Link>
+            <button
+              className="mt-4 bg-transparent border-none text-primary cursor-pointer font-body-sm"
+              onClick={handleResend} disabled={resending}
+            >
+              {resending ? 'Gönderiliyor...' : 'E-postayı Tekrar Gönder'}
+            </button>
+            {resendMessage && <p className="text-on-surface-variant text-sm mt-2">{resendMessage}</p>}
+          </div>
+        ) : (
+          <form className="px-8 pb-10 space-y-6" onSubmit={handleRegister}>
+            <div className="grid grid-cols-2 gap-bento-gap">
+              <div className="space-y-1.5">
+                <label className="font-label-mono text-label-mono text-on-surface-variant uppercase" htmlFor="firstName">AD</label>
+                <input
+                  className="w-full bg-surface-container-lowest border border-outline-variant rounded-lg px-4 py-3 text-on-surface focus:border-primary outline-none transition-all placeholder-on-surface-variant/30"
+                  id="firstName" placeholder="İSİM" required type="text"
+                  value={ad} onChange={(e) => setAd(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="font-label-mono text-label-mono text-on-surface-variant uppercase" htmlFor="lastName">SOYAD</label>
+                <input
+                  className="w-full bg-surface-container-lowest border border-outline-variant rounded-lg px-4 py-3 text-on-surface focus:border-primary outline-none transition-all placeholder-on-surface-variant/30"
+                  id="lastName" placeholder="SOYİSİM" required type="text"
+                  value={soyad} onChange={(e) => setSoyad(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="font-label-mono text-label-mono text-on-surface-variant uppercase" htmlFor="email">E-POSTA ADRESİ</label>
+              <div className="relative">
+                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/50">mail</span>
+                <input
+                  className="w-full bg-surface-container-lowest border border-outline-variant rounded-lg pl-12 pr-4 py-3 text-on-surface focus:border-primary outline-none transition-all placeholder-on-surface-variant/30"
+                  id="email" placeholder="example@visionfit.ai" required type="email"
+                  value={email} onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="font-label-mono text-label-mono text-on-surface-variant uppercase" htmlFor="password">ŞİFRE</label>
+              <div className="relative">
+                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/50">lock</span>
+                <input
+                  className="w-full bg-surface-container-lowest border border-outline-variant rounded-lg pl-12 pr-4 py-3 text-on-surface focus:border-primary outline-none transition-all placeholder-on-surface-variant/30"
+                  id="password" placeholder="••••••••" required type="password"
+                  value={password} onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="bg-surface-container-high/50 rounded-lg p-4 space-y-2 border border-outline-variant/30">
+              {PASSWORD_RULES.map((rule) => {
+                const valid = rule.test(password);
+                return (
+                  <div key={rule.label} className={`flex items-center gap-3 font-label-mono text-[10px] uppercase tracking-wider transition-colors duration-200 ${valid ? 'text-primary' : 'text-on-surface-variant'}`}>
+                    <span className="material-symbols-outlined text-[16px]">{valid ? 'check_circle' : 'radio_button_unchecked'}</span>
+                    {rule.label}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="font-label-mono text-label-mono text-on-surface-variant uppercase">ŞİFRE TEKRAR</label>
+              <input
+                className="w-full bg-surface-container-lowest border rounded-lg px-4 py-3 text-on-surface focus:border-primary outline-none transition-all placeholder-on-surface-variant/30"
+                style={{ borderColor: passwordConfirm && password !== passwordConfirm ? '#E8313F' : undefined }}
+                placeholder="••••••••" type="password" required
+                value={passwordConfirm} onChange={(e) => setPasswordConfirm(e.target.value)}
+              />
+              {passwordConfirm && password !== passwordConfirm && (
+                <span className="text-brand-red text-xs">Şifreler eşleşmiyor.</span>
+              )}
+            </div>
+
+            {error && <p className="text-brand-red text-sm text-center">{error}</p>}
+
+            <button
+              className="w-full bg-primary-container text-on-primary-container font-headline-md py-4 rounded-lg hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 uppercase"
+              type="submit" disabled={loading}
+            >
+              {loading ? 'KAYDEDİLİYOR...' : 'KAYIT OL'}
+              <span className="material-symbols-outlined">arrow_forward</span>
+            </button>
+
+            <div className="text-center pt-2">
+              <p className="font-body-sm text-body-sm text-on-surface-variant">
+                Zaten hesabın var mı?
+                <Link className="text-primary font-bold hover:underline underline-offset-4 ml-1" to="/login">Giriş Yap</Link>
+              </p>
+            </div>
+          </form>
+        )}
       </div>
 
-      <div className="auth-form-panel">
-        <div className="auth-box fade-in">
-          {success ? (
-            <div style={{ textAlign: 'center' }}>
-              <Mail size={48} color="var(--accent)" style={{ margin: '0 auto 16px' }} />
-              <h2>E-postanı Kontrol Et</h2>
-              <p style={{ color: 'var(--text-muted)', margin: '12px 0 24px' }}>
-                <strong>{email}</strong> adresine bir doğrulama bağlantısı gönderdik. Hesabını aktifleştirmek için
-                e-postandaki bağlantıya tıkla, ardından giriş yapabilirsin.
-              </p>
-              <Link to="/login" className="submit-btn" style={{ display: 'block', textDecoration: 'none' }}>Giriş Sayfasına Git</Link>
-              <button
-                style={{ marginTop: '16px', background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: '0.9rem' }}
-                onClick={handleResend}
-                disabled={resending}
-              >
-                {resending ? 'Gönderiliyor...' : 'E-postayı Tekrar Gönder'}
-              </button>
-              {resendMessage && <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '8px' }}>{resendMessage}</p>}
-            </div>
-          ) : (
-            <>
-              <h2>Kayıt Ol</h2>
-              {error && <p className="error-text">{error}</p>}
-              <form onSubmit={handleRegister}>
-                <div className="form-group">
-                  <label>Ad</label>
-                  <input type="text" value={ad} onChange={(e) => setAd(e.target.value)} required />
-                </div>
-                <div className="form-group">
-                  <label>Soyad</label>
-                  <input type="text" value={soyad} onChange={(e) => setSoyad(e.target.value)} required />
-                </div>
-                <div className="form-group">
-                  <label>E-posta</label>
-                  <input type="email" placeholder="ornek@visionfit.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
-                </div>
-                <div className="form-group">
-                  <label>Şifre</label>
-                  <input type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
-                  {password.length > 0 && (
-                    <div className="password-rules">
-                      {PASSWORD_RULES.map((rule) => (
-                        <span key={rule.label} className={`password-rule ${rule.test(password) ? 'valid' : ''}`}>
-                          {rule.test(password) ? '✓' : '○'} {rule.label}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <div className="form-group">
-                  <label>Şifre Tekrar</label>
-                  <input
-                    type="password"
-                    placeholder="••••••••"
-                    value={passwordConfirm}
-                    onChange={(e) => setPasswordConfirm(e.target.value)}
-                    required
-                    style={{ borderColor: passwordConfirm && password !== passwordConfirm ? 'var(--danger)' : undefined }}
-                  />
-                  {passwordConfirm && password !== passwordConfirm && (
-                    <span style={{ color: 'var(--danger)', fontSize: '0.82rem', marginTop: '4px' }}>Şifreler eşleşmiyor.</span>
-                  )}
-                </div>
-                <button type="submit" className="submit-btn" disabled={loading}>
-                  {loading ? 'Kaydediliyor...' : 'Hesap Oluştur'}
-                </button>
-              </form>
-              <Link to="/login" className="link-text">Zaten hesabın var mı? Giriş Yap</Link>
-            </>
-          )}
-        </div>
+      <div className="mt-8 grid grid-cols-3 gap-bento-gap opacity-30">
+        <div className="h-[1px] bg-outline"></div>
+        <div className="font-label-mono text-[8px] text-center text-outline uppercase tracking-widest">SECURE_ENCRYPTION_V4.0</div>
+        <div className="h-[1px] bg-outline"></div>
       </div>
-    </div>
+    </main>
   );
 }
 

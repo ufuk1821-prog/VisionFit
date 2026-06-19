@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import { Play, Pause, RotateCcw, Flag, Info } from 'lucide-react';
 import Sidebar from '../components/sidebar';
 
 function formatStopwatch(ms) {
@@ -8,7 +7,8 @@ function formatStopwatch(ms) {
   const totalSeconds = Math.floor(totalCs / 100);
   const s = totalSeconds % 60;
   const m = Math.floor(totalSeconds / 60);
-  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(cs).padStart(2, '0')}`;
+  const h = Math.floor(m / 60);
+  return `${String(h).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(cs).padStart(2, '0')}`;
 }
 
 function playBeep() {
@@ -22,117 +22,7 @@ function playBeep() {
     gain.gain.value = 0.3;
     osc.start();
     osc.stop(ctx.currentTime + 0.5);
-  } catch {
-  }
-}
-
-function ProgressRing({ progress, color, finished, size = 280 }) {
-  const stroke = 10;
-  const radius = (size - stroke) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const safeProgress = Math.min(Math.max(progress, 0), 1);
-  const offset = circumference * (1 - safeProgress);
-
-  return (
-    <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-      <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="var(--surface-2)" strokeWidth={stroke} />
-      <circle
-        cx={size / 2}
-        cy={size / 2}
-        r={radius}
-        fill="none"
-        stroke={finished ? '#4CAF50' : color}
-        strokeWidth={stroke}
-        strokeDasharray={circumference}
-        strokeDashoffset={offset}
-        strokeLinecap="round"
-        style={{ transition: 'stroke-dashoffset 0.5s linear' }}
-      />
-    </svg>
-  );
-}
-
-function Stopwatch() {
-  const [elapsed, setElapsed] = useState(0);
-  const [running, setRunning] = useState(false);
-  const [laps, setLaps] = useState([]);
-  const startRef = useRef(0);
-  const intervalRef = useRef(null);
-
-  useEffect(() => {
-    if (running) {
-      startRef.current = Date.now() - elapsed;
-      intervalRef.current = setInterval(() => {
-        setElapsed(Date.now() - startRef.current);
-      }, 10);
-    } else {
-      clearInterval(intervalRef.current);
-    }
-    return () => clearInterval(intervalRef.current);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [running]);
-
-  const handleStartPause = () => setRunning((r) => !r);
-
-  const handleReset = () => {
-    setRunning(false);
-    setElapsed(0);
-    setLaps([]);
-  };
-
-  const handleLap = () => setLaps((prev) => [elapsed, ...prev]);
-
-  return (
-    <div>
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '20px', padding: '48px 24px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '16px' }}>GEÇEN SÜRE</div>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'clamp(2.4rem, 8vw, 5rem)', letterSpacing: '-0.02em', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
-          {formatStopwatch(elapsed)}
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '32px', marginTop: '48px' }}>
-          <button onClick={handleReset} style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-            <RotateCcw size={22} />
-          </button>
-          <button
-            onClick={handleStartPause}
-            style={{ width: '92px', height: '92px', borderRadius: '50%', background: 'var(--accent)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: 'none', boxShadow: '0 10px 30px -10px var(--accent)' }}
-          >
-            {running ? <Pause size={36} /> : <Play size={36} />}
-          </button>
-          <button onClick={handleLap} disabled={!running} style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'var(--surface-2)', border: '1px solid var(--border)', color: running ? 'var(--text)' : 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: running ? 'pointer' : 'not-allowed', opacity: running ? 1 : 0.5 }}>
-            <Flag size={22} />
-          </button>
-        </div>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '16px', marginTop: '16px' }} className="timer-bottom-grid">
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '20px', height: '280px', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', paddingBottom: '10px', marginBottom: '12px' }}>
-            <h3 style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>TUR KAYITLARI</h3>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: 'var(--accent)' }}># LAP</span>
-          </div>
-          <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {laps.length === 0 && <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', marginTop: '32px' }}>Henüz tur kaydı yok</p>}
-            {laps.map((lap, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface-2)', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.78rem', color: 'var(--text-muted)' }}>TUR {laps.length - i}</span>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '1rem' }}>{formatStopwatch(lap)}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div style={{ background: 'rgba(232,49,63,0.06)', border: '1px solid rgba(232,49,63,0.15)', borderRadius: '14px', padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          <div>
-            <Info size={26} color="var(--accent)" style={{ marginBottom: '12px' }} />
-            <h4 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--accent)', marginBottom: '8px', fontSize: '1rem' }}>Performans İpucu</h4>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', lineHeight: 1.5 }}>Set arası 60-90 saniye dinlenin. ATP depolarının yenilenmesi için bu süre kritiktir.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  } catch {}
 }
 
 const PRESETS = [
@@ -142,167 +32,217 @@ const PRESETS = [
   { sn: 300, label: 'Aktivasyon' },
 ];
 
-function CountdownTimer() {
-  const [inputMinutes, setInputMinutes] = useState(1);
-  const [inputSeconds, setInputSeconds] = useState(0);
-  const [totalDuration, setTotalDuration] = useState(60);
-  const [remaining, setRemaining] = useState(60);
+function Timer() {
+  const [tab, setTab] = useState('stopwatch');
+
+  const [elapsed, setElapsed] = useState(0);
   const [running, setRunning] = useState(false);
-  const [finished, setFinished] = useState(false);
+  const [laps, setLaps] = useState([]);
+  const startRef = useRef(0);
   const intervalRef = useRef(null);
 
   useEffect(() => {
     if (running) {
-      intervalRef.current = setInterval(() => {
-        setRemaining((r) => {
-          if (r <= 1) {
-            clearInterval(intervalRef.current);
-            setRunning(false);
-            setFinished(true);
-            playBeep();
-            return 0;
-          }
-          return r - 1;
-        });
-      }, 1000);
+      startRef.current = Date.now() - elapsed;
+      intervalRef.current = setInterval(() => setElapsed(Date.now() - startRef.current), 10);
     } else {
       clearInterval(intervalRef.current);
     }
     return () => clearInterval(intervalRef.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [running]);
 
+  const handleStartPause = () => setRunning((r) => !r);
+  const handleReset = () => { setRunning(false); setElapsed(0); setLaps([]); };
+  const handleLap = () => setLaps((prev) => [elapsed, ...prev]);
+
+  const [inputMinutes, setInputMinutes] = useState(5);
+  const [inputSeconds, setInputSeconds] = useState(0);
+  const [totalDuration, setTotalDuration] = useState(300);
+  const [remaining, setRemaining] = useState(300);
+  const [timerRunning, setTimerRunning] = useState(false);
+  const [finished, setFinished] = useState(false);
+  const timerIntervalRef = useRef(null);
+
+  useEffect(() => {
+    if (timerRunning) {
+      timerIntervalRef.current = setInterval(() => {
+        setRemaining((r) => {
+          if (r <= 1) { clearInterval(timerIntervalRef.current); setTimerRunning(false); setFinished(true); playBeep(); return 0; }
+          return r - 1;
+        });
+      }, 1000);
+    } else {
+      clearInterval(timerIntervalRef.current);
+    }
+    return () => clearInterval(timerIntervalRef.current);
+  }, [timerRunning]);
+
   const handleSetPreset = (seconds) => {
-    setRunning(false);
-    setFinished(false);
-    setRemaining(seconds);
-    setTotalDuration(seconds);
-    setInputMinutes(Math.floor(seconds / 60));
-    setInputSeconds(seconds % 60);
+    setTimerRunning(false); setFinished(false);
+    setRemaining(seconds); setTotalDuration(seconds);
+    setInputMinutes(Math.floor(seconds / 60)); setInputSeconds(seconds % 60);
   };
 
-  const handleStartPause = () => {
-    if (remaining === 0) return;
-    setFinished(false);
-    setRunning((r) => !r);
+  const handleApplyCustom = () => {
+    const total = Math.max(1, inputMinutes * 60 + inputSeconds);
+    setTimerRunning(false); setFinished(false); setRemaining(total); setTotalDuration(total);
   };
 
-  const handleReset = () => {
-    setRunning(false);
-    setFinished(false);
-    setRemaining(totalDuration);
-  };
+  const handleTimerToggle = () => { if (remaining === 0) return; setFinished(false); setTimerRunning((r) => !r); };
+  const handleTimerReset = () => { setTimerRunning(false); setFinished(false); setRemaining(totalDuration); };
 
   const minutes = Math.floor(remaining / 60);
   const seconds = remaining % 60;
+  const ringCircumference = 1000;
   const progress = totalDuration > 0 ? remaining / totalDuration : 0;
-
-  return (
-    <div>
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '20px', padding: '48px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <div style={{ position: 'relative', width: '280px', height: '280px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <ProgressRing progress={progress} color="var(--accent)" finished={finished} />
-          <div style={{ position: 'absolute', fontFamily: 'var(--font-mono)', fontSize: 'clamp(2rem, 6vw, 3.4rem)', fontWeight: 900, color: finished ? '#4CAF50' : 'var(--text)' }}>
-            {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
-          </div>
-        </div>
-
-        {!running && remaining === totalDuration && (
-          <div style={{ display: 'flex', gap: '16px', marginTop: '32px', width: '100%', maxWidth: '320px' }}>
-            <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '6px' }}>DAKİKA</label>
-              <input
-                type="number" min="0" value={inputMinutes}
-                onChange={(e) => setInputMinutes(Math.max(0, Number(e.target.value)))}
-                style={{ width: '100%', background: 'var(--surface-lowest, #0e0e0e)', border: '1px solid var(--border)', borderRadius: '8px', padding: '12px', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '1.2rem', color: 'var(--text)' }}
-              />
-            </div>
-            <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '6px' }}>SANİYE</label>
-              <input
-                type="number" min="0" max="59" value={inputSeconds}
-                onChange={(e) => setInputSeconds(Math.min(59, Math.max(0, Number(e.target.value))))}
-                style={{ width: '100%', background: 'var(--surface-lowest, #0e0e0e)', border: '1px solid var(--border)', borderRadius: '8px', padding: '12px', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '1.2rem', color: 'var(--text)' }}
-              />
-            </div>
-          </div>
-        )}
-
-        {!running && remaining === totalDuration && (
-          <button
-            onClick={() => { const total = Math.max(1, inputMinutes * 60 + inputSeconds); setRunning(false); setFinished(false); setRemaining(total); setTotalDuration(total); }}
-            className="submit-btn"
-            style={{ marginTop: '16px', maxWidth: '320px' }}
-          >
-            Ayarla
-          </button>
-        )}
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '32px', marginTop: '32px' }}>
-          <button onClick={handleReset} style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-            <RotateCcw size={22} />
-          </button>
-          <button
-            onClick={handleStartPause}
-            style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'var(--accent)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: 'none' }}
-          >
-            {running ? <Pause size={32} /> : <Play size={32} />}
-          </button>
-        </div>
-
-        {finished && <div className="info-banner" style={{ marginTop: '24px' }}>⏰ Süre doldu!</div>}
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginTop: '16px' }} className="preset-grid">
-        {PRESETS.map((p) => (
-          <button
-            key={p.sn}
-            onClick={() => handleSetPreset(p.sn)}
-            style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', textAlign: 'center', cursor: 'pointer' }}
-          >
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '1.05rem' }}>{String(Math.floor(p.sn / 60)).padStart(2, '0')}:{String(p.sn % 60).padStart(2, '0')}</div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', marginTop: '4px' }}>{p.label}</div>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function TimerPage() {
-  const [tab, setTab] = useState('kronometre');
+  const ringOffset = ringCircumference * (1 - progress);
 
   return (
     <div>
       <Sidebar />
+      <main className="md:pl-64 pt-20 md:pt-10 px-gutter min-h-screen pb-24 md:pb-10 bg-surface-container-lowest">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex gap-8 mb-10 border-b border-outline-variant">
+            <button
+              onClick={() => setTab('stopwatch')}
+              className={`pb-4 font-label-mono text-label-mono uppercase tracking-widest border-b-2 transition-all ${tab === 'stopwatch' ? 'border-primary text-primary' : 'border-transparent text-on-surface-variant hover:text-on-surface'}`}
+            >
+              KRONOMETRE
+            </button>
+            <button
+              onClick={() => setTab('timer')}
+              className={`pb-4 font-label-mono text-label-mono uppercase tracking-widest border-b-2 transition-all ${tab === 'timer' ? 'border-primary text-primary' : 'border-transparent text-on-surface-variant hover:text-on-surface'}`}
+            >
+              ZAMANLAYICI
+            </button>
+          </div>
 
-      <div style={{ display: 'flex', gap: '32px', marginBottom: '32px', borderBottom: '1px solid var(--border)' }}>
-        <button
-          onClick={() => setTab('kronometre')}
-          style={{
-            padding: '0 0 16px', background: 'none', border: 'none', cursor: 'pointer',
-            fontFamily: 'var(--font-mono)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em',
-            borderBottom: tab === 'kronometre' ? '2px solid var(--accent)' : '2px solid transparent',
-            color: tab === 'kronometre' ? 'var(--accent)' : 'var(--text-muted)',
-          }}
-        >
-          KRONOMETRE
-        </button>
-        <button
-          onClick={() => setTab('zamanlayici')}
-          style={{
-            padding: '0 0 16px', background: 'none', border: 'none', cursor: 'pointer',
-            fontFamily: 'var(--font-mono)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em',
-            borderBottom: tab === 'zamanlayici' ? '2px solid var(--accent)' : '2px solid transparent',
-            color: tab === 'zamanlayici' ? 'var(--accent)' : 'var(--text-muted)',
-          }}
-        >
-          ZAMANLAYICI
-        </button>
-      </div>
+          {tab === 'stopwatch' && (
+            <section className="space-y-8">
+              <div className="bento-card p-12 text-center flex flex-col items-center">
+                <div className="font-label-mono text-label-mono text-on-surface-variant uppercase mb-4 tracking-tighter">GEÇEN SÜRE</div>
+                <div className="font-label-mono text-6xl md:text-8xl lg:text-9xl tracking-tighter font-bold tabular-nums text-on-surface">
+                  {formatStopwatch(elapsed)}
+                </div>
+                <div className="flex items-center gap-12 mt-16">
+                  <button onClick={handleReset} className="w-16 h-16 rounded-full flex items-center justify-center bg-surface-container-high text-on-surface hover:bg-surface-container-highest border border-outline">
+                    <span className="material-symbols-outlined">restart_alt</span>
+                  </button>
+                  <button
+                    onClick={handleStartPause}
+                    className={`w-24 h-24 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center hover:scale-105 active:scale-95 shadow-xl transition-all ${running ? 'animate-pulse' : ''}`}
+                  >
+                    <span className="material-symbols-outlined text-5xl">{running ? 'pause' : 'play_arrow'}</span>
+                  </button>
+                  <button onClick={handleLap} disabled={!running} className="w-16 h-16 rounded-full flex items-center justify-center bg-surface-container-high text-on-surface hover:bg-surface-container-highest border border-outline disabled:opacity-40">
+                    <span className="material-symbols-outlined">timer_10_alt_1</span>
+                  </button>
+                </div>
+              </div>
 
-      {tab === 'kronometre' ? <Stopwatch /> : <CountdownTimer />}
+              <div className="grid md:grid-cols-3 gap-bento-gap">
+                <div className="md:col-span-2 bento-card p-6 h-[300px] flex flex-col">
+                  <div className="flex justify-between items-center mb-4 border-b border-outline-variant pb-2">
+                    <h3 className="font-label-mono text-label-mono text-on-surface-variant uppercase">TUR KAYITLARI</h3>
+                    <span className="font-label-mono text-xs text-primary"># LAP</span>
+                  </div>
+                  <div className="flex-1 overflow-y-auto space-y-3 pr-2">
+                    {laps.length === 0 && <div className="text-on-surface-variant font-label-mono text-center py-10 opacity-30">TUR KAYDI YOK</div>}
+                    {laps.map((lap, i) => (
+                      <div key={i} className="flex justify-between items-center bg-surface-container-low p-3 rounded border border-outline-variant">
+                        <span className="font-label-mono text-on-surface-variant">TUR {laps.length - i}</span>
+                        <span className="font-label-mono text-on-surface text-lg">{formatStopwatch(lap)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="bento-card p-6 bg-primary-container/10 border-primary-container/20 flex flex-col justify-between">
+                  <div>
+                    <span className="material-symbols-outlined text-primary text-3xl mb-4">info</span>
+                    <h4 className="font-headline-md text-primary mb-2">Performans İpucu</h4>
+                    <p className="text-on-surface-variant leading-relaxed">Set arası 60-90 saniye dinlenin. ATP depolarının yenilenmesi için bu süre kritiktir.</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {tab === 'timer' && (
+            <section className="space-y-8">
+              <div className="bento-card p-12 flex flex-col items-center">
+                <div className="relative w-64 h-64 md:w-80 md:h-80 flex items-center justify-center">
+                  <svg className="absolute inset-0 w-full h-full -rotate-90">
+                    <circle cx="50%" cy="50%" fill="transparent" r="48%" stroke="#1c1b1b" strokeWidth="8"></circle>
+                    <circle
+                      cx="50%" cy="50%" fill="transparent" r="48%" stroke={finished ? '#41a447' : '#E8313F'} strokeWidth="8" strokeLinecap="round"
+                      strokeDasharray={ringCircumference} strokeDashoffset={ringOffset}
+                      className="transition-all duration-1000"
+                    ></circle>
+                  </svg>
+                  <div className="font-label-mono text-6xl md:text-7xl font-black text-on-surface z-10">
+                    {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+                  </div>
+                </div>
+
+                <div className="mt-12 flex flex-col items-center gap-8 w-full max-w-xs">
+                  {!timerRunning && remaining === totalDuration && (
+                    <div className="grid grid-cols-2 gap-4 w-full">
+                      <div className="space-y-2">
+                        <label className="font-label-mono text-[10px] text-on-surface-variant uppercase">DAKİKA</label>
+                        <input
+                          type="number" min="0" value={inputMinutes}
+                          onChange={(e) => setInputMinutes(Math.max(0, Number(e.target.value)))}
+                          className="w-full bg-surface-container-lowest border border-outline p-3 rounded font-label-mono text-center text-xl focus:border-primary outline-none text-on-surface transition-colors"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="font-label-mono text-[10px] text-on-surface-variant uppercase">SANİYE</label>
+                        <input
+                          type="number" min="0" max="59" value={inputSeconds}
+                          onChange={(e) => setInputSeconds(Math.min(59, Math.max(0, Number(e.target.value))))}
+                          className="w-full bg-surface-container-lowest border border-outline p-3 rounded font-label-mono text-center text-xl focus:border-primary outline-none text-on-surface transition-colors"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {!timerRunning && remaining === totalDuration && (
+                    <button onClick={handleApplyCustom} className="w-full py-3 bg-surface-container-high border border-outline-variant rounded-lg font-label-mono uppercase text-sm">
+                      Ayarla
+                    </button>
+                  )}
+
+                  <div className="flex items-center gap-8">
+                    <button onClick={handleTimerReset} className="w-16 h-16 rounded-full flex items-center justify-center bg-surface-container-high text-on-surface hover:bg-surface-container-highest border border-outline">
+                      <span className="material-symbols-outlined">restart_alt</span>
+                    </button>
+                    <button onClick={handleTimerToggle} className="w-20 h-20 rounded-full bg-primary text-on-primary flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-lg">
+                      <span className="material-symbols-outlined text-4xl">{timerRunning ? 'pause' : 'play_arrow'}</span>
+                    </button>
+                  </div>
+
+                  {finished && <div className="font-label-mono text-tertiary uppercase">⏰ Süre doldu!</div>}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-bento-gap">
+                {PRESETS.map((p) => (
+                  <button key={p.sn} onClick={() => handleSetPreset(p.sn)} className="bento-card p-4 text-center hover:border-primary transition-colors group">
+                    <div className="font-label-mono text-lg text-on-surface group-hover:text-primary transition-colors">
+                      {String(Math.floor(p.sn / 60)).padStart(2, '0')}:{String(p.sn % 60).padStart(2, '0')}
+                    </div>
+                    <div className="font-label-mono text-[10px] text-on-surface-variant uppercase">{p.label}</div>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+        </div>
+      </main>
     </div>
   );
 }
 
-export default TimerPage;
+export default Timer;

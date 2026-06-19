@@ -1,189 +1,237 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
-import { AnimatePresence, motion } from 'framer-motion';
-import { KeyRound, Trash2, AlertTriangle, Sun, Moon } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/sidebar';
-
-const overlayVariants = {
-  initial: { opacity: 0 },
-  animate: { opacity: 1 },
-  exit: { opacity: 0 },
-};
-
-const modalVariants = {
-  initial: { opacity: 0, scale: 0.9, y: 16 },
-  animate: { opacity: 1, scale: 1, y: 0 },
-  exit: { opacity: 0, scale: 0.92, y: 12 },
-};
 
 function Settings() {
   const [mevcutSifre, setMevcutSifre] = useState('');
   const [yeniSifre, setYeniSifre] = useState('');
   const [yeniSifreTekrar, setYeniSifreTekrar] = useState('');
-  const [sifreMesaj, setSifreMesaj] = useState('');
-  const [sifreHata, setSifreHata] = useState('');
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deleteHata, setDeleteHata] = useState('');
-  const [theme, setTheme] = useState('dark');
+  const [mesaj, setMesaj] = useState('');
+  const [hata, setHata] = useState('');
+  const [yukleniyor, setYukleniyor] = useState(false);
+  const [silModalAcik, setSilModalAcik] = useState(false);
+  const navigate = useNavigate();
   const token = localStorage.getItem('token');
-  const headers = { Authorization: `Bearer ${token}` };
-  const apiUrl = import.meta.env.VITE_API_URL;
 
-  useEffect(() => {
-    const saved = localStorage.getItem('theme') || 'dark';
-    setTheme(saved);
-  }, []);
-
-  const handleThemeChange = (value) => {
-    setTheme(value);
-    localStorage.setItem('theme', value);
-    document.documentElement.setAttribute('data-theme', value);
-  };
-
-  const handlePasswordChange = async (e) => {
+  const sifreGuncelle = async (e) => {
     e.preventDefault();
-    setSifreMesaj('');
-    setSifreHata('');
-
+    setHata('');
+    setMesaj('');
     if (yeniSifre !== yeniSifreTekrar) {
-      setSifreHata('Yeni şifreler eşleşmiyor.');
+      setHata('Yeni şifreler eşleşmiyor.');
       return;
     }
-
-    if (yeniSifre.length < 6) {
-      setSifreHata('Yeni şifre en az 6 karakter olmalıdır.');
-      return;
-    }
-
+    setYukleniyor(true);
     try {
-      await axios.put(`${apiUrl}/api/users/me/password`, {
-        mevcut_sifre: mevcutSifre,
-        yeni_sifre: yeniSifre,
-      }, { headers });
-
-      setSifreMesaj('Şifre başarıyla güncellendi.');
+      await axios.put(
+        `${import.meta.env.VITE_API_URL}/api/users/me/password`,
+        { mevcut_sifre: mevcutSifre, yeni_sifre: yeniSifre },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setMesaj('Şifreniz başarıyla güncellendi.');
       setMevcutSifre('');
       setYeniSifre('');
       setYeniSifreTekrar('');
     } catch (err) {
-      setSifreHata(err.response?.data?.detail || 'Şifre güncellenemedi.');
+      setHata(err.response?.data?.detail || 'Şifre güncellenemedi.');
+    } finally {
+      setYukleniyor(false);
     }
   };
 
-  const handleDeleteAccount = async () => {
-    setDeleteHata('');
+  const hesabiSil = async () => {
     try {
-      await axios.delete(`${apiUrl}/api/users/me`, { headers });
+      await axios.delete(`${import.meta.env.VITE_API_URL}/api/users/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       localStorage.removeItem('token');
-      window.location.href = '/login';
-    } catch (err) {
-      setDeleteHata('Hesap silinemedi.');
+      navigate('/login');
+    } catch {
+      setHata('Hesap silinemedi, lütfen tekrar deneyin.');
+      setSilModalAcik(false);
     }
   };
 
   return (
     <div>
       <Sidebar />
-      <div className="section-title">Ayarlar</div>
 
-      <div className="auth-box">
-        <h2>Görünüm</h2>
+      <main className="md:ml-64 pt-20 md:pt-10 px-gutter min-h-screen">
+        <div className="max-w-5xl mx-auto pb-20">
+          <header className="mb-10">
+            <h2 className="font-display-lg text-display-lg-mobile md:text-display-lg mb-2">AYARLAR</h2>
+            <div className="h-1 w-12 bg-primary-container rounded-full mb-4"></div>
+            <p className="font-body-md text-on-surface-variant max-w-xl">
+              Sistem tercihlerini, güvenlik protokollerini ve hesap verilerini bu panel üzerinden yönetebilirsiniz.
+            </p>
+          </header>
 
-        <div className="theme-toggle-row">
-          <div
-            className={`theme-option ${theme === 'dark' ? 'active' : ''}`}
-            onClick={() => handleThemeChange('dark')}
-          >
-            <div className="theme-preview dark" />
-            <span>
-              <Moon size={16} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
-              Koyu Tema
-            </span>
-          </div>
-          <div
-            className={`theme-option ${theme === 'light' ? 'active' : ''}`}
-            onClick={() => handleThemeChange('light')}
-          >
-            <div className="theme-preview light" />
-            <span>
-              <Sun size={16} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
-              Açık Tema
-            </span>
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-bento-gap">
+            <section className="col-span-1 md:col-span-4 bento-card p-6 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-6">
+                  <span className="material-symbols-outlined text-primary">palette</span>
+                  <h3 className="font-label-mono text-label-mono uppercase">GÖRÜNÜM</h3>
+                </div>
+                <p className="font-body-sm text-on-surface-variant mb-6 leading-relaxed">
+                  Arayüz temasını çalışma ortamınıza göre optimize edin. Karanlık mod yüksek odaklı analizler için önerilir.
+                </p>
+              </div>
+              <div className="space-y-4">
+                <label className="flex items-center justify-between p-4 bg-surface-container-low rounded-lg border border-outline-variant cursor-pointer group active:scale-95 transition-all">
+                  <div className="flex items-center gap-3">
+                    <span className="material-symbols-outlined group-hover:text-primary transition-colors">dark_mode</span>
+                    <span className="font-body-md">Karanlık Mod</span>
+                  </div>
+                  <input checked readOnly className="form-radio text-brand-red focus:ring-brand-red h-5 w-5 bg-surface-container" name="theme" type="radio" />
+                </label>
+                <label className="flex items-center justify-between p-4 bg-surface-container-low rounded-lg border border-outline-variant cursor-pointer group active:scale-95 transition-all opacity-50">
+                  <div className="flex items-center gap-3">
+                    <span className="material-symbols-outlined group-hover:text-primary transition-colors">light_mode</span>
+                    <span className="font-body-md">Aydınlık Mod</span>
+                  </div>
+                  <input className="form-radio text-brand-red focus:ring-brand-red h-5 w-5 bg-surface-container" name="theme" type="radio" disabled />
+                </label>
+              </div>
+            </section>
+
+            <section className="col-span-1 md:col-span-8 bento-card p-6">
+              <div className="flex items-center gap-2 mb-6">
+                <span className="material-symbols-outlined text-primary">lock</span>
+                <h3 className="font-label-mono text-label-mono uppercase">GÜVENLİK PROTOKOLÜ</h3>
+              </div>
+              <form className="space-y-6" onSubmit={sifreGuncelle}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="flex flex-col space-y-2">
+                    <label className="font-label-mono text-label-mono text-on-surface-variant">MEVCUT ŞİFRE</label>
+                    <div className="relative">
+                      <input
+                        className="input-technical w-full pl-10"
+                        placeholder="••••••••"
+                        type="password"
+                        value={mevcutSifre}
+                        onChange={(e) => setMevcutSifre(e.target.value)}
+                        required
+                      />
+                      <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">key</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center">
+                    <p className="text-xs text-on-surface-variant italic opacity-60">Kimlik doğrulaması için mevcut şifrenizi girmeniz zorunludur.</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="flex flex-col space-y-2">
+                    <label className="font-label-mono text-label-mono text-on-surface-variant">YENİ ŞİFRE</label>
+                    <div className="relative">
+                      <input
+                        className="input-technical w-full pl-10"
+                        placeholder="Min. 8 karakter"
+                        type="password"
+                        value={yeniSifre}
+                        onChange={(e) => setYeniSifre(e.target.value)}
+                        required
+                        minLength={8}
+                      />
+                      <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">lock_open</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-col space-y-2">
+                    <label className="font-label-mono text-label-mono text-on-surface-variant">YENİ ŞİFRE (TEKRAR)</label>
+                    <div className="relative">
+                      <input
+                        className="input-technical w-full pl-10"
+                        placeholder="Şifreyi doğrulayın"
+                        type="password"
+                        value={yeniSifreTekrar}
+                        onChange={(e) => setYeniSifreTekrar(e.target.value)}
+                        required
+                      />
+                      <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">verified</span>
+                    </div>
+                  </div>
+                </div>
+
+                {hata && <p className="text-brand-red text-sm">{hata}</p>}
+                {mesaj && <p className="text-tertiary text-sm">{mesaj}</p>}
+
+                <div className="pt-4 flex justify-end">
+                  <button className="btn-primary-red flex items-center gap-2" type="submit" disabled={yukleniyor}>
+                    <span className="material-symbols-outlined">save</span>
+                    {yukleniyor ? 'GÜNCELLENİYOR...' : 'ŞİFREYİ GÜNCELLE'}
+                  </button>
+                </div>
+              </form>
+            </section>
+
+            <section className="col-span-1 md:col-span-4 bento-card p-6 bg-[#161616]">
+              <div className="flex items-center gap-2 mb-4">
+                <span className="material-symbols-outlined text-primary">data_usage</span>
+                <h3 className="font-label-mono text-label-mono uppercase">VERİ ANALİTİĞİ</h3>
+              </div>
+              <div className="space-y-4">
+                <div className="flex justify-between items-end">
+                  <span className="font-body-sm text-on-surface-variant">Bulut Depolama</span>
+                  <span className="font-label-mono text-primary">SINIRSIZ</span>
+                </div>
+                <div className="w-full h-1 bg-surface-container-high rounded-full overflow-hidden">
+                  <div className="h-full bg-brand-red w-full"></div>
+                </div>
+                <p className="text-[10px] font-label-mono text-on-surface-variant uppercase leading-tight">
+                  Veriler bulut sunucusunda anlık senkronize edilir
+                </p>
+              </div>
+            </section>
+
+            <section className="col-span-1 md:col-span-8 bento-card p-6 border-on-primary-fixed-variant bg-on-primary-fixed-variant/5">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="max-w-md">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="material-symbols-outlined text-brand-red">warning</span>
+                    <h3 className="font-label-mono text-label-mono uppercase text-brand-red">TEHLİKELİ BÖLGE</h3>
+                  </div>
+                  <p className="font-body-sm text-on-surface leading-relaxed">
+                    Hesabınızı sildiğinizde tüm performans verileriniz, analiz geçmişiniz ve kişisel tercihleriniz <strong>kalıcı olarak silinecektir.</strong> Bu işlem geri alınamaz.
+                  </p>
+                </div>
+                <div className="flex-shrink-0">
+                  <button
+                    className="px-6 py-3 border border-brand-red/30 text-brand-red hover:bg-brand-red hover:text-white transition-all font-bold rounded-lg flex items-center gap-2 group"
+                    onClick={() => setSilModalAcik(true)}
+                  >
+                    <span className="material-symbols-outlined group-hover:animate-pulse">delete_forever</span>
+                    HESABI KALICI OLARAK SİL
+                  </button>
+                </div>
+              </div>
+            </section>
+
+            <section className="col-span-1 md:col-span-12 h-40 bento-card overflow-hidden relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-background via-transparent to-background"></div>
+              <div className="relative z-10 flex h-full items-center justify-center">
+                <div className="text-center">
+                  <span className="font-label-mono text-label-mono uppercase tracking-[0.4em] opacity-40">VisionFit Sistem Aktif</span>
+                </div>
+              </div>
+            </section>
           </div>
         </div>
-      </div>
+      </main>
 
-      <div className="auth-box">
-        <h2><KeyRound size={20} style={{ verticalAlign: 'middle', marginRight: '8px' }} />Şifre Değiştir</h2>
-
-        {sifreMesaj && <p style={{ color: 'var(--accent)', textAlign: 'center', marginBottom: '16px' }}>{sifreMesaj}</p>}
-        {sifreHata && <p className="error-text">{sifreHata}</p>}
-
-        <form onSubmit={handlePasswordChange}>
-          <div className="form-group">
-            <label>Mevcut Şifre</label>
-            <input type="password" value={mevcutSifre} onChange={(e) => setMevcutSifre(e.target.value)} required />
+      {silModalAcik && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[1100] flex items-center justify-center p-5" onClick={() => setSilModalAcik(false)}>
+          <div className="bg-surface-container border border-brand-red rounded-xl p-7 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-headline-md text-headline-md text-brand-red mb-3">Emin misiniz?</h3>
+            <p className="font-body-sm text-on-surface-variant mb-6">Bu işlem geri alınamaz. Hesabınız ve tüm verileriniz kalıcı olarak silinecektir.</p>
+            <div className="flex gap-3 justify-end">
+              <button className="px-5 py-2.5 rounded-lg border border-outline-variant text-on-surface-variant" onClick={() => setSilModalAcik(false)}>Vazgeç</button>
+              <button className="px-5 py-2.5 rounded-lg bg-brand-red text-white font-bold" onClick={hesabiSil}>Evet, Sil</button>
+            </div>
           </div>
-          <div className="form-group">
-            <label>Yeni Şifre</label>
-            <input type="password" value={yeniSifre} onChange={(e) => setYeniSifre(e.target.value)} required />
-          </div>
-          <div className="form-group">
-            <label>Yeni Şifre (Tekrar)</label>
-            <input type="password" value={yeniSifreTekrar} onChange={(e) => setYeniSifreTekrar(e.target.value)} required />
-          </div>
-          <button type="submit" className="submit-btn">Şifreyi Güncelle</button>
-        </form>
-      </div>
-
-      <div className="auth-box danger-zone">
-        <h2 style={{ color: 'var(--danger)' }}><AlertTriangle size={20} style={{ verticalAlign: 'middle', marginRight: '8px' }} />Hesabı Sil</h2>
-        <p style={{ color: 'var(--text-muted)', marginBottom: '16px', textAlign: 'center' }}>
-          Bu işlem geri alınamaz. Tüm antrenman geçmişi, adım kayıtları ve beslenme verileri silinir.
-        </p>
-        {deleteHata && <p className="error-text">{deleteHata}</p>}
-        <button className="danger-btn" onClick={() => setShowDeleteModal(true)}>
-          <Trash2 size={18} />
-          Hesabımı Sil
-        </button>
-      </div>
-
-      <AnimatePresence>
-        {showDeleteModal && (
-          <motion.div
-            className="food-modal-overlay"
-            onClick={() => setShowDeleteModal(false)}
-            variants={overlayVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            transition={{ duration: 0.2 }}
-          >
-            <motion.div
-              className="food-modal"
-              onClick={(e) => e.stopPropagation()}
-              variants={modalVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              transition={{ duration: 0.25, ease: [0.34, 1.56, 0.64, 1] }}
-            >
-              <h2 style={{ color: 'var(--danger)', marginBottom: '12px' }}>Emin misiniz?</h2>
-              <p style={{ color: 'var(--text)', marginBottom: '20px' }}>
-                Hesabınız ve tüm verileriniz kalıcı olarak silinecek. Bu işlem geri alınamaz.
-              </p>
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <button className="submit-btn" style={{ background: 'var(--surface-2)', color: 'var(--text)' }} onClick={() => setShowDeleteModal(false)}>
-                  Vazgeç
-                </button>
-                <button className="submit-btn" style={{ background: 'var(--danger)', color: '#fff' }} onClick={handleDeleteAccount}>
-                  Evet, Sil
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        </div>
+      )}
     </div>
   );
 }

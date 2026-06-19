@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { PoseLandmarker, FilesetResolver, DrawingUtils } from '@mediapipe/tasks-vision';
 import axios from 'axios';
-import { Play, Square, CheckCircle, AlertTriangle, SwitchCamera, Sparkles, Info } from 'lucide-react';
 import Sidebar from '../components/sidebar';
 
 const KATEGORI_LABELS = {
@@ -12,17 +11,6 @@ const KATEGORI_LABELS = {
   diz_cokusu: 'Diz Çöküşü',
   agirlik_merkezi: 'Ağırlık Merkezi',
 };
-
-function ScoreBar({ skor }) {
-  const color = skor >= 75 ? 'var(--accent)' : skor >= 50 ? 'var(--accent-2)' : 'var(--danger)';
-  return (
-    <div style={{ width: '100%' }}>
-      <div style={{ height: '8px', background: 'var(--surface-2)', borderRadius: '4px', overflow: 'hidden', marginTop: '4px' }}>
-        <div style={{ width: `${skor}%`, height: '100%', background: color, borderRadius: '4px', transition: 'width 0.5s' }} />
-      </div>
-    </div>
-  );
-}
 
 function VideoAnalizBolumu({ apiUrl, token }) {
   const [videoSonuc, setVideoSonuc] = useState(null);
@@ -37,9 +25,7 @@ function VideoAnalizBolumu({ apiUrl, token }) {
     setSecilenVideo(dosya);
     setVideoSonuc(null);
     setVideoHata('');
-    if (videoRef2.current) {
-      videoRef2.current.src = URL.createObjectURL(dosya);
-    }
+    if (videoRef2.current) videoRef2.current.src = URL.createObjectURL(dosya);
   };
 
   const videoAnalizEt = async () => {
@@ -50,9 +36,7 @@ function VideoAnalizBolumu({ apiUrl, token }) {
 
     try {
       const { PoseLandmarker, FilesetResolver } = await import('@mediapipe/tasks-vision');
-      const vision = await FilesetResolver.forVisionTasks(
-        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
-      );
+      const vision = await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm');
       const poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
         baseOptions: {
           modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',
@@ -68,26 +52,15 @@ function VideoAnalizBolumu({ apiUrl, token }) {
       await new Promise((resolve, reject) => {
         video.currentTime = 0;
         video.muted = true;
-        video.playbackRate = 1;
-
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-
-        video.onloadedmetadata = () => {
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-        };
+        video.onloadedmetadata = () => { canvas.width = video.videoWidth; canvas.height = video.videoHeight; };
 
         let sonZaman = -1;
         let frameNo = 0;
 
         const isle = () => {
-          if (video.ended || video.paused) {
-            poseLandmarker.close();
-            resolve();
-            return;
-          }
-
+          if (video.ended || video.paused) { poseLandmarker.close(); resolve(); return; }
           frameNo++;
           const simdikiZaman = video.currentTime * 1000;
           if (simdikiZaman !== sonZaman && frameNo % 2 === 0) {
@@ -104,7 +77,6 @@ function VideoAnalizBolumu({ apiUrl, token }) {
           }
           requestAnimationFrame(isle);
         };
-
         video.onplay = () => requestAnimationFrame(isle);
         video.onerror = reject;
         video.play();
@@ -115,11 +87,7 @@ function VideoAnalizBolumu({ apiUrl, token }) {
         return;
       }
 
-      const res = await axios.post(
-        `${apiUrl}/api/analyze/session`,
-        { frames },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await axios.post(`${apiUrl}/api/analyze/session`, { frames }, { headers: { Authorization: `Bearer ${token}` } });
       setVideoSonuc(res.data);
     } catch (err) {
       setVideoHata(err.response?.data?.detail || 'Video analizi sırasında hata oluştu.');
@@ -129,61 +97,45 @@ function VideoAnalizBolumu({ apiUrl, token }) {
   };
 
   return (
-    <div style={{ marginTop: '24px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '24px' }}>
-      <div className="section-title" style={{ marginBottom: '16px' }}>Video Analizi</div>
-      <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', marginBottom: '16px' }}>
-        💡 Yandan çekilmiş, tüm vücudunuzun göründüğü bir squat videosu yükleyin.
-      </p>
+    <div className="flex-1 flex items-center justify-center p-6">
+      <div className="w-full max-w-3xl bento-card p-8">
+        <h2 className="font-headline-md text-headline-md mb-2">Video Analizi</h2>
+        <p className="text-on-surface-variant font-body-sm mb-6">Yandan çekilmiş, tüm vücudunuzun göründüğü bir squat videosu yükleyin.</p>
 
-      <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap', alignItems: 'flex-start' }}>
-        <div style={{ flex: '0 0 auto' }}>
-          <video
-            ref={videoRef2}
-            style={{ width: '320px', height: '240px', background: '#000', borderRadius: '12px', border: '2px solid var(--border)', display: secilenVideo ? 'block' : 'none' }}
-            controls
-          />
-          {!secilenVideo && (
-            <div style={{ width: '320px', height: '240px', background: '#000', borderRadius: '12px', border: '2px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-              Video seçilmedi
-            </div>
-          )}
-        </div>
-
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px', minWidth: '200px' }}>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: '8px', cursor: 'pointer' }}>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Video Seç</span>
-            <input type="file" accept="video/*" onChange={videoSec} style={{ display: 'none' }} />
-            <div className="timer-btn" style={{ justifyContent: 'center', cursor: 'pointer' }}>
-              📁 Video Yükle
-            </div>
-          </label>
-
-          {secilenVideo && (
-            <button
-              className="timer-btn primary"
-              style={{ justifyContent: 'center' }}
-              onClick={videoAnalizEt}
-              disabled={videoYukleniyor}
-            >
-              {videoYukleniyor ? '⏳ Analiz Ediliyor...' : '▶ Videoyu Analiz Et'}
-            </button>
-          )}
-
-          {videoHata && (
-            <p style={{ color: 'var(--danger)', fontSize: '0.85rem' }}>{videoHata}</p>
-          )}
-
-          {videoSonuc && (
-            <div className="card" style={{ gap: '8px' }}>
-              <div className="card-title">Analiz Sonucu</div>
-              <div style={{ fontSize: '2rem', fontWeight: 700, color: videoSonuc.genel_skor >= 75 ? 'var(--accent)' : videoSonuc.genel_skor >= 50 ? 'var(--accent-2)' : 'var(--danger)' }}>
-                %{videoSonuc.genel_skor}
+        <div className="grid md:grid-cols-2 gap-bento-gap">
+          <div>
+            <video ref={videoRef2} className="w-full aspect-video bg-black rounded-xl border border-outline-variant" style={{ display: secilenVideo ? 'block' : 'none' }} controls />
+            {!secilenVideo && (
+              <div className="w-full aspect-video bg-surface-container-lowest rounded-xl border border-outline-variant flex items-center justify-center text-on-surface-variant text-sm">
+                Video seçilmedi
               </div>
-              <p style={{ fontSize: '0.82rem', color: 'var(--text)', lineHeight: 1.5 }}>{videoSonuc.olumlu_mesaj}</p>
-              <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>{videoSonuc.gelistirilecek_mesaj}</p>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{videoSonuc.squat_kare} kare analiz edildi</div>
-            </div>
-          )}
+            )}
+          </div>
+
+          <div className="flex flex-col gap-3 justify-center">
+            <label className="font-label-mono text-label-mono text-on-surface-variant uppercase">Video Seç</label>
+            <input type="file" accept="video/*" onChange={videoSec} className="hidden" id="video-input" />
+            <label htmlFor="video-input" className="px-6 py-3 bg-surface-container-high border border-outline-variant rounded-lg text-center cursor-pointer font-label-mono text-label-mono uppercase">
+              Video Yükle
+            </label>
+
+            {secilenVideo && (
+              <button className="px-6 py-3 bg-primary text-on-primary font-bold rounded-lg uppercase font-label-mono disabled:opacity-40" onClick={videoAnalizEt} disabled={videoYukleniyor}>
+                {videoYukleniyor ? 'Analiz Ediliyor...' : 'Videoyu Analiz Et'}
+              </button>
+            )}
+
+            {videoHata && <p className="text-brand-red text-sm">{videoHata}</p>}
+
+            {videoSonuc && (
+              <div className="bento-card p-4 mt-2">
+                <div className="font-label-mono text-label-mono text-on-surface-variant uppercase mb-2">Analiz Sonucu</div>
+                <div className="font-stat-lg text-stat-lg text-primary">%{videoSonuc.genel_skor}</div>
+                <p className="text-body-sm text-on-surface mt-2">{videoSonuc.olumlu_mesaj}</p>
+                <p className="text-body-sm text-on-surface-variant mt-1">{videoSonuc.gelistirilecek_mesaj}</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -196,9 +148,11 @@ function Dashboard() {
   const poseLandmarkerRef = useRef(null);
   const animFrameRef = useRef(null);
   const framesRef = useRef([]);
+  const phaseRef = useRef('idle');
+  const streamRef = useRef(null);
+  const detectStartedRef = useRef(false);
 
   const [modelReady, setModelReady] = useState(false);
-  const [cameraReady, setCameraReady] = useState(false);
   const [phase, setPhase] = useState('idle');
   const [countdown, setCountdown] = useState(3);
   const [result, setResult] = useState(null);
@@ -208,20 +162,14 @@ function Dashboard() {
   const [aiHata, setAiHata] = useState('');
   const [onKamera, setOnKamera] = useState(true);
   const [activeTab, setActiveTab] = useState('canli');
-
-  const streamRef = useRef(null);
-  const detectStartedRef = useRef(false);
+  const [elapsedSec, setElapsedSec] = useState(0);
 
   const token = localStorage.getItem('token');
   const apiUrl = import.meta.env.VITE_API_URL;
 
   const kamerayiAc = async (onMu) => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((t) => t.stop());
-    }
-    const yeniStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: onMu ? 'user' : 'environment' },
-    });
+    if (streamRef.current) streamRef.current.getTracks().forEach((t) => t.stop());
+    const yeniStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: onMu ? 'user' : 'environment' } });
     streamRef.current = yeniStream;
     videoRef.current.srcObject = yeniStream;
   };
@@ -229,21 +177,13 @@ function Dashboard() {
   const kameraDegistir = async () => {
     const yeni = !onKamera;
     setOnKamera(yeni);
-    try {
-      await kamerayiAc(yeni);
-    } catch {
-      setError('Seçilen kameraya erişilemedi.');
-      setOnKamera(!yeni);
-    }
+    try { await kamerayiAc(yeni); } catch { setError('Seçilen kameraya erişilemedi.'); setOnKamera(!yeni); }
   };
 
   useEffect(() => {
     let poseLandmarker;
-
     const init = async () => {
-      const vision = await FilesetResolver.forVisionTasks(
-        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
-      );
+      const vision = await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm');
       poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
         baseOptions: {
           modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',
@@ -257,11 +197,7 @@ function Dashboard() {
 
       await kamerayiAc(onKamera);
       videoRef.current.onloadeddata = () => {
-        setCameraReady(true);
-        if (!detectStartedRef.current) {
-          detectStartedRef.current = true;
-          detectLoop();
-        }
+        if (!detectStartedRef.current) { detectStartedRef.current = true; detectLoop(); }
       };
     };
 
@@ -274,26 +210,20 @@ function Dashboard() {
         if (!videoRef.current || !canvasRef.current || !poseLandmarkerRef.current) return;
         const now = performance.now();
         const results = poseLandmarkerRef.current.detectForVideo(videoRef.current, now);
-
         ctx.save();
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-
         if (results.landmarks && results.landmarks.length > 0) {
           drawingUtils.drawConnectors(results.landmarks[0], PoseLandmarker.POSE_CONNECTIONS, { color: '#e8313f', lineWidth: 3 });
           drawingUtils.drawLandmarks(results.landmarks[0], { color: '#f5f5f5', lineWidth: 1, radius: 3 });
-
           if (phaseRef.current === 'recording') {
             const flat = [];
             results.landmarks[0].forEach((lm) => flat.push(lm.x, lm.y, lm.z, lm.visibility ?? 0));
             framesRef.current.push(flat);
           }
         }
-
         ctx.restore();
         animFrameRef.current = requestAnimationFrame(detect);
       };
-
       animFrameRef.current = requestAnimationFrame(detect);
     };
 
@@ -304,13 +234,19 @@ function Dashboard() {
       if (streamRef.current) streamRef.current.getTracks().forEach((t) => t.stop());
       if (poseLandmarker) poseLandmarker.close();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const phaseRef = useRef('idle');
-  const setPhaseSync = (val) => {
-    phaseRef.current = val;
-    setPhase(val);
-  };
+  const setPhaseSync = (val) => { phaseRef.current = val; setPhase(val); };
+
+  useEffect(() => {
+    let interval;
+    if (phase === 'recording') {
+      setElapsedSec(0);
+      interval = setInterval(() => setElapsedSec((s) => s + 1), 1000);
+    }
+    return () => clearInterval(interval);
+  }, [phase]);
 
   const handleStart = () => {
     setResult(null);
@@ -321,12 +257,8 @@ function Dashboard() {
     setCountdown(count);
     const interval = setInterval(() => {
       count -= 1;
-      if (count <= 0) {
-        clearInterval(interval);
-        setPhaseSync('recording');
-      } else {
-        setCountdown(count);
-      }
+      if (count <= 0) { clearInterval(interval); setPhaseSync('recording'); }
+      else setCountdown(count);
     }, 1000);
   };
 
@@ -342,11 +274,7 @@ function Dashboard() {
     }
 
     try {
-      const res = await axios.post(
-        `${apiUrl}/api/analyze/session`,
-        { frames },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await axios.post(`${apiUrl}/api/analyze/session`, { frames }, { headers: { Authorization: `Bearer ${token}` } });
       setResult(res.data);
       setPhaseSync('result');
     } catch (err) {
@@ -369,14 +297,8 @@ function Dashboard() {
     setAiYorum('');
     try {
       const skorlar = {};
-      Object.keys(KATEGORI_LABELS).forEach((key) => {
-        skorlar[key] = result[key].skor;
-      });
-      const res = await axios.post(
-        `${apiUrl}/api/yerel-ai/antrenor-yorumu`,
-        { skorlar },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      Object.keys(KATEGORI_LABELS).forEach((key) => { skorlar[key] = result[key].skor; });
+      const res = await axios.post(`${apiUrl}/api/yerel-ai/antrenor-yorumu`, { skorlar }, { headers: { Authorization: `Bearer ${token}` } });
       setAiYorum(res.data.yorum);
     } catch {
       setAiHata('AI yorumu alınamadı, lütfen tekrar deneyin.');
@@ -388,217 +310,199 @@ function Dashboard() {
   return (
     <div>
       <Sidebar />
-
-      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
-        <div style={{ display: 'flex', background: 'var(--surface-2)', borderRadius: '999px', padding: '4px', border: '1px solid var(--border)' }}>
+      <main className="md:ml-64 min-h-screen pt-16 md:pt-0 relative overflow-hidden flex flex-col">
+        <div className="absolute top-20 md:top-6 left-1/2 -translate-x-1/2 z-30 flex bg-surface-container rounded-full p-1 border border-outline-variant shadow-xl">
           <button
+            className={`px-8 py-2 rounded-full font-label-mono uppercase transition-all ${activeTab === 'canli' ? 'bg-primary-container text-on-primary-container font-bold' : 'text-on-surface-variant font-medium hover:text-on-surface'}`}
             onClick={() => setActiveTab('canli')}
-            style={{
-              padding: '8px 28px', borderRadius: '999px', border: 'none', cursor: 'pointer',
-              fontFamily: 'var(--font-mono)', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase',
-              background: activeTab === 'canli' ? 'var(--accent)' : 'transparent',
-              color: activeTab === 'canli' ? '#fff' : 'var(--text-muted)',
-              transition: 'all 0.2s',
-            }}
           >
             CANLI
           </button>
           <button
+            className={`px-8 py-2 rounded-full font-label-mono uppercase transition-all ${activeTab === 'video' ? 'bg-primary-container text-on-primary-container font-bold' : 'text-on-surface-variant font-medium hover:text-on-surface'}`}
             onClick={() => setActiveTab('video')}
-            style={{
-              padding: '8px 28px', borderRadius: '999px', border: 'none', cursor: 'pointer',
-              fontFamily: 'var(--font-mono)', fontSize: '0.78rem', fontWeight: 600, textTransform: 'uppercase',
-              background: activeTab === 'video' ? 'var(--accent)' : 'transparent',
-              color: activeTab === 'video' ? '#fff' : 'var(--text-muted)',
-              transition: 'all 0.2s',
-            }}
           >
             VİDEO
           </button>
         </div>
-      </div>
 
-      {activeTab === 'canli' && (
-        <>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', marginBottom: '8px', textAlign: 'center' }}>
-            💡 Daha doğru analiz için kameranıza <strong>yandan</strong> bakacak şekilde durun.
-          </p>
-
-          <div className="main-wrapper">
-            <div className="video-container" style={{ position: 'relative' }}>
-              {/* Corner brackets */}
-              <div style={{ position: 'absolute', top: '12px', left: '12px', width: '36px', height: '36px', borderTop: '2px solid var(--accent)', borderLeft: '2px solid var(--accent)', opacity: 0.6, zIndex: 4, pointerEvents: 'none' }} />
-              <div style={{ position: 'absolute', top: '12px', right: '12px', width: '36px', height: '36px', borderTop: '2px solid var(--accent)', borderRight: '2px solid var(--accent)', opacity: 0.6, zIndex: 4, pointerEvents: 'none' }} />
-              <div style={{ position: 'absolute', bottom: '12px', left: '12px', width: '36px', height: '36px', borderBottom: '2px solid var(--accent)', borderLeft: '2px solid var(--accent)', opacity: 0.6, zIndex: 4, pointerEvents: 'none' }} />
-              <div style={{ position: 'absolute', bottom: '12px', right: '12px', width: '36px', height: '36px', borderBottom: '2px solid var(--accent)', borderRight: '2px solid var(--accent)', opacity: 0.6, zIndex: 4, pointerEvents: 'none' }} />
-
-              <video ref={videoRef} id="webcam" autoPlay playsInline muted />
-              <canvas ref={canvasRef} id="output_canvas" width="640" height="480" />
-
-              <button
-                className="timer-btn"
-                style={{ position: 'absolute', top: '12px', right: '12px', zIndex: 5, width: 'auto', padding: '8px 14px' }}
-                onClick={kameraDegistir}
-                disabled={phase === 'recording' || phase === 'countdown' || phase === 'analyzing'}
-                title="Kamerayı Değiştir"
-              >
-                <SwitchCamera size={18} /> {onKamera ? 'Arka Kamera' : 'Ön Kamera'}
-              </button>
-
-              {phase === 'countdown' && (
-                <div className="camera-overlay">
-                  <div className="countdown-number">{countdown}</div>
-                  <p>Hazırlan...</p>
-                </div>
-              )}
-
-              {phase === 'analyzing' && (
-                <div className="camera-overlay">
-                  <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--accent)' }}>
-                    Analiz ediliyor...
-                  </div>
-                </div>
-              )}
-
-              {!modelReady && (
-                <div className="camera-overlay">
-                  <div style={{ color: 'var(--text-muted)' }}>Model yükleniyor...</div>
-                </div>
-              )}
-
-              {error && (
-                <div className="camera-overlay">
-                  <div style={{ color: 'var(--danger)', textAlign: 'center' }}>{error}</div>
-                  <button className="submit-btn" style={{ marginTop: '16px', width: 'auto' }} onClick={handleReset}>Tekrar Dene</button>
-                </div>
-              )}
+        {activeTab === 'video' ? (
+          <VideoAnalizBolumu apiUrl={apiUrl} token={token} />
+        ) : (
+          <div className="flex-1 relative bg-surface-lowest overflow-hidden">
+            <div className="absolute inset-0 pointer-events-none">
+              <div className="absolute top-10 left-10 w-20 h-20 border-t-2 border-l-2 border-primary opacity-50"></div>
+              <div className="absolute top-10 right-10 w-20 h-20 border-t-2 border-r-2 border-primary opacity-50"></div>
+              <div className="absolute bottom-10 left-10 w-20 h-20 border-b-2 border-l-2 border-primary opacity-50"></div>
+              <div className="absolute bottom-10 right-10 w-20 h-20 border-b-2 border-r-2 border-primary opacity-50"></div>
             </div>
 
-            <div className="dashboard">
-              {phase === 'idle' && (
-                <>
-                  <div className="card status-card" style={{ alignItems: 'center', textAlign: 'center', gap: '16px' }}>
-                    <div className="card-title" style={{ fontSize: '1rem' }}>Hazır</div>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                      Squat yapın. Başlat'a basın, 3'ten geriye sayacak ve analiz başlayacak.
-                    </p>
-                    <button className="timer-btn primary" style={{ width: '100%', justifyContent: 'center' }} onClick={handleStart}>
-                      <Play size={20} /> Başlat
-                    </button>
-                  </div>
-
-                  <div className="card" style={{ gap: '8px' }}>
-                    <div className="card-title" style={{ fontSize: '0.9rem' }}>⚠️ Sık Yapılan Hatalar</div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      {[
-                        'Dizlerin içe çökmesi',
-                        'Sırtın kamburlaşması',
-                        'Topukların yerden kalkması',
-                        'Yetersiz iniş derinliği',
-                      ].map((h, i) => (
-                        <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'center', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-                          <span style={{ color: 'var(--danger)' }}>✗</span>
-                          <span>{h}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {phase === 'recording' && (
-                <div className="card status-card" style={{ alignItems: 'center', textAlign: 'center', gap: '16px' }}>
-                  <div style={{ width: '16px', height: '16px', borderRadius: '50%', background: 'var(--danger)', animation: 'pulse 1s infinite' }} />
-                  <div className="card-value" style={{ fontSize: '1.2rem', color: 'var(--danger)' }}>Kayıt Devam Ediyor</div>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Squatları yapın, bitince durdurun.</p>
-                  <button className="timer-btn" style={{ width: '100%', justifyContent: 'center', borderColor: 'var(--danger)', color: 'var(--danger)' }} onClick={handleStop}>
-                    <Square size={20} /> Durdur ve Analiz Et
-                  </button>
-                </div>
-              )}
-
-              {phase === 'countdown' && (
-                <div className="card" style={{ alignItems: 'center', textAlign: 'center' }}>
-                  <div className="card-value" style={{ fontSize: '3rem', color: 'var(--accent)' }}>{countdown}</div>
-                  <div className="card-title">Hazırlan!</div>
-                </div>
-              )}
-
-              {phase === 'analyzing' && (
-                <div className="card" style={{ alignItems: 'center', textAlign: 'center' }}>
-                  <div className="card-title">Analiz ediliyor...</div>
-                </div>
-              )}
-
-              {phase === 'result' && result && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <div className="card status-card" style={{ textAlign: 'center' }}>
-                    <div className="card-title">Genel Skor</div>
-                    <div className="card-value" style={{ fontSize: '3rem', color: result.genel_skor >= 75 ? 'var(--accent)' : result.genel_skor >= 50 ? 'var(--accent-2)' : 'var(--danger)' }}>
-                      %{result.genel_skor}
-                    </div>
-                    <div className="card-subtext">{result.squat_kare} squat karesi analiz edildi</div>
-                  </div>
-
-                  <div style={{ background: 'rgba(232,49,63,0.1)', border: '1px solid rgba(232,49,63,0.3)', borderRadius: '12px', padding: '16px', display: 'flex', gap: '12px', alignItems: 'center' }}>
-                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <AlertTriangle size={18} color="#fff" />
-                    </div>
-                    <span style={{ fontSize: '0.85rem', color: 'var(--text)' }}>{result.gelistirilecek_mesaj}</span>
-                  </div>
-
-                  <div style={{ background: 'rgba(76,175,80,0.1)', border: '1px solid rgba(76,175,80,0.3)', borderRadius: '12px', padding: '16px', display: 'flex', gap: '12px', alignItems: 'center' }}>
-                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#4CAF50', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <CheckCircle size={18} color="#fff" />
-                    </div>
-                    <span style={{ fontSize: '0.85rem', color: 'var(--text)' }}>{result.olumlu_mesaj}</span>
-                  </div>
-
-                  <div className="card">
-                    <div className="card-header">
-                      <div className="card-icon"><Sparkles size={18} /></div>
-                      <div className="card-title">AI Antrenör Yorumu</div>
-                    </div>
-                    {!aiYorum && !aiHata && (
-                      <button className="timer-btn" style={{ marginTop: '8px', justifyContent: 'center', width: '100%' }} onClick={aiYorumuAl} disabled={aiYukleniyor}>
-                        <Sparkles size={16} /> {aiYukleniyor ? 'Yorum Hazırlanıyor...' : 'AI Yorumu Al'}
-                      </button>
-                    )}
-                    {aiYorum && <p style={{ fontSize: '0.85rem', color: 'var(--text)', marginTop: '8px', lineHeight: '1.6' }}>{aiYorum}</p>}
-                    {aiHata && <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '8px' }}>{aiHata}</p>}
-                  </div>
-
-                  <button className="timer-btn primary" style={{ justifyContent: 'center' }} onClick={handleReset}>
-                    <Play size={18} /> Yeni Antrenman
-                  </button>
-                </div>
-              )}
+            <div className="relative w-full h-full flex items-center justify-center">
+              <video ref={videoRef} autoPlay playsInline muted className="hidden" />
+              <canvas ref={canvasRef} width="640" height="480" className="max-w-full max-h-full" style={{ transform: 'scaleX(-1)' }} />
             </div>
-          </div>
 
-          {phase === 'result' && result && (
-            <>
-              <div className="section-title">Kategori Detayları</div>
-              <div className="dashboard-grid">
-                {['genel_form', 'omurga_notrluğu', 'kalca_derinligi', 'diz_hizasi', 'diz_cokusu', 'agirlik_merkezi'].map((key) => {
-                  const kat = result[key];
-                  const color = kat.skor >= 75 ? 'var(--accent)' : kat.skor >= 50 ? 'var(--accent-2)' : 'var(--danger)';
-                  return (
-                    <div className="card" key={key}>
-                      <div className="card-title">{KATEGORI_LABELS[key]}</div>
-                      <div className="card-value" style={{ fontSize: '1.8rem', color }}>%{kat.skor}</div>
-                      <ScoreBar skor={kat.skor} />
-                      <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '8px' }}>{kat.mesaj}</p>
-                    </div>
-                  );
-                })}
+            <div className="absolute top-36 md:top-24 left-1/2 -translate-x-1/2 w-[90%] md:w-auto px-6 py-3 bg-surface-container-high/80 backdrop-blur-md rounded-xl border border-outline-variant flex items-center justify-between gap-8 z-20">
+              <div className="flex items-center gap-3">
+                <span className="material-symbols-outlined text-primary-container">info</span>
+                <p className="font-body-md text-on-surface font-medium">Vücudunuzun tamamını çerçevede tutun</p>
               </div>
-            </>
-          )}
-        </>
-      )}
+              <button className="p-2 hover:bg-surface-container-highest rounded-lg transition-colors" onClick={kameraDegistir} disabled={phase === 'recording' || phase === 'countdown' || phase === 'analyzing'}>
+                <span className="material-symbols-outlined text-on-surface">flip_camera_ios</span>
+              </button>
+            </div>
 
-      {activeTab === 'video' && <VideoAnalizBolumu apiUrl={apiUrl} token={token} />}
+            {phase === 'countdown' && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <span className="text-[180px] md:text-[240px] font-black font-display-lg text-primary" style={{ filter: 'drop-shadow(0 0 30px rgba(232,49,63,0.5))' }}>{countdown}</span>
+              </div>
+            )}
+
+            {!modelReady && phase === 'idle' && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <p className="text-on-surface-variant font-label-mono">Model yükleniyor...</p>
+              </div>
+            )}
+
+            {error && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-black/70 z-40">
+                <p className="text-brand-red text-center px-6">{error}</p>
+                <button className="px-6 py-3 bg-primary text-on-primary font-bold rounded-xl uppercase font-label-mono" onClick={handleReset}>Tekrar Dene</button>
+              </div>
+            )}
+
+            {phase === 'idle' && modelReady && !error && (
+              <div className="absolute bottom-0 left-0 w-full bg-surface-container-high border-t border-outline-variant p-6 z-30 shadow-[0_-20px_50px_rgba(0,0,0,0.5)] rounded-t-[32px]">
+                <div className="max-w-4xl mx-auto flex flex-col items-center gap-6">
+                  <p className="text-on-surface-variant text-center text-sm">Squat yapın. Başlat'a basın, 3'ten geriye sayacak ve analiz başlayacak.</p>
+                  <button
+                    className="w-full md:w-64 py-4 bg-primary text-on-primary font-bold rounded-xl flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform active:scale-95 shadow-lg shadow-primary/20 uppercase tracking-tight"
+                    onClick={handleStart}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>play_circle</span> BAŞLAT
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {phase === 'recording' && (
+              <div className="absolute bottom-0 left-0 w-full bg-surface-container-high border-t border-outline-variant p-6 z-30 shadow-[0_-20px_50px_rgba(0,0,0,0.5)] rounded-t-[32px]">
+                <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+                  <div className="flex gap-8 md:gap-16 w-full md:w-auto justify-between md:justify-start">
+                    <div className="flex flex-col">
+                      <span className="font-label-mono text-label-mono text-on-surface-variant uppercase tracking-widest mb-1">GEÇEN SÜRE</span>
+                      <span className="font-stat-lg text-stat-lg text-primary">{String(Math.floor(elapsedSec / 60)).padStart(2, '0')}:{String(elapsedSec % 60).padStart(2, '0')}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="font-label-mono text-label-mono text-on-surface-variant uppercase tracking-widest mb-1">TOPLANAN KARE</span>
+                      <span className="font-stat-lg text-stat-lg text-on-surface">{framesRef.current.length}</span>
+                    </div>
+                  </div>
+                  <button
+                    className="w-full md:w-48 py-4 bg-primary text-on-primary font-bold rounded-xl flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform active:scale-95 shadow-lg shadow-primary/20 uppercase tracking-tight"
+                    onClick={handleStop}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>stop_circle</span> DURDUR
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {phase === 'analyzing' && (
+              <div className="absolute bottom-0 left-0 w-full bg-surface-container-high border-t border-outline-variant p-6 z-30 rounded-t-[32px] text-center">
+                <p className="font-label-mono text-label-mono text-on-surface-variant uppercase">Analiz Ediliyor...</p>
+              </div>
+            )}
+
+            {phase === 'result' && result && (
+              <div className="fixed inset-x-0 bottom-0 z-50 flex items-end justify-center px-4">
+                <div className="w-full max-w-5xl max-h-[90vh] overflow-y-auto bg-surface-container-lowest border-x border-t border-outline-variant rounded-t-[40px] p-8 pb-12 shadow-[0_-50px_100px_rgba(0,0,0,0.8)]">
+                  <div className="w-16 h-1.5 bg-outline-variant rounded-full mx-auto mb-8"></div>
+                  <div className="flex flex-col gap-10">
+                    <header className="text-center">
+                      <h2 className="font-display-lg text-display-lg-mobile md:text-display-lg text-on-surface mb-2">ANALİZ TAMAMLANDI</h2>
+                      <p className="font-label-mono text-label-mono text-on-surface-variant uppercase">Veri setleri başarıyla işlendi ve optimize edildi</p>
+                    </header>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-bento-gap">
+                      <div className="bento-card p-6 border-l-[3px] border-primary-container">
+                        <p className="font-label-mono text-label-mono text-on-surface-variant uppercase mb-4">GENEL SKOR</p>
+                        <div className="flex items-baseline gap-2">
+                          <span className="font-stat-lg text-stat-lg text-primary">{result.genel_skor}</span>
+                          <span className="font-label-mono text-label-mono text-primary">%</span>
+                        </div>
+                      </div>
+                      <div className="bento-card p-6">
+                        <p className="font-label-mono text-label-mono text-on-surface-variant uppercase mb-4">SQUAT KARELERİ</p>
+                        <span className="font-stat-lg text-stat-lg text-on-surface">{result.squat_kare}</span>
+                      </div>
+                      <div className="bento-card p-6">
+                        <p className="font-label-mono text-label-mono text-on-surface-variant uppercase mb-4">TOPLAM KARE</p>
+                        <span className="font-stat-lg text-stat-lg text-on-surface">{framesRef.current.length || result.squat_kare}</span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-bento-gap">
+                      <div className="bg-error-container/20 border border-error-container/30 rounded-2xl p-6 flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-full bg-error-container flex items-center justify-center text-error flex-shrink-0">
+                          <span className="material-symbols-outlined">warning</span>
+                        </div>
+                        <div>
+                          <h4 className="font-headline-md text-on-surface text-base">Gelişim Alanı</h4>
+                          <p className="text-body-sm text-on-surface-variant">{result.gelistirilecek_mesaj}</p>
+                        </div>
+                      </div>
+                      <div className="bg-tertiary-container/10 border border-tertiary-container/30 rounded-2xl p-6 flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-full bg-tertiary-container flex items-center justify-center text-on-tertiary flex-shrink-0">
+                          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                        </div>
+                        <div>
+                          <h4 className="font-headline-md text-on-surface text-base">Güçlü Yön</h4>
+                          <p className="text-body-sm text-on-surface-variant">{result.olumlu_mesaj}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bento-card p-6">
+                      <div className="flex items-center gap-2 mb-4">
+                        <span className="material-symbols-outlined text-primary">smart_toy</span>
+                        <h3 className="font-headline-md text-headline-md">AI Antrenör Yorumu</h3>
+                      </div>
+                      {!aiYorum && !aiHata && (
+                        <button className="w-full py-3 bg-surface-container-high border border-outline-variant rounded-lg font-label-mono uppercase disabled:opacity-50" onClick={aiYorumuAl} disabled={aiYukleniyor}>
+                          {aiYukleniyor ? 'Yorum Hazırlanıyor...' : 'AI Yorumu Al'}
+                        </button>
+                      )}
+                      {aiYorum && <p className="text-body-sm text-on-surface leading-relaxed">{aiYorum}</p>}
+                      {aiHata && <p className="text-body-sm text-on-surface-variant">{aiHata}</p>}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-bento-gap">
+                      {Object.entries(KATEGORI_LABELS).map(([key, label]) => {
+                        const kat = result[key];
+                        if (!kat) return null;
+                        return (
+                          <div className="bento-card p-5" key={key}>
+                            <p className="font-label-mono text-label-mono text-on-surface-variant uppercase mb-2">{label}</p>
+                            <span className="font-stat-lg text-stat-lg" style={{ color: kat.skor >= 75 ? '#41a447' : kat.skor >= 50 ? '#E8313F' : '#ffb4ab' }}>%{kat.skor}</span>
+                            <p className="text-body-sm text-on-surface-variant mt-2">{kat.mesaj}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <div className="flex flex-col md:flex-row gap-4 pt-4">
+                      <button className="flex-1 py-4 bg-primary text-on-primary font-bold rounded-xl hover:brightness-110 transition-all uppercase font-label-mono" onClick={handleReset}>
+                        YENİDEN BAŞLAT
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </main>
     </div>
   );
 }
