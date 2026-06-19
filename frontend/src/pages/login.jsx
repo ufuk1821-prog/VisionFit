@@ -53,11 +53,6 @@ function Login() {
 
   return (
     <div className="auth-layout">
-      {yukleniyor && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, background: 'var(--accent)', color: '#fff', textAlign: 'center', padding: '6px', fontSize: '0.8rem', zIndex: 999 }}>
-          Sunucu uyandırılıyor, lütfen bekleyin...
-        </div>
-      )}
       <div className="auth-side-panel">
         <img src={logoImg} alt="VisionFit" className="auth-side-logo" />
         <h2>En İyi Haline Ulaş</h2>
@@ -84,26 +79,31 @@ function Login() {
           )}
           <form onSubmit={handleLogin}>
             <div className="form-group">
-              <label>Email</label>
+              <label>E-posta</label>
               <input
                 type="email"
+                placeholder="ornek@visionfit.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
             </div>
             <div className="form-group">
-              <label>Şifre</label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <label style={{ marginBottom: 0 }}>Şifre</label>
+                <a href="#" className="link-text" style={{ margin: 0, fontSize: '0.7rem' }}>Şifremi Unuttum</a>
+              </div>
               <input
                 type="password"
+                placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
             </div>
             <button type="submit" className="submit-btn" disabled={yukleniyor}>
-  {yukleniyor ? 'Giriş Yapılıyor...' : 'Giriş Yap'}
-</button>
+              {yukleniyor ? 'Giriş Yapılıyor...' : 'Giriş Yap'}
+            </button>
           </form>
           <Link to="/register" className="link-text">Hesabın yok mu? Kayıt Ol</Link>
         </div>

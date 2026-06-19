@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { PoseLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
 import axios from 'axios';
-import { Upload, CheckCircle, AlertTriangle, Clipboard, Info, Lightbulb, Eye } from 'lucide-react';
+import { Upload, CheckCircle, AlertTriangle, Clipboard, Info, Lightbulb, Eye, Camera as CameraIcon, ImagePlus, Bot } from 'lucide-react';
 import Sidebar from '../components/sidebar';
 
 const HAREKETLER = [
@@ -147,97 +147,33 @@ function FotografliAnaliz() {
     setHata('');
   };
 
-  const durumRengi = (durum) => (durum.includes('İyi') ? 'var(--accent)' : 'var(--danger)');
+  const skorRengi = sonuc ? (sonuc.durum?.includes('İyi') ? 'var(--accent)' : 'var(--danger)') : 'var(--accent)';
+  const skorYuzde = sonuc?.skor ?? (sonuc ? (sonuc.durum?.includes('İyi') ? 88 : 45) : 0);
+  const gaugeCircumference = 2 * Math.PI * 40;
+  const gaugeOffset = gaugeCircumference * (1 - skorYuzde / 100);
 
   return (
     <div>
       <Sidebar />
-      <div className="section-title">Fotoğraflı Analiz</div>
-
-      {onizleme && (
-        <label className="timer-btn" style={{ cursor: 'pointer', width: 'fit-content', marginBottom: '12px' }}>
-          <Upload size={16} /> Yeniden Yükle
-          <input type="file" accept="image/*" onChange={dosyaSecildi} style={{ display: 'none' }} />
-        </label>
-      )}
-
-      <div className="card status-card" style={{ width: '100%', gap: '16px' }}>
-        {!onizleme ? (
-          <div style={{ textAlign: 'center' }}>
-            <div className="card-title">Analiz için lütfen bir fotoğraf yükleyiniz.</div>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: '8px 0 16px' }}>
-              Yandan çekilmiş, tüm vücudunuzun göründüğü bir fotoğraf yükleyiniz.
-            </p>
-            <label className="timer-btn primary" style={{ cursor: 'pointer', justifyContent: 'center', margin: '0 auto' }}>
-              <Upload size={20} /> Fotoğraf Seç
-              <input type="file" accept="image/*" onChange={dosyaSecildi} style={{ display: 'none' }} />
-            </label>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', color: 'var(--text-muted)', fontSize: '0.82rem', marginTop: '12px' }}>
-              <Clipboard size={16} /> Veya bir fotoğraf kopyalayıp bu sayfaya yapıştırın (Ctrl+V)
-            </div>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap', width: '100%' }}>
-            <img src={onizleme} alt="Analiz" style={{ width: '220px', borderRadius: '12px', flexShrink: 0 }} />
-            <div style={{ flex: 1, minWidth: '200px', textAlign: 'left' }}>
-              {yukleniyor && <div className="card-title">Analiz ediliyor...</div>}
-
-              {hata && (
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-                  <AlertTriangle size={18} color="var(--danger)" style={{ flexShrink: 0, marginTop: '2px' }} />
-                  <span style={{ fontSize: '0.85rem', color: 'var(--text)' }}>{hata}</span>
-                </div>
-              )}
-
-              {sonuc && (
-                <>
-                  <div className="card-value" style={{ fontSize: '1.4rem', color: durumRengi(sonuc.durum) }}>
-                    {sonuc.durum}
-                  </div>
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', marginTop: '8px' }}>
-                    <CheckCircle size={18} color={durumRengi(sonuc.durum)} style={{ flexShrink: 0, marginTop: '2px' }} />
-                    <span style={{ fontSize: '0.85rem', color: 'var(--text)' }}>{sonuc.antrenor_mesaji}</span>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        )}
+      <div style={{ marginBottom: '24px' }}>
+        <h2 className="section-title" style={{ margin: 0, fontSize: '1.8rem', textTransform: 'uppercase' }}>Fotoğraf Analizi</h2>
+        <p style={{ color: 'var(--text-muted)', maxWidth: '640px', marginTop: '8px' }}>
+          Yapay zeka destekli biyomekanik analiz için formunuzun bir fotoğrafını yükleyin. Formunuzdaki hataları milimetrik hassasiyetle tespit edelim.
+        </p>
       </div>
 
-      {sonuc && (
-        <Link
-          to={sonuc?.kayit_id ? `/history?kayit=${sonuc.kayit_id}` : "/history"}
-          className="timer-btn"
-          style={{
-            width: 'fit-content', margin: '12px 0', textDecoration: 'none',
-            background: 'var(--accent)', opacity: 0.35, color: '#fff', border: 'none', transition: 'opacity 0.2s',
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.35'; }}
-        >
-          <Eye size={16} /> Analizi Detaylı Görüntüle
-        </Link>
-      )}
-
-      <div style={{ display: 'flex', gap: '6px', marginTop: '20px', flexWrap: 'nowrap' }}>
+      <div style={{ display: 'flex', overflowX: 'auto', gap: '10px', paddingBottom: '16px', marginBottom: '8px' }}>
         {HAREKETLER.map((h) => (
           <button
             key={h.id}
             onClick={() => hareketSec(h.id)}
             style={{
-              flex: '1 1 0', minWidth: 0, padding: '10px 4px', borderRadius: '10px',
-              fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer',
-              transition: 'background 0.2s, color 0.2s',
-              border: secili === h.id ? 'none' : '1px solid var(--danger)',
-              background: secili === h.id ? 'var(--danger)' : 'var(--surface-2)',
-              color: secili === h.id ? '#fff' : 'var(--danger)',
-            }}
-            onMouseEnter={(e) => {
-              if (secili !== h.id) { e.currentTarget.style.background = 'var(--danger)'; e.currentTarget.style.color = '#fff'; }
-            }}
-            onMouseLeave={(e) => {
-              if (secili !== h.id) { e.currentTarget.style.background = 'var(--surface-2)'; e.currentTarget.style.color = 'var(--danger)'; }
+              flexShrink: 0, padding: '8px 20px', borderRadius: '999px', cursor: 'pointer',
+              fontFamily: 'var(--font-mono)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase',
+              transition: 'all 0.2s',
+              border: secili === h.id ? '1px solid var(--accent)' : '1px solid var(--border)',
+              background: secili === h.id ? 'var(--accent)' : 'var(--surface-2)',
+              color: secili === h.id ? '#fff' : 'var(--text-muted)',
             }}
           >
             {h.label}
@@ -245,20 +181,114 @@ function FotografliAnaliz() {
         ))}
       </div>
 
-      <div className="dashboard-grid" style={{ marginTop: '16px' }}>
-        <div className="card">
-          <div className="card-header">
-            <div className="card-icon"><Lightbulb size={18} /></div>
-            <div className="card-title">İyi Fotoğraf İçin İpuçları</div>
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '16px' }} className="dashboard-grid-responsive">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {onizleme ? (
+            <div style={{ position: 'relative', borderRadius: '16px', overflow: 'hidden', border: '1px solid var(--border)', background: '#000' }}>
+              <img src={onizleme} alt="Önizleme" style={{ width: '100%', maxHeight: '380px', objectFit: 'contain', display: 'block' }} />
+              {yukleniyor && (
+                <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ color: '#fff', fontFamily: 'var(--font-mono)', fontSize: '0.85rem' }}>ANALİZ EDİLİYOR...</span>
+                </div>
+              )}
+            </div>
+          ) : (
+            <label
+              style={{
+                aspectRatio: '16/9', background: 'var(--surface-2)', borderRadius: '16px',
+                border: '2px dashed var(--border)', display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center', cursor: 'pointer', textAlign: 'center', padding: '32px',
+              }}
+            >
+              <input type="file" accept="image/*" onChange={dosyaSecildi} style={{ display: 'none' }} />
+              <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--surface-container-highest, var(--border))', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+                <Upload size={28} color="var(--accent)" />
+              </div>
+              <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, marginBottom: '8px' }}>Fotoğraf Yükle veya Sürükle</h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', maxWidth: '280px' }}>PNG, JPG veya HEIC formatında. Maksimum dosya boyutu 15MB.</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)', fontSize: '0.78rem', marginTop: '16px' }}>
+                <Clipboard size={14} /> Veya Ctrl+V ile yapıştırın
+              </div>
+            </label>
+          )}
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <label className="timer-btn" style={{ justifyContent: 'center', cursor: 'pointer' }}>
+              <ImagePlus size={18} /> Galeri
+              <input type="file" accept="image/*" onChange={dosyaSecildi} style={{ display: 'none' }} />
+            </label>
+            <label className="timer-btn primary" style={{ justifyContent: 'center', cursor: 'pointer' }}>
+              <CameraIcon size={18} /> Kamera
+              <input type="file" accept="image/*" capture="environment" onChange={dosyaSecildi} style={{ display: 'none' }} />
+            </label>
           </div>
-          <ul style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '8px', paddingLeft: '20px', lineHeight: '1.6' }}>
-            <li>Telefonu yere paralel, kameraya tam yandan bakacak şekilde konumlandırın.</li>
-            <li>Baştan ayağa tüm vücudunuz kadrajda olsun.</li>
-            <li>Ortam aydınlık olsun, vücut hattınız net seçilsin.</li>
-            <li>Bol kıyafet vücut hattını gizleyebilir, dar kıyafet daha doğru sonuç verir.</li>
-          </ul>
+
+          {hata && (
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', padding: '14px', background: 'rgba(232,49,63,0.1)', border: '1px solid rgba(232,49,63,0.3)', borderRadius: '10px' }}>
+              <AlertTriangle size={18} color="var(--danger)" style={{ flexShrink: 0, marginTop: '2px' }} />
+              <span style={{ fontSize: '0.85rem', color: 'var(--text)' }}>{hata}</span>
+            </div>
+          )}
+
+          {sonuc && (
+            <Link
+              to={sonuc?.kayit_id ? `/history?kayit=${sonuc.kayit_id}` : '/history'}
+              className="timer-btn"
+              style={{ width: 'fit-content', textDecoration: 'none' }}
+            >
+              <Eye size={16} /> Analizi Detaylı Görüntüle
+            </Link>
+          )}
         </div>
 
+        <div style={{ background: 'var(--surface-2)', borderRadius: '16px', border: '1px solid var(--border)', padding: '24px', position: 'relative' }}>
+          <span style={{ position: 'absolute', top: '16px', right: '16px', fontFamily: 'var(--font-mono)', fontSize: '9px', background: 'rgba(232,49,63,0.1)', color: 'var(--accent)', padding: '4px 8px', borderRadius: '4px', border: '1px solid rgba(232,49,63,0.2)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Analiz Raporu
+          </span>
+
+          <div style={{ marginTop: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div style={{ position: 'relative', width: '160px', height: '160px', marginBottom: '24px' }}>
+              <svg width="160" height="160" viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)' }}>
+                <circle cx="50" cy="50" r="40" fill="none" stroke="var(--surface)" strokeWidth="8" />
+                <circle
+                  cx="50" cy="50" r="40" fill="none"
+                  stroke={skorRengi} strokeWidth="8"
+                  strokeDasharray={gaugeCircumference}
+                  strokeDashoffset={sonuc ? gaugeOffset : gaugeCircumference}
+                  strokeLinecap="round"
+                  style={{ transition: 'stroke-dashoffset 0.6s ease' }}
+                />
+              </svg>
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', fontWeight: 800 }}>{sonuc ? `${skorYuzde}%` : '—'}</span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase' }}>SKOR</span>
+              </div>
+            </div>
+
+            <div style={{ width: '100%' }}>
+              <div style={{ padding: '14px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', marginBottom: '16px' }}>
+                <h4 style={{ display: 'flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: 'var(--accent)', marginBottom: '8px', textTransform: 'uppercase' }}>
+                  <Bot size={14} /> KOÇUN NOTU
+                </h4>
+                <p style={{ fontSize: '0.85rem', fontStyle: 'italic', lineHeight: 1.5, color: 'var(--text)' }}>
+                  {sonuc ? sonuc.antrenor_mesaji : 'Analiz sonucunuz burada görünecek.'}
+                </p>
+              </div>
+
+              {sonuc && (
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '8px', marginBottom: '8px' }}>
+                    <span style={{ color: 'var(--text-muted)', textTransform: 'uppercase' }}>Durum</span>
+                    <span style={{ color: skorRengi }}>{sonuc.durum?.toUpperCase()}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px', marginTop: '48px' }}>
         <div className="card">
           <div className="card-header">
             <div className="card-icon"><CheckCircle size={18} /></div>
@@ -277,6 +307,19 @@ function FotografliAnaliz() {
           <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '8px', lineHeight: '1.6' }}>
             {hareket.nasilCalisir}
           </p>
+        </div>
+
+        <div className="card">
+          <div className="card-header">
+            <div className="card-icon"><Lightbulb size={18} /></div>
+            <div className="card-title">İyi Fotoğraf İçin İpuçları</div>
+          </div>
+          <ul style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '8px', paddingLeft: '20px', lineHeight: '1.6' }}>
+            <li>Telefonu yere paralel, kameraya tam yandan bakacak şekilde konumlandırın.</li>
+            <li>Baştan ayağa tüm vücudunuz kadrajda olsun.</li>
+            <li>Ortam aydınlık olsun, vücut hattınız net seçilsin.</li>
+            <li>Bol kıyafet vücut hattını gizleyebilir, dar kıyafet daha doğru sonuç verir.</li>
+          </ul>
         </div>
       </div>
     </div>

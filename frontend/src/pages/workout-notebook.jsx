@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Plus, Trash2, Save, Calendar, Sparkles } from 'lucide-react';
+import { Plus, Trash2, Save, Calendar, Sparkles, Dumbbell } from 'lucide-react';
 import Sidebar from '../components/sidebar';
 
 const GUN_ADLARI = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
@@ -117,7 +117,8 @@ function WorkoutNotebook() {
       setSaving(false);
     }
   };
-const aiAnalizAl = async () => {
+
+  const aiAnalizAl = async () => {
     const kayitliHareketler = rows.filter((r) => r.hareket && r.agirlik);
     if (kayitliHareketler.length === 0) return;
     setAiYukleniyor(true);
@@ -148,22 +149,27 @@ const aiAnalizAl = async () => {
   return (
     <div>
       <Sidebar />
-      <div className="section-title">Antrenman Defteri</div>
-      <p style={{ color: 'var(--text-muted)', marginBottom: '20px' }}>
-        Yaptığınız hareketleri, set/tekrar sayılarını ve ağırlıkları kaydedin; geçmiş tarihlerle
-        karşılaştırarak gelişiminizi (Progressive Overload) takip edin.
-      </p>
 
-      <div className="notebook-date-row">
-        <div className="form-group" style={{ marginBottom: 0 }}>
-          <label>Tarih</label>
-          <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} />
+      <header style={{ marginBottom: '32px', display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: '20px' }}>
+        <div>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: '1.8rem', textTransform: 'uppercase', lineHeight: 1 }}>ANTRENMAN GÜNLÜĞÜ</h2>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: 'var(--accent-2)', marginTop: '8px', textTransform: 'uppercase' }}>
+            Yaptığınız hareketleri kaydedin, gelişiminizi takip edin
+          </p>
         </div>
-
-        {availableDates.length > 0 && (
-          <div className="form-group" style={{ marginBottom: 0, minWidth: '220px' }}>
-            <label>Kayıtlı Tarihler</label>
-            <select value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text)', padding: '10px 16px', borderRadius: '10px', fontFamily: 'var(--font-mono)', fontSize: '0.78rem' }}
+          />
+          {availableDates.length > 0 && (
+            <select
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)', padding: '10px 16px', borderRadius: '10px', fontFamily: 'var(--font-mono)', fontSize: '0.78rem' }}
+            >
               {!availableDates.includes(selectedDate) && (
                 <option value={selectedDate}>{formatDateDisplay(selectedDate)}</option>
               )}
@@ -173,112 +179,137 @@ const aiAnalizAl = async () => {
                 </option>
               ))}
             </select>
-          </div>
-        )}
-
-        <div className="notebook-date-display">
-          <Calendar size={18} />
-          {formatDateDisplay(selectedDate)}
+          )}
         </div>
-      </div>
+      </header>
 
-      {loading ? (
-        <div className="loading-text">Yükleniyor...</div>
-      ) : (
-        <>
-          <div className="notebook-table-wrapper">
-            <table className="notebook-table">
-              <thead>
-                <tr>
-                  <th>Hareket</th>
-                  <th>Set Sayısı</th>
-                  <th>Tekrar Sayısı</th>
-                  <th>Ağırlık (kg)</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row, i) => (
-                  <tr key={i}>
-                    <td>
-                      <input
-                        type="text"
-                        placeholder="Örn: Barbell Bench Press"
-                        value={row.hareket}
-                        onChange={(e) => handleRowChange(i, 'hareket', e.target.value)}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="number"
-                        min="0"
-                        value={row.set_sayisi}
-                        onChange={(e) => handleRowChange(i, 'set_sayisi', e.target.value)}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="number"
-                        min="0"
-                        value={row.tekrar_sayisi}
-                        onChange={(e) => handleRowChange(i, 'tekrar_sayisi', e.target.value)}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.5"
-                        value={row.agirlik}
-                        onChange={(e) => handleRowChange(i, 'agirlik', e.target.value)}
-                      />
-                    </td>
-                    <td>
-                      <button
-                        className="delete-btn"
-                        onClick={() => handleDeleteRow(i)}
-                        disabled={rows.length === 1}
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="notebook-actions">
-            <button className="quick-add-btn" style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={handleAddRow}>
-              <Plus size={18} />
-              Satır Ekle
-            </button>
+      <div style={{ display: 'grid', gridTemplateColumns: '8fr 4fr', gap: '16px' }} className="notebook-grid">
+        <section style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', overflow: 'hidden' }}>
+          <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1.05rem' }}>
+              <Dumbbell size={20} color="var(--accent)" />
+              {formatDateDisplay(selectedDate)}
+            </h3>
             <button
-              className="submit-btn notebook-save-btn"
-              onClick={handleSave}
-              disabled={saving}
+              onClick={handleAddRow}
+              style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(232,49,63,0.12)', color: 'var(--accent)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
             >
-              <Save size={18} />
-              {saving ? 'Kaydediliyor...' : 'Kaydet'}
+              <Plus size={18} />
             </button>
           </div>
 
-          {savedMessage && <div className="info-banner" style={{ marginTop: '16px' }}>{savedMessage}</div>}
+          {loading ? (
+            <div className="loading-text">Yükleniyor...</div>
+          ) : (
+            <>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ background: 'var(--surface-2)', textAlign: 'left' }}>
+                      <th style={{ padding: '14px 16px', fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--border)' }}>Egzersiz</th>
+                      <th style={{ padding: '14px 16px', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', borderBottom: '1px solid var(--border)' }}>Set</th>
+                      <th style={{ padding: '14px 16px', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', borderBottom: '1px solid var(--border)' }}>Tekrar</th>
+                      <th style={{ padding: '14px 16px', textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', borderBottom: '1px solid var(--border)' }}>Ağırlık (kg)</th>
+                      <th style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)' }}></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((row, i) => (
+                      <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                        <td style={{ padding: '12px 16px' }}>
+                          <input
+                            type="text"
+                            placeholder="Örn: Barbell Bench Press"
+                            value={row.hareket}
+                            onChange={(e) => handleRowChange(i, 'hareket', e.target.value)}
+                            style={{ width: '100%', background: 'transparent', border: 'none', color: 'var(--text)', fontSize: '0.9rem', outline: 'none' }}
+                          />
+                        </td>
+                        <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                          <input
+                            type="number"
+                            min="0"
+                            value={row.set_sayisi}
+                            onChange={(e) => handleRowChange(i, 'set_sayisi', e.target.value)}
+                            style={{ width: '48px', background: 'var(--surface-lowest, #0e0e0e)', border: '1px solid var(--border)', color: 'var(--text)', textAlign: 'center', borderRadius: '6px', padding: '6px', fontFamily: 'var(--font-mono)', fontSize: '0.85rem' }}
+                          />
+                        </td>
+                        <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                          <input
+                            type="number"
+                            min="0"
+                            value={row.tekrar_sayisi}
+                            onChange={(e) => handleRowChange(i, 'tekrar_sayisi', e.target.value)}
+                            style={{ width: '48px', background: 'var(--surface-lowest, #0e0e0e)', border: '1px solid var(--border)', color: 'var(--text)', textAlign: 'center', borderRadius: '6px', padding: '6px', fontFamily: 'var(--font-mono)', fontSize: '0.85rem' }}
+                          />
+                        </td>
+                        <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.5"
+                            value={row.agirlik}
+                            onChange={(e) => handleRowChange(i, 'agirlik', e.target.value)}
+                            style={{ width: '64px', background: 'var(--surface-lowest, #0e0e0e)', border: '1px solid var(--border)', color: 'var(--text)', textAlign: 'center', borderRadius: '6px', padding: '6px', fontFamily: 'var(--font-mono)', fontSize: '0.85rem' }}
+                          />
+                        </td>
+                        <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                          <button
+                            onClick={() => handleDeleteRow(i)}
+                            disabled={rows.length === 1}
+                            style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: rows.length === 1 ? 'not-allowed' : 'pointer', opacity: rows.length === 1 ? 0.4 : 1 }}
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
-          <div className="card" style={{ marginTop: '16px' }}>
-            <div className="card-header">
-              <div className="card-icon"><Sparkles size={18} /></div>
-              <div className="card-title">AI İlerleme Analizi</div>
-            </div>
+              <div style={{ padding: '20px 24px', display: 'flex', justifyContent: 'flex-end', gap: '12px', background: 'var(--surface-2)' }}>
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 24px', borderRadius: '8px',
+                    background: 'var(--accent)', color: '#fff', border: 'none', fontFamily: 'var(--font-mono)',
+                    fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', cursor: 'pointer',
+                  }}
+                >
+                  <Save size={16} />
+                  {saving ? 'Kaydediliyor...' : 'Günlüğü Tamamla'}
+                </button>
+              </div>
+
+              {savedMessage && <div className="info-banner" style={{ margin: '16px 24px' }}>{savedMessage}</div>}
+            </>
+          )}
+        </section>
+
+        <aside style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '24px' }}>
+            <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: '#8d99ae', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '16px' }}>
+              <Sparkles size={16} /> AI İLERLEME ANALİZİ
+            </h4>
             {!aiAnaliz && (
-              <button className="timer-btn" style={{ marginTop: '8px', justifyContent: 'center', width: '100%' }} onClick={aiAnalizAl} disabled={aiYukleniyor}>
+              <button
+                onClick={aiAnalizAl}
+                disabled={aiYukleniyor}
+                style={{
+                  width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                  padding: '12px', borderRadius: '10px', background: '#8d99ae', color: '#fff', border: 'none',
+                  fontFamily: 'var(--font-mono)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', cursor: 'pointer',
+                }}
+              >
                 <Sparkles size={16} /> {aiYukleniyor ? 'Analiz Hazırlanıyor...' : 'AI ile Analiz Et'}
               </button>
             )}
-            {aiAnaliz && <p style={{ fontSize: '0.85rem', color: 'var(--text)', marginTop: '8px', lineHeight: '1.6' }}>{aiAnaliz}</p>}
+            {aiAnaliz && <p style={{ fontSize: '0.85rem', color: 'var(--text)', lineHeight: '1.6', fontStyle: 'italic' }}>{aiAnaliz}</p>}
           </div>
-        </>
-      )}
+        </aside>
+      </div>
     </div>
   );
 }

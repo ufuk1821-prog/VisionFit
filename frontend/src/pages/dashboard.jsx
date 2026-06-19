@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { PoseLandmarker, FilesetResolver, DrawingUtils } from '@mediapipe/tasks-vision';
 import axios from 'axios';
-import { Play, Square, CheckCircle, XCircle, SwitchCamera, Sparkles } from 'lucide-react';
+import { Play, Square, CheckCircle, AlertTriangle, SwitchCamera, Sparkles, Info } from 'lucide-react';
 import Sidebar from '../components/sidebar';
-
 
 const KATEGORI_LABELS = {
   genel_form: 'Genel Form',
@@ -24,14 +23,13 @@ function ScoreBar({ skor }) {
     </div>
   );
 }
+
 function VideoAnalizBolumu({ apiUrl, token }) {
   const [videoSonuc, setVideoSonuc] = useState(null);
   const [videoYukleniyor, setVideoYukleniyor] = useState(false);
   const [videoHata, setVideoHata] = useState('');
   const [secilenVideo, setSecilenVideo] = useState(null);
   const videoRef2 = useRef(null);
-  const canvasRef2 = useRef(null);
-  const poseLandmarkerRef2 = useRef(null);
 
   const videoSec = (e) => {
     const dosya = e.target.files[0];
@@ -209,6 +207,7 @@ function Dashboard() {
   const [aiYukleniyor, setAiYukleniyor] = useState(false);
   const [aiHata, setAiHata] = useState('');
   const [onKamera, setOnKamera] = useState(true);
+  const [activeTab, setActiveTab] = useState('canli');
 
   const streamRef = useRef(null);
   const detectStartedRef = useRef(false);
@@ -363,7 +362,8 @@ function Dashboard() {
     setAiYorum('');
     setAiHata('');
   };
-const aiYorumuAl = async () => {
+
+  const aiYorumuAl = async () => {
     setAiYukleniyor(true);
     setAiHata('');
     setAiYorum('');
@@ -388,178 +388,217 @@ const aiYorumuAl = async () => {
   return (
     <div>
       <Sidebar />
-      <div className="section-title">Kamera Analizi</div>
-      <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', marginBottom: '8px' }}>
-        💡 Daha doğru analiz için kameranıza <strong>yandan</strong> bakacak şekilde durun.
-      </p>
 
-      <div className="main-wrapper">
-        <div className="video-container" style={{ position: 'relative' }}>
-          <video ref={videoRef} id="webcam" autoPlay playsInline muted />
-          <canvas ref={canvasRef} id="output_canvas" width="640" height="480" />
-
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', background: 'var(--surface-2)', borderRadius: '999px', padding: '4px', border: '1px solid var(--border)' }}>
           <button
-            className="timer-btn"
-            style={{ position: 'absolute', top: '12px', right: '12px', zIndex: 5, width: 'auto', padding: '8px 14px' }}
-            onClick={kameraDegistir}
-            disabled={phase === 'recording' || phase === 'countdown' || phase === 'analyzing'}
-            title="Kamerayı Değiştir"
+            onClick={() => setActiveTab('canli')}
+            style={{
+              padding: '8px 28px', borderRadius: '999px', border: 'none', cursor: 'pointer',
+              fontFamily: 'var(--font-mono)', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase',
+              background: activeTab === 'canli' ? 'var(--accent)' : 'transparent',
+              color: activeTab === 'canli' ? '#fff' : 'var(--text-muted)',
+              transition: 'all 0.2s',
+            }}
           >
-            <SwitchCamera size={18} /> {onKamera ? 'Arka Kamera' : 'Ön Kamera'}
+            CANLI
           </button>
-
-          {phase === 'countdown' && (
-            <div className="camera-overlay">
-              <div className="countdown-number">{countdown}</div>
-              <p>Hazırlan...</p>
-            </div>
-          )}
-
-          {phase === 'analyzing' && (
-            <div className="camera-overlay">
-              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--accent)' }}>
-                Analiz ediliyor...
-              </div>
-            </div>
-          )}
-
-          {!modelReady && (
-            <div className="camera-overlay">
-              <div style={{ color: 'var(--text-muted)' }}>Model yükleniyor...</div>
-            </div>
-          )}
-
-          {error && (
-            <div className="camera-overlay">
-              <div style={{ color: 'var(--danger)', textAlign: 'center' }}>{error}</div>
-              <button className="submit-btn" style={{ marginTop: '16px', width: 'auto' }} onClick={handleReset}>Tekrar Dene</button>
-            </div>
-          )}
-        </div>
-
-        <div className="dashboard">
-          {phase === 'idle' && (
-            <>
-              <div className="card status-card" style={{ alignItems: 'center', textAlign: 'center', gap: '16px' }}>
-                <div className="card-title" style={{ fontSize: '1rem' }}>Hazır</div>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                  Squat yapın. Başlat'a basın, 3'ten geriye sayacak ve analiz başlayacak.
-                </p>
-                <button className="timer-btn primary" style={{ width: '100%', justifyContent: 'center' }} onClick={handleStart}>
-                  <Play size={20} /> Başlat
-                </button>
-              </div>
-
-
-              <div className="card" style={{ gap: '8px' }}>
-                <div className="card-title" style={{ fontSize: '0.9rem' }}>⚠️ Sık Yapılan Hatalar</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  {[
-                    'Dizlerin içe çökmesi',
-                    'Sırtın kamburlaşması',
-                    'Topukların yerden kalkması',
-                    'Yetersiz iniş derinliği',
-                  ].map((h, i) => (
-                    <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'center', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-                      <span style={{ color: 'var(--danger)' }}>✗</span>
-                      <span>{h}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
-
-          {phase === 'recording' && (
-            <div className="card status-card" style={{ alignItems: 'center', textAlign: 'center', gap: '16px' }}>
-              <div style={{ width: '16px', height: '16px', borderRadius: '50%', background: 'var(--danger)', animation: 'pulse 1s infinite' }} />
-              <div className="card-value" style={{ fontSize: '1.2rem', color: 'var(--danger)' }}>Kayıt Devam Ediyor</div>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Squatları yapın, bitince durdurun.</p>
-              <button className="timer-btn" style={{ width: '100%', justifyContent: 'center', borderColor: 'var(--danger)', color: 'var(--danger)' }} onClick={handleStop}>
-                <Square size={20} /> Durdur ve Analiz Et
-              </button>
-            </div>
-          )}
-
-          {phase === 'countdown' && (
-            <div className="card" style={{ alignItems: 'center', textAlign: 'center' }}>
-              <div className="card-value" style={{ fontSize: '3rem', color: 'var(--accent)' }}>{countdown}</div>
-              <div className="card-title">Hazırlan!</div>
-            </div>
-          )}
-
-          {phase === 'analyzing' && (
-            <div className="card" style={{ alignItems: 'center', textAlign: 'center' }}>
-              <div className="card-title">Analiz ediliyor...</div>
-            </div>
-          )}
-
-          {phase === 'result' && result && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div className="card status-card" style={{ textAlign: 'center' }}>
-                <div className="card-title">Genel Skor</div>
-                <div className="card-value" style={{ fontSize: '3rem', color: result.genel_skor >= 75 ? 'var(--accent)' : result.genel_skor >= 50 ? 'var(--accent-2)' : 'var(--danger)' }}>
-                  %{result.genel_skor}
-                </div>
-                <div className="card-subtext">{result.squat_kare} squat karesi analiz edildi</div>
-              </div>
-
-              <div className="card">
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-                  <CheckCircle size={18} color="var(--accent)" style={{ flexShrink: 0, marginTop: '2px' }} />
-                  <span style={{ fontSize: '0.85rem', color: 'var(--text)' }}>{result.olumlu_mesaj}</span>
-                </div>
-              </div>
-
-              <div className="card">
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-                  <XCircle size={18} color="var(--accent-2)" style={{ flexShrink: 0, marginTop: '2px' }} />
-                  <span style={{ fontSize: '0.85rem', color: 'var(--text)' }}>{result.gelistirilecek_mesaj}</span>
-                </div>
-              </div>
-
-              <button className="timer-btn primary" style={{ justifyContent: 'center' }} onClick={handleReset}>
-                <div className="card">
-                <div className="card-header">
-                  <div className="card-icon"><Sparkles size={18} /></div>
-                  <div className="card-title">AI Antrenör Yorumu</div>
-                </div>
-                {!aiYorum && !aiHata && (
-                  <button className="timer-btn" style={{ marginTop: '8px', justifyContent: 'center', width: '100%' }} onClick={aiYorumuAl} disabled={aiYukleniyor}>
-                    <Sparkles size={16} /> {aiYukleniyor ? 'Yorum Hazırlanıyor...' : 'AI Yorumu Al'}
-                  </button>
-                )}
-                {aiYorum && <p style={{ fontSize: '0.85rem', color: 'var(--text)', marginTop: '8px', lineHeight: '1.6' }}>{aiYorum}</p>}
-                {aiHata && <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '8px' }}>{aiHata}</p>}
-              </div>
-                <Play size={18} /> Yeni Antrenman
-              </button>
-            </div>
-          )}
+          <button
+            onClick={() => setActiveTab('video')}
+            style={{
+              padding: '8px 28px', borderRadius: '999px', border: 'none', cursor: 'pointer',
+              fontFamily: 'var(--font-mono)', fontSize: '0.78rem', fontWeight: 600, textTransform: 'uppercase',
+              background: activeTab === 'video' ? 'var(--accent)' : 'transparent',
+              color: activeTab === 'video' ? '#fff' : 'var(--text-muted)',
+              transition: 'all 0.2s',
+            }}
+          >
+            VİDEO
+          </button>
         </div>
       </div>
 
-      <VideoAnalizBolumu apiUrl={apiUrl} token={token} />
-
-      {phase === 'result' && result && (
+      {activeTab === 'canli' && (
         <>
-          <div className="section-title">Kategori Detayları</div>
-          <div className="dashboard-grid">
-            {['genel_form', 'omurga_notrluğu', 'kalca_derinligi', 'diz_hizasi', 'diz_cokusu', 'agirlik_merkezi'].map((key) => {
-              const kat = result[key];
-              const color = kat.skor >= 75 ? 'var(--accent)' : kat.skor >= 50 ? 'var(--accent-2)' : 'var(--danger)';
-              return (
-                <div className="card" key={key}>
-                  <div className="card-title">{KATEGORI_LABELS[key]}</div>
-                  <div className="card-value" style={{ fontSize: '1.8rem', color }}>%{kat.skor}</div>
-                  <ScoreBar skor={kat.skor} />
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '8px' }}>{kat.mesaj}</p>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', marginBottom: '8px', textAlign: 'center' }}>
+            💡 Daha doğru analiz için kameranıza <strong>yandan</strong> bakacak şekilde durun.
+          </p>
+
+          <div className="main-wrapper">
+            <div className="video-container" style={{ position: 'relative' }}>
+              {/* Corner brackets */}
+              <div style={{ position: 'absolute', top: '12px', left: '12px', width: '36px', height: '36px', borderTop: '2px solid var(--accent)', borderLeft: '2px solid var(--accent)', opacity: 0.6, zIndex: 4, pointerEvents: 'none' }} />
+              <div style={{ position: 'absolute', top: '12px', right: '12px', width: '36px', height: '36px', borderTop: '2px solid var(--accent)', borderRight: '2px solid var(--accent)', opacity: 0.6, zIndex: 4, pointerEvents: 'none' }} />
+              <div style={{ position: 'absolute', bottom: '12px', left: '12px', width: '36px', height: '36px', borderBottom: '2px solid var(--accent)', borderLeft: '2px solid var(--accent)', opacity: 0.6, zIndex: 4, pointerEvents: 'none' }} />
+              <div style={{ position: 'absolute', bottom: '12px', right: '12px', width: '36px', height: '36px', borderBottom: '2px solid var(--accent)', borderRight: '2px solid var(--accent)', opacity: 0.6, zIndex: 4, pointerEvents: 'none' }} />
+
+              <video ref={videoRef} id="webcam" autoPlay playsInline muted />
+              <canvas ref={canvasRef} id="output_canvas" width="640" height="480" />
+
+              <button
+                className="timer-btn"
+                style={{ position: 'absolute', top: '12px', right: '12px', zIndex: 5, width: 'auto', padding: '8px 14px' }}
+                onClick={kameraDegistir}
+                disabled={phase === 'recording' || phase === 'countdown' || phase === 'analyzing'}
+                title="Kamerayı Değiştir"
+              >
+                <SwitchCamera size={18} /> {onKamera ? 'Arka Kamera' : 'Ön Kamera'}
+              </button>
+
+              {phase === 'countdown' && (
+                <div className="camera-overlay">
+                  <div className="countdown-number">{countdown}</div>
+                  <p>Hazırlan...</p>
                 </div>
-              );
-            })}
+              )}
+
+              {phase === 'analyzing' && (
+                <div className="camera-overlay">
+                  <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--accent)' }}>
+                    Analiz ediliyor...
+                  </div>
+                </div>
+              )}
+
+              {!modelReady && (
+                <div className="camera-overlay">
+                  <div style={{ color: 'var(--text-muted)' }}>Model yükleniyor...</div>
+                </div>
+              )}
+
+              {error && (
+                <div className="camera-overlay">
+                  <div style={{ color: 'var(--danger)', textAlign: 'center' }}>{error}</div>
+                  <button className="submit-btn" style={{ marginTop: '16px', width: 'auto' }} onClick={handleReset}>Tekrar Dene</button>
+                </div>
+              )}
+            </div>
+
+            <div className="dashboard">
+              {phase === 'idle' && (
+                <>
+                  <div className="card status-card" style={{ alignItems: 'center', textAlign: 'center', gap: '16px' }}>
+                    <div className="card-title" style={{ fontSize: '1rem' }}>Hazır</div>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                      Squat yapın. Başlat'a basın, 3'ten geriye sayacak ve analiz başlayacak.
+                    </p>
+                    <button className="timer-btn primary" style={{ width: '100%', justifyContent: 'center' }} onClick={handleStart}>
+                      <Play size={20} /> Başlat
+                    </button>
+                  </div>
+
+                  <div className="card" style={{ gap: '8px' }}>
+                    <div className="card-title" style={{ fontSize: '0.9rem' }}>⚠️ Sık Yapılan Hatalar</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      {[
+                        'Dizlerin içe çökmesi',
+                        'Sırtın kamburlaşması',
+                        'Topukların yerden kalkması',
+                        'Yetersiz iniş derinliği',
+                      ].map((h, i) => (
+                        <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'center', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                          <span style={{ color: 'var(--danger)' }}>✗</span>
+                          <span>{h}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {phase === 'recording' && (
+                <div className="card status-card" style={{ alignItems: 'center', textAlign: 'center', gap: '16px' }}>
+                  <div style={{ width: '16px', height: '16px', borderRadius: '50%', background: 'var(--danger)', animation: 'pulse 1s infinite' }} />
+                  <div className="card-value" style={{ fontSize: '1.2rem', color: 'var(--danger)' }}>Kayıt Devam Ediyor</div>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Squatları yapın, bitince durdurun.</p>
+                  <button className="timer-btn" style={{ width: '100%', justifyContent: 'center', borderColor: 'var(--danger)', color: 'var(--danger)' }} onClick={handleStop}>
+                    <Square size={20} /> Durdur ve Analiz Et
+                  </button>
+                </div>
+              )}
+
+              {phase === 'countdown' && (
+                <div className="card" style={{ alignItems: 'center', textAlign: 'center' }}>
+                  <div className="card-value" style={{ fontSize: '3rem', color: 'var(--accent)' }}>{countdown}</div>
+                  <div className="card-title">Hazırlan!</div>
+                </div>
+              )}
+
+              {phase === 'analyzing' && (
+                <div className="card" style={{ alignItems: 'center', textAlign: 'center' }}>
+                  <div className="card-title">Analiz ediliyor...</div>
+                </div>
+              )}
+
+              {phase === 'result' && result && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div className="card status-card" style={{ textAlign: 'center' }}>
+                    <div className="card-title">Genel Skor</div>
+                    <div className="card-value" style={{ fontSize: '3rem', color: result.genel_skor >= 75 ? 'var(--accent)' : result.genel_skor >= 50 ? 'var(--accent-2)' : 'var(--danger)' }}>
+                      %{result.genel_skor}
+                    </div>
+                    <div className="card-subtext">{result.squat_kare} squat karesi analiz edildi</div>
+                  </div>
+
+                  <div style={{ background: 'rgba(232,49,63,0.1)', border: '1px solid rgba(232,49,63,0.3)', borderRadius: '12px', padding: '16px', display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <AlertTriangle size={18} color="#fff" />
+                    </div>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text)' }}>{result.gelistirilecek_mesaj}</span>
+                  </div>
+
+                  <div style={{ background: 'rgba(76,175,80,0.1)', border: '1px solid rgba(76,175,80,0.3)', borderRadius: '12px', padding: '16px', display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#4CAF50', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <CheckCircle size={18} color="#fff" />
+                    </div>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text)' }}>{result.olumlu_mesaj}</span>
+                  </div>
+
+                  <div className="card">
+                    <div className="card-header">
+                      <div className="card-icon"><Sparkles size={18} /></div>
+                      <div className="card-title">AI Antrenör Yorumu</div>
+                    </div>
+                    {!aiYorum && !aiHata && (
+                      <button className="timer-btn" style={{ marginTop: '8px', justifyContent: 'center', width: '100%' }} onClick={aiYorumuAl} disabled={aiYukleniyor}>
+                        <Sparkles size={16} /> {aiYukleniyor ? 'Yorum Hazırlanıyor...' : 'AI Yorumu Al'}
+                      </button>
+                    )}
+                    {aiYorum && <p style={{ fontSize: '0.85rem', color: 'var(--text)', marginTop: '8px', lineHeight: '1.6' }}>{aiYorum}</p>}
+                    {aiHata && <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '8px' }}>{aiHata}</p>}
+                  </div>
+
+                  <button className="timer-btn primary" style={{ justifyContent: 'center' }} onClick={handleReset}>
+                    <Play size={18} /> Yeni Antrenman
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
+
+          {phase === 'result' && result && (
+            <>
+              <div className="section-title">Kategori Detayları</div>
+              <div className="dashboard-grid">
+                {['genel_form', 'omurga_notrluğu', 'kalca_derinligi', 'diz_hizasi', 'diz_cokusu', 'agirlik_merkezi'].map((key) => {
+                  const kat = result[key];
+                  const color = kat.skor >= 75 ? 'var(--accent)' : kat.skor >= 50 ? 'var(--accent-2)' : 'var(--danger)';
+                  return (
+                    <div className="card" key={key}>
+                      <div className="card-title">{KATEGORI_LABELS[key]}</div>
+                      <div className="card-value" style={{ fontSize: '1.8rem', color }}>%{kat.skor}</div>
+                      <ScoreBar skor={kat.skor} />
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '8px' }}>{kat.mesaj}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </>
       )}
+
+      {activeTab === 'video' && <VideoAnalizBolumu apiUrl={apiUrl} token={token} />}
     </div>
   );
 }

@@ -1,7 +1,6 @@
 import { useState, useRef } from 'react';
 import axios from 'axios';
-import { Sparkles } from 'lucide-react';
-import { Activity, Flame, Target } from 'lucide-react';
+import { Sparkles, BarChart3, Bot } from 'lucide-react';
 import Sidebar from '../components/sidebar';
 
 const BMI_LABELS = { Zayif: 'Zayıf', Normal: 'Normal', Kilolu: 'Kilolu', Obez: 'Obez' };
@@ -16,9 +15,9 @@ const AKTIFLIK_OPTIONS = [
 ];
 
 const HEDEF_OPTIONS = [
-  { value: 'kilo_verme', label: 'Kilo Ver' },
-  { value: 'kilo_koruma', label: 'Kiloyu Koru' },
-  { value: 'kilo_alma', label: 'Kilo Al' },
+  { value: 'kilo_verme', label: 'Kilo Ver', desc: 'Yağ yakımı odaklı kalori açığı.', emoji: '📉' },
+  { value: 'kilo_koruma', label: 'Formu Koru', desc: 'Stabil metabolizma ve enerji dengesi.', emoji: '⚖️' },
+  { value: 'kilo_alma', label: 'Kilo Al', desc: 'Kas kütlesi için kalori fazlası.', emoji: '💪' },
 ];
 
 function Diet() {
@@ -107,7 +106,8 @@ function Diet() {
       setLoading(false);
     }
   };
-const aiOneriAl = async () => {
+
+  const aiOneriAl = async () => {
     if (!diet) return;
     setAiYukleniyor(true);
     setAiOneri('');
@@ -135,172 +135,199 @@ const aiOneriAl = async () => {
     }
   };
 
+  const bmiPercent = diet ? Math.min(Math.max(((diet.bmi - 15) / (35 - 15)) * 100, 0), 100) : 0;
+
   return (
     <div>
       <Sidebar />
-      <div className="section-title">Diyet Önerisi</div>
 
-      <div className="auth-box">
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '16px' }}>
-          <div className="form-group">
-            <label>Boy (cm)</label>
-            <input
-              type="number"
-              step="0.1"
-              value={boy}
-              onChange={handleBoyChange}
-              placeholder="175"
-              min="50"
-              max="300"
-              style={{ borderColor: boyHata ? 'var(--danger)' : undefined }}
-            />
-            {boyHata && <span style={{ color: 'var(--danger)', fontSize: '0.78rem', marginTop: '4px' }}>{boyHata}</span>}
+      <div style={{ marginBottom: '32px' }}>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: '1.8rem', textTransform: 'uppercase' }}>DİYET ÖNERİSİ</h1>
+        <p style={{ color: 'var(--text-muted)', maxWidth: '640px', marginTop: '8px' }}>
+          Biyometrik verilerinize ve hedeflerinize göre yapay zeka tarafından optimize edilmiş beslenme planınızı inceleyin.
+        </p>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '4fr 8fr', gap: '16px' }} className="diet-grid">
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <BarChart3 size={20} color="var(--accent)" />
+            <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1.1rem' }}>Ölçümler</h2>
           </div>
-          <div className="form-group">
-            <label>Kilo (kg)</label>
-            <input
-              type="number"
-              step="0.1"
-              value={kilo}
-              onChange={handleKiloChange}
-              placeholder="70"
-              min="20"
-              max="500"
-              style={{ borderColor: kiloHata ? 'var(--danger)' : undefined }}
-            />
-            {kiloHata && <span style={{ color: 'var(--danger)', fontSize: '0.78rem', marginTop: '4px' }}>{kiloHata}</span>}
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label>Boy (cm)</label>
+              <input type="number" step="0.1" value={boy} onChange={handleBoyChange} placeholder="180" min="50" max="300" style={{ borderColor: boyHata ? 'var(--danger)' : undefined }} />
+              {boyHata && <span style={{ color: 'var(--danger)', fontSize: '0.72rem', marginTop: '4px' }}>{boyHata}</span>}
+            </div>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label>Kilo (kg)</label>
+              <input type="number" step="0.1" value={kilo} onChange={handleKiloChange} placeholder="75" min="20" max="500" style={{ borderColor: kiloHata ? 'var(--danger)' : undefined }} />
+              {kiloHata && <span style={{ color: 'var(--danger)', fontSize: '0.72rem', marginTop: '4px' }}>{kiloHata}</span>}
+            </div>
           </div>
-          <div className="form-group">
+
+          <div className="form-group" style={{ marginBottom: 0 }}>
             <label>Yaş</label>
-            <input
-              type="number"
-              value={yas}
-              onChange={handleYasChange}
-              placeholder="25"
-              min="1"
-              max="120"
-              style={{ borderColor: yasHata ? 'var(--danger)' : undefined }}
-            />
-            {yasHata && <span style={{ color: 'var(--danger)', fontSize: '0.78rem', marginTop: '4px' }}>{yasHata}</span>}
+            <input type="number" value={yas} onChange={handleYasChange} placeholder="28" min="1" max="120" style={{ borderColor: yasHata ? 'var(--danger)' : undefined }} />
+            {yasHata && <span style={{ color: 'var(--danger)', fontSize: '0.72rem', marginTop: '4px' }}>{yasHata}</span>}
           </div>
-          <div className="form-group">
+
+          <div className="form-group" style={{ marginBottom: 0 }}>
             <label>Cinsiyet</label>
-            <select value={cinsiyet} onChange={(e) => setCinsiyet(e.target.value)}>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={() => setCinsiyet('Erkek')}
+                style={{ flex: 1, padding: '10px', borderRadius: '8px', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '0.72rem', textTransform: 'uppercase', border: cinsiyet === 'Erkek' ? '1px solid var(--accent)' : '1px solid var(--border)', background: cinsiyet === 'Erkek' ? 'var(--surface-2)' : 'transparent', color: cinsiyet === 'Erkek' ? 'var(--accent)' : 'var(--text-muted)' }}
+              >
+                Erkek
+              </button>
+              <button
+                onClick={() => setCinsiyet('Kadin')}
+                style={{ flex: 1, padding: '10px', borderRadius: '8px', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '0.72rem', textTransform: 'uppercase', border: cinsiyet === 'Kadin' ? '1px solid var(--accent)' : '1px solid var(--border)', background: cinsiyet === 'Kadin' ? 'var(--surface-2)' : 'transparent', color: cinsiyet === 'Kadin' ? 'var(--accent)' : 'var(--text-muted)' }}
+              >
+                Kadın
+              </button>
+            </div>
+          </div>
+
+          <div className="form-group" style={{ marginBottom: 0 }}>
+            <label>Aktivite Seviyesi</label>
+            <select value={aktiflik} onChange={(e) => setAktiflik(e.target.value)}>
               <option value="">Seçin</option>
-              <option value="Erkek">Erkek</option>
-              <option value="Kadin">Kadın</option>
+              {AKTIFLIK_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </div>
         </div>
 
-        <div className="form-group">
-          <label>Aktivite Seviyesi</label>
-          <select value={aktiflik} onChange={(e) => setAktiflik(e.target.value)}>
-            <option value="">Seçin</option>
-            {AKTIFLIK_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
-        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }} className="diet-goal-grid">
+            {HEDEF_OPTIONS.map((h) => {
+              const active = hedef === h.value;
+              return (
+                <div
+                  key={h.value}
+                  onClick={() => setHedef(h.value)}
+                  style={{
+                    background: active ? 'var(--surface-2)' : 'var(--surface)', padding: '24px', borderRadius: '16px', cursor: 'pointer',
+                    border: active ? '2px solid var(--accent)' : '1px solid var(--border)', position: 'relative', overflow: 'hidden', transition: 'all 0.2s',
+                  }}
+                >
+                  {active && <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', background: 'var(--accent)' }} />}
+                  <div style={{ fontSize: '2.2rem', marginBottom: '12px' }}>{h.emoji}</div>
+                  <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1.05rem', marginBottom: '4px' }}>{h.label}</h3>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{h.desc}</p>
+                </div>
+              );
+            })}
+          </div>
 
-        <div className="form-group">
-          <label>Hedef</label>
-          <select value={hedef} onChange={(e) => setHedef(e.target.value)}>
-            <option value="">Seçin</option>
-            {HEDEF_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
-        </div>
+          <div className="form-group" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '20px', marginBottom: 0 }}>
+            <label>Özel İstekler (Vejetaryen, Alerjen vb.)</label>
+            <textarea
+              value={istek}
+              onChange={(e) => setIstek(e.target.value)}
+              placeholder="Örn: Süt ürünleri tüketmiyorum, yüksek proteinli tarifler tercih ederim..."
+            />
+          </div>
 
-        <div className="form-group">
-          <label>Özel istek, alerji veya tercih (opsiyonel)</label>
-          <textarea
-            value={istek}
-            onChange={(e) => setIstek(e.target.value)}
-            placeholder="Örnek: Yumurtaya alerjim var, kırmızı et seviyorum"
-          />
+          <button
+            className="submit-btn"
+            disabled={loading || !!boyHata || !!kiloHata || !!yasHata}
+            onClick={handleGenerate}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '16px' }}
+          >
+            <Sparkles size={18} />
+            {loading ? 'Hesaplanıyor...' : 'DİYET PLANINI OLUŞTUR'}
+          </button>
         </div>
-
-        <button className="submit-btn" disabled={loading || !!boyHata || !!kiloHata || !!yasHata} onClick={handleGenerate}>
-          {loading ? 'Hesaplanıyor...' : 'Diyet Önerisi Al'}
-        </button>
       </div>
 
       {error && <p className="error-text">{error}</p>}
 
       {diet && (
         <div ref={sonucRef}>
-          <div className="main-wrapper" style={{ marginTop: '24px' }}>
-            <div className="bmi-card">
-              <div className="bmi-card-title">Vücut Kitle Endeksi</div>
-              <div className="bmi-value">{diet.bmi}</div>
-              <span className={`bmi-badge ${diet.bmi_kategori.toLowerCase()}`}>
-                {BMI_LABELS[diet.bmi_kategori] ?? diet.bmi_kategori}
-              </span>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginTop: '24px' }} className="diet-stats-grid">
+            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Vücut Kitle Endeksi (BMI)</span>
+              <div style={{ marginTop: '16px', display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                <span style={{ fontFamily: 'var(--font-display)', fontSize: '2.4rem', fontWeight: 900 }}>{diet.bmi}</span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: '#4CAF50' }}>{(BMI_LABELS[diet.bmi_kategori] ?? diet.bmi_kategori).toUpperCase()}</span>
+              </div>
+              <div style={{ marginTop: '20px', height: '6px', width: '100%', background: 'var(--surface-2)', borderRadius: '999px', overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${bmiPercent}%`, background: '#4CAF50', borderRadius: '999px' }} />
+              </div>
             </div>
-            <div className="dashboard">
-              <div className="card status-card">
-                <div className="card-header">
-                  <div className="card-icon"><Activity size={18} /></div>
-                  <div className="card-title">Bazal Metabolizma (BMR)</div>
-                </div>
-                <div className="card-value">{diet.bmr} kcal</div>
+
+            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '24px' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Günlük Kalori Hedefi</span>
+              <div style={{ marginTop: '16px', display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                <span style={{ fontFamily: 'var(--font-display)', fontSize: '2.4rem', fontWeight: 900, color: 'var(--accent)' }}>{diet.hedef_kalori}</span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: 'var(--text-muted)' }}>kcal</span>
               </div>
-              <div className="card angle-card">
-                <div className="card-header">
-                  <div className="card-icon"><Flame size={18} /></div>
-                  <div className="card-title">Toplam Günlük Harcama (TDEE)</div>
-                </div>
-                <div className="card-value">{diet.tdee} kcal</div>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '10px' }}>Bazal metabolizma: {diet.bmr} kcal</p>
+            </div>
+
+            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '16px', padding: '24px', position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center' }}>
+              <div style={{ position: 'absolute', top: 0, right: 0, opacity: 0.06 }}>
+                <Bot size={120} />
               </div>
-              <div className="card confidence-card">
-                <div className="card-header">
-                  <div className="card-icon"><Target size={18} /></div>
-                  <div className="card-title">Hedef Günlük Kalori</div>
+              <div style={{ position: 'relative', zIndex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                  <Sparkles size={14} color="#8d99ae" />
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: '#8d99ae', letterSpacing: '0.1em', textTransform: 'uppercase' }}>TOPLAM GÜNLÜK HARCAMA</span>
                 </div>
-                <div className="card-value">{diet.hedef_kalori} kcal</div>
+                <p style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 700, fontStyle: 'italic' }}>{diet.tdee} kcal</p>
               </div>
             </div>
           </div>
 
-          <div className="section-title">Önerilen Planlar ({HEDEF_LABELS[diet.hedef] ?? diet.hedef})</div>
+          <div style={{ marginTop: '24px' }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', fontWeight: 700, marginBottom: '16px', textTransform: 'uppercase' }}>
+              Önerilen Planlar ({HEDEF_LABELS[diet.hedef] ?? diet.hedef})
+            </h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+              {diet.planlar.map((plan, index) => {
+                const pKcal = plan.protein_g * 4;
+                const cKcal = plan.karbonhidrat_g * 4;
+                const fKcal = plan.yag_g * 9;
+                const total = pKcal + cKcal + fKcal;
+                return (
+                  <div className="plan-card" key={index}>
+                    <h3>{plan.baslik}</h3>
+                    <div className="macro-bar">
+                      <div className="macro-bar-segment protein" style={{ width: `${(pKcal / total) * 100}%` }} />
+                      <div className="macro-bar-segment carb" style={{ width: `${(cKcal / total) * 100}%` }} />
+                      <div className="macro-bar-segment fat" style={{ width: `${(fKcal / total) * 100}%` }} />
+                    </div>
+                    <div className="plan-macros">
+                      <span>{plan.kalori} kcal</span>
+                      <span><span className="dot protein" />Protein: {plan.protein_g} g</span>
+                      <span><span className="dot carb" />Karbonhidrat: {plan.karbonhidrat_g} g</span>
+                      <span><span className="dot fat" />Yağ: {plan.yag_g} g</span>
+                    </div>
+                    <ul className="plan-meals">
+                      {plan.ornek_ogunler.map((ogun, i) => <li key={i}>• {ogun}</li>)}
+                    </ul>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
 
-          <div className="diet-panel">
-            {diet.planlar.map((plan, index) => {
-              const pKcal = plan.protein_g * 4;
-              const cKcal = plan.karbonhidrat_g * 4;
-              const fKcal = plan.yag_g * 9;
-              const total = pKcal + cKcal + fKcal;
-              return (
-                <div className="plan-card" key={index}>
-                  <h3>{plan.baslik}</h3>
-                  <div className="macro-bar">
-                    <div className="macro-bar-segment protein" style={{ width: `${(pKcal / total) * 100}%` }} />
-                    <div className="macro-bar-segment carb" style={{ width: `${(cKcal / total) * 100}%` }} />
-                    <div className="macro-bar-segment fat" style={{ width: `${(fKcal / total) * 100}%` }} />
-                  </div>
-                  <div className="plan-macros">
-                    <span>{plan.kalori} kcal</span>
-                    <span><span className="dot protein" />Protein: {plan.protein_g} g</span>
-                    <span><span className="dot carb" />Karbonhidrat: {plan.karbonhidrat_g} g</span>
-                    <span><span className="dot fat" />Yağ: {plan.yag_g} g</span>
-                  </div>
-                  <ul className="plan-meals">
-                    {plan.ornek_ogunler.map((ogun, i) => <li key={i}>{ogun}</li>)}
-                  </ul>
-                </div>
-              );
-            })}
+          <div className="card" style={{ marginTop: '24px' }}>
+            <div className="card-header">
+              <div className="card-icon"><Sparkles size={18} /></div>
+              <div className="card-title">AI Diyet Önerisi</div>
+            </div>
+            {!aiOneri && (
+              <button className="timer-btn" style={{ marginTop: '8px', justifyContent: 'center', width: '100%' }} onClick={aiOneriAl} disabled={aiYukleniyor}>
+                <Sparkles size={16} /> {aiYukleniyor ? 'Öneri Hazırlanıyor...' : 'AI Önerisi Al'}
+              </button>
+            )}
+            {aiOneri && <p style={{ fontSize: '0.85rem', color: 'var(--text)', marginTop: '8px', lineHeight: '1.6' }}>{aiOneri}</p>}
           </div>
-        <div className="card" style={{ marginTop: '16px' }}>
-          <div className="card-header">
-            <div className="card-icon"><Sparkles size={18} /></div>
-            <div className="card-title">AI Diyet Önerisi</div>
-          </div>
-          {!aiOneri && (
-            <button className="timer-btn" style={{ marginTop: '8px', justifyContent: 'center', width: '100%' }} onClick={aiOneriAl} disabled={aiYukleniyor}>
-              <Sparkles size={16} /> {aiYukleniyor ? 'Öneri Hazırlanıyor...' : 'AI Önerisi Al'}
-            </button>
-          )}
-          {aiOneri && <p style={{ fontSize: '0.85rem', color: 'var(--text)', marginTop: '8px', lineHeight: '1.6' }}>{aiOneri}</p>}
-        </div>
         </div>
       )}
     </div>

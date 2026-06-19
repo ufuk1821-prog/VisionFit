@@ -117,12 +117,12 @@ function Register() {
                   <input type="text" value={soyad} onChange={(e) => setSoyad(e.target.value)} required />
                 </div>
                 <div className="form-group">
-                  <label>Email</label>
-                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                  <label>E-posta</label>
+                  <input type="email" placeholder="ornek@visionfit.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
                 </div>
                 <div className="form-group">
                   <label>Şifre</label>
-                  <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                  <input type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
                   {password.length > 0 && (
                     <div className="password-rules">
                       {PASSWORD_RULES.map((rule) => (
@@ -137,6 +137,7 @@ function Register() {
                   <label>Şifre Tekrar</label>
                   <input
                     type="password"
+                    placeholder="••••••••"
                     value={passwordConfirm}
                     onChange={(e) => setPasswordConfirm(e.target.value)}
                     required

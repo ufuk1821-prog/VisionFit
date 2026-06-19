@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Ruler, Flame, Target, Footprints, Activity, ArrowRight, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Ruler, Flame, Target, Footprints, Activity, ArrowRight, ChevronRight, Video, Camera, History as HistoryIcon, Salad, Utensils, Award } from 'lucide-react';
 import Sidebar from '../components/sidebar';
 import useCountUp from '../hooks/useCountUp';
 
@@ -12,34 +12,22 @@ const BMI_LABELS = {
   Obez: 'Obez',
 };
 
-function formatDelta(current, previous) {
-  if (previous === 0 && current === 0) {
-    return { text: '—', trend: 'same' };
-  }
-  if (previous === 0) {
-    return { text: 'Yeni', trend: 'up' };
-  }
-  const diff = current - previous;
-  const percent = Math.round((diff / previous) * 100);
-
-  if (diff > 0) return { text: `+%${percent}`, trend: 'up' };
-  if (diff < 0) return { text: `%${percent}`, trend: 'down' };
-  return { text: '%0', trend: 'same' };
-}
-
-function TrendIcon({ trend }) {
-  if (trend === 'up') return <TrendingUp size={14} />;
-  if (trend === 'down') return <TrendingDown size={14} />;
-  return <Minus size={14} />;
-}
+const QUICK_ACCESS = [
+  { path: '/dashboard', icon: Video, label: 'Kamera Analizi' },
+  { path: '/plank', icon: Camera, label: 'Fotoğraf Analizi' },
+  { path: '/history', icon: HistoryIcon, label: 'Geçmiş' },
+  { path: '/diet', icon: Salad, label: 'Diyet' },
+  { path: '/nutrition', icon: Utensils, label: 'Beslenme' },
+  { path: '/badges', icon: Award, label: 'Rozetler' },
+];
 
 function Home() {
   const [profile, setProfile] = useState(null);
   const [diet, setDiet] = useState(null);
   const [workouts, setWorkouts] = useState([]);
-  const [stepLogs, setStepLogs] = useState([]);
   const [todaySteps, setTodaySteps] = useState(0);
   const [todayCalories, setTodayCalories] = useState(0);
+  const [todayWater, setTodayWater] = useState(0);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
@@ -53,187 +41,205 @@ function Home() {
       axios.get(`${apiUrl}/api/users/me/diet`, { headers }),
       axios.get(`${apiUrl}/api/analyze/history`, { headers }),
       axios.get(`${apiUrl}/api/steps`, { headers }),
-    ]).then(([profileRes, dietRes, historyRes, stepsRes]) => {
+      axios.get(`${apiUrl}/api/nutrition/water/today`, { headers }),
+    ]).then(([profileRes, dietRes, historyRes, stepsRes, waterRes]) => {
       if (profileRes.status === 'fulfilled') {
         setProfile(profileRes.value.data);
       }
-
       if (dietRes.status === 'fulfilled') {
         setDiet(dietRes.value.data);
       }
-
       if (historyRes.status === 'fulfilled') {
         setWorkouts(historyRes.value.data);
       }
-
       if (stepsRes.status === 'fulfilled') {
-        setStepLogs(stepsRes.value.data);
-
         const today = new Date().toDateString();
         const bugunkuKayitlar = stepsRes.value.data.filter(
           (k) => new Date(k.tarih).toDateString() === today
         );
-
         const toplamAdim = bugunkuKayitlar.reduce((acc, k) => acc + k.adim_sayisi, 0);
         const toplamKalori = bugunkuKayitlar.reduce((acc, k) => acc + k.yakilan_kalori, 0);
-
         setTodaySteps(toplamAdim);
         setTodayCalories(Math.round(toplamKalori));
+      }
+      if (waterRes.status === 'fulfilled') {
+        const toplamSu = waterRes.value.data.reduce((acc, w) => acc + w.miktar_ml, 0);
+        setTodayWater(toplamSu);
       }
 
       setLoading(false);
     });
   }, []);
 
-  const now = new Date();
-  const weekStart = new Date(now);
-  weekStart.setDate(now.getDate() - 7);
-  const prevWeekStart = new Date(now);
-  prevWeekStart.setDate(now.getDate() - 14);
-
-  const thisWeekWorkouts = workouts.filter((w) => new Date(w.tarih) >= weekStart);
-  const prevWeekWorkouts = workouts.filter((w) => new Date(w.tarih) >= prevWeekStart && new Date(w.tarih) < weekStart);
-
-  const thisWeekSteps = stepLogs.filter((s) => new Date(s.tarih) >= weekStart).reduce((acc, s) => acc + s.adim_sayisi, 0);
-  const prevWeekSteps = stepLogs.filter((s) => new Date(s.tarih) >= prevWeekStart && new Date(s.tarih) < weekStart).reduce((acc, s) => acc + s.adim_sayisi, 0);
-
-  const avgConfidence = (list) => list.length > 0 ? Math.round(list.reduce((acc, w) => acc + w.eminlik_skoru, 0) / list.length) : 0;
-  const thisWeekAvgConfidence = avgConfidence(thisWeekWorkouts);
-  const prevWeekAvgConfidence = avgConfidence(prevWeekWorkouts);
-
-  const adimDelta = formatDelta(thisWeekSteps, prevWeekSteps);
-  const guvenDelta = formatDelta(thisWeekAvgConfidence, prevWeekAvgConfidence);
-  const antrenmanDelta = formatDelta(thisWeekWorkouts.length, prevWeekWorkouts.length);
-
   const bmiCount = useCountUp(diet ? diet.bmi : 0, 900, 1);
   const kcalCount = useCountUp(diet ? diet.hedef_kalori : 0, 900);
   const stepsCount = useCountUp(todaySteps, 900);
-  const stepsKcalCount = useCountUp(todayCalories, 900);
-  const weekStepsCount = useCountUp(thisWeekSteps, 900);
-  const weekConfidenceCount = useCountUp(thisWeekAvgConfidence, 900);
-  const weekWorkoutsCount = useCountUp(thisWeekWorkouts.length, 900);
 
   if (loading) {
     return <p className="loading-text">Yükleniyor...</p>;
   }
 
   const profileComplete = profile && profile.boy && profile.kilo && profile.yas && profile.cinsiyet && profile.aktiflik_seviyesi && profile.hedef;
-  const lastWorkout = workouts.length > 0 ? workouts[0] : null;
 
-  const bugunTarih = now.toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const now = new Date();
+  const bugunTarih = now.toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).toUpperCase();
+
+  const bmiKategori = diet?.bmi_kategori ?? '';
+  const bmiPercent = diet ? Math.min(Math.max(((diet.bmi - 15) / (35 - 15)) * 100, 0), 100) : 0;
+
+  const kalanKalori = diet ? Math.max(diet.hedef_kalori - todayCalories, 0) : null;
+
+  const stepsGoal = 10000;
+  const stepsPercent = Math.min((todaySteps / stepsGoal) * 100, 100);
+  const stepsCircumference = 364.4;
+  const stepsOffset = stepsCircumference * (1 - stepsPercent / 100);
+
+  const waterGoalL = 3.0;
+  const waterL = todayWater / 1000;
+  const waterBars = 5;
+  const filledBars = Math.round((waterL / waterGoalL) * waterBars);
 
   return (
     <div>
       <Sidebar />
 
-      <div className="home-hero">
-        <div className="welcome-text">Merhaba, {profile?.ad ?? 'Sporcu'}</div>
-        <p className="home-hero-subtitle">{bugunTarih}</p>
+      <header style={{ marginBottom: '32px', display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: '16px' }}>
+        <div>
+          <h2 className="welcome-text" style={{ marginBottom: 0 }}>Merhaba, {profile?.ad ?? 'Sporcu'} 👋</h2>
+          <p className="home-hero-subtitle" style={{ marginTop: '8px', textTransform: 'none' }}>{bugunTarih}</p>
+        </div>
+        <div style={{ padding: '8px 16px', background: 'var(--surface-2)', borderRadius: '10px', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Flame size={16} color="#4CAF50" />
+          <span className="font-label-mono" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            {workouts.length} TOPLAM ANTRENMAN
+          </span>
+        </div>
+      </header>
 
-        {!profileComplete && (
-          <div className="info-banner" style={{ marginTop: '16px', marginBottom: 0 }}>
-            Profilinizi tamamlayarak diyet önerisi ve kalori hesaplamalarından yararlanabilirsiniz.
-            <button className="banner-btn" onClick={() => navigate('/profile')}>
-              Profilimi Tamamla <ArrowRight size={16} />
-            </button>
-          </div>
-        )}
-      </div>
+      {!profileComplete && (
+        <div className="info-banner" style={{ marginBottom: '24px' }}>
+          Profilinizi tamamlayarak diyet önerisi ve kalori hesaplamalarından yararlanabilirsiniz.
+          <button className="banner-btn" onClick={() => navigate('/profile')}>
+            Profilimi Tamamla <ArrowRight size={16} />
+          </button>
+        </div>
+      )}
 
-      <div className="dashboard-grid">
-        <div className="card status-card">
-          <div className="card-header">
-            <div className="card-icon"><Ruler size={18} /></div>
-            <div className="card-title">Vücut Kitle Endeksi</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+        <div className="card" style={{ gap: '12px' }}>
+          <span className="card-title">VKİ (BMI)</span>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+            <div className="card-value" style={{ fontSize: '2.2rem' }}>{diet ? bmiCount : '—'}</div>
+            {diet && (
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: bmiKategori === 'Normal' ? '#4CAF50' : 'var(--accent-2)' }}>
+                {(BMI_LABELS[bmiKategori] ?? bmiKategori).toUpperCase()}
+              </span>
+            )}
           </div>
-          <div className="card-value">{diet ? bmiCount : '—'}</div>
+          <div style={{ width: '100%', height: '4px', background: 'var(--surface-2)', borderRadius: '99px', overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${bmiPercent}%`, background: 'var(--accent)', borderRadius: '99px' }} />
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--text-muted)', opacity: 0.6, fontFamily: 'var(--font-mono)' }}>
+            <span>18.5</span>
+            <span>25.0</span>
+          </div>
+        </div>
+
+        <div className="card" style={{ gap: '8px' }}>
+          <span className="card-title">HEDEF KALORİ</span>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+            <div className="card-value" style={{ fontSize: '2.2rem' }}>{diet ? kcalCount : '—'}</div>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: 'var(--text-muted)' }}>KCAL</span>
+          </div>
           {diet && (
-            <span className={`bmi-badge ${diet.bmi_kategori.toLowerCase()}`}>
-              {BMI_LABELS[diet.bmi_kategori] ?? diet.bmi_kategori}
-            </span>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+              Bugün yakılan: <strong style={{ color: 'var(--text)' }}>{todayCalories} kcal</strong>
+            </p>
           )}
         </div>
 
-        <div className="card angle-card">
-          <div className="card-header">
-            <div className="card-icon"><Target size={18} /></div>
-            <div className="card-title">Hedef Günlük Kalori</div>
+        <div className="card" style={{ gap: '8px', gridRow: 'span 2', justifyContent: 'space-between' }}>
+          <span className="card-title">ADIMLAR</span>
+          <div className="card-value" style={{ fontSize: '2.2rem' }}>{stepsCount}</div>
+          <div style={{ position: 'relative', width: '128px', height: '128px', margin: '16px auto' }}>
+            <svg width="128" height="128" style={{ transform: 'rotate(-90deg)' }}>
+              <circle cx="64" cy="64" r="58" fill="transparent" stroke="var(--surface-2)" strokeWidth="8" />
+              <circle
+                cx="64" cy="64" r="58" fill="transparent"
+                stroke="var(--accent)" strokeWidth="8"
+                strokeDasharray={stepsCircumference}
+                strokeDashoffset={stepsOffset}
+                strokeLinecap="round"
+                style={{ transition: 'stroke-dashoffset 0.6s ease' }}
+              />
+            </svg>
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontSize: '0.95rem', fontWeight: 700 }}>%{Math.round(stepsPercent)}</span>
+              <span style={{ fontSize: '8px', fontFamily: 'var(--font-mono)', opacity: 0.5, textTransform: 'uppercase' }}>HEDEF</span>
+            </div>
           </div>
-          <div className="card-value">{diet ? `${kcalCount} kcal` : '—'}</div>
         </div>
 
-        <div className="card confidence-card">
-          <div className="card-header">
-            <div className="card-icon"><Footprints size={18} /></div>
-            <div className="card-title">Bugünkü Adım</div>
+        <div className="card" style={{ gap: '8px' }}>
+          <span className="card-title">SU TÜKETİMİ</span>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+            <div className="card-value" style={{ fontSize: '2.2rem' }}>{waterL.toFixed(1)}L</div>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: 'var(--text-muted)' }}>/ {waterGoalL.toFixed(1)}L</span>
           </div>
-          <div className="card-value">{stepsCount}</div>
-          <span className="card-subtext">{stepsKcalCount} kcal yakıldı</span>
-        </div>
-
-        <div className="card status-card">
-          <div className="card-header">
-            <div className="card-icon"><Activity size={18} /></div>
-            <div className="card-title">Son Antrenman</div>
+          <div style={{ display: 'flex', gap: '4px', marginTop: '12px' }}>
+            {Array.from({ length: waterBars }).map((_, i) => (
+              <div
+                key={i}
+                style={{ height: '32px', width: '100%', borderRadius: '2px', background: i < filledBars ? 'var(--accent-blue)' : 'var(--surface-2)' }}
+              />
+            ))}
           </div>
-          {lastWorkout ? (
-            <>
-              <div className="card-value" style={{ fontSize: '1.3rem' }}>{lastWorkout.antrenor_notu}</div>
-              <span className="card-subtext">{new Date(lastWorkout.tarih).toLocaleDateString('tr-TR')}</span>
-            </>
-          ) : (
-            <div className="card-value" style={{ fontSize: '1rem', color: 'var(--text-muted)' }}>Henüz antrenman yok</div>
-          )}
         </div>
       </div>
 
-      <div className="section-title">Haftalık Özet</div>
-
-      <div className="dashboard-grid">
-        <div className="card">
-          <div className="card-title">Toplam Adım (Bu Hafta)</div>
-          <div className="card-value">{weekStepsCount}</div>
-          <span className={`comparison-delta ${adimDelta.trend}`}>
-            <TrendIcon trend={adimDelta.trend} /> {adimDelta.text} (geçen hafta: {prevWeekSteps})
+      <div
+        style={{
+          marginTop: '24px', padding: '32px', borderRadius: '16px', position: 'relative', overflow: 'hidden',
+          background: 'linear-gradient(135deg, var(--accent) 0%, #5a0d12 100%)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', textAlign: 'center',
+        }}
+      >
+        <div style={{ fontSize: '3rem' }}>🔥</div>
+        <div>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: '0.2em', display: 'block', marginBottom: '8px' }}>
+            MOTİVASYON
           </span>
-        </div>
-
-        <div className="card">
-          <div className="card-title">Ortalama Güven Skoru</div>
-          <div className="card-value">%{weekConfidenceCount}</div>
-          <span className={`comparison-delta ${guvenDelta.trend}`}>
-            <TrendIcon trend={guvenDelta.trend} /> {guvenDelta.text} (geçen hafta: %{prevWeekAvgConfidence})
-          </span>
-        </div>
-
-        <div className="card">
-          <div className="card-title">Antrenman Sayısı</div>
-          <div className="card-value">{weekWorkoutsCount}</div>
-          <span className={`comparison-delta ${antrenmanDelta.trend}`}>
-            <TrendIcon trend={antrenmanDelta.trend} /> {antrenmanDelta.text} (geçen hafta: {prevWeekWorkouts.length})
-          </span>
+          <h4 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', color: '#fff', fontWeight: 800, fontStyle: 'italic', lineHeight: 1.3 }}>
+            {workouts.length === 0
+              ? '"Her büyük yolculuk ilk adımla başlar."'
+              : workouts.length < 10
+              ? '"Tutarlılık, motivasyondan daha güçlüdür."'
+              : '"Sınırlarını zorla, potansiyelini keşfet."'}
+          </h4>
         </div>
       </div>
 
-      <div className="section-title">Hızlı Erişim</div>
-
-      <div className="quick-actions">
-        <button className="quick-action-btn" onClick={() => navigate('/dashboard')}>
-          <Activity size={20} />
-          Kamera ile Antrenman
-        </button>
-        <button className="quick-action-btn" onClick={() => navigate('/diet')}>
-          <Target size={20} />
-          Diyet Önerisi Al
-        </button>
-        <button className="quick-action-btn" onClick={() => navigate('/steps')}>
-          <Footprints size={20} />
-          Adım Ekle
-        </button>
-        <button className="quick-action-btn" onClick={() => navigate('/timer')}>
-          <Flame size={20} />
-          Antrenmana Başla
-        </button>
+      <div style={{ marginTop: '48px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', fontWeight: 700 }}>Hızlı Erişim</h3>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>TÜMÜ</span>
+        </div>
+        <div style={{ display: 'flex', overflowX: 'auto', gap: '16px', paddingBottom: '8px' }}>
+          {QUICK_ACCESS.map(({ path, icon: Icon, label }) => (
+            <div
+              key={path}
+              className="quick-action-btn"
+              style={{ minWidth: '180px', height: '128px', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'space-between', flexShrink: 0 }}
+              onClick={() => navigate(path)}
+            >
+              <Icon size={22} color="var(--accent)" />
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '-0.02em' }}>{label}</span>
+                <ChevronRight size={16} />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
