@@ -354,7 +354,7 @@ class _VideoAnalizSekmeState extends State<_VideoAnalizSekme> {
           final kareYolu = await VideoThumbnail.thumbnailFile(
             video: _video!.path,
             thumbnailPath: geciciKlasor.path,
-            imageFormat: ImageFormat.JPEG,
+            imageFormat: ImageFormat.jpeg,
             timeMs: zamanMs,
             quality: 80,
           );

@@ -115,7 +115,7 @@ class _BeslenmeEkraniState extends State<BeslenmeEkrani> {
           final secili = gun.year == _seciliTarih.year && gun.month == _seciliTarih.month && gun.day == _seciliTarih.day;
           final bugunMu = gun.year == bugun.year && gun.month == bugun.month && gun.day == bugun.day;
           return GestureDetector(
-            onTap: () { setState(() { _seciliTarih = gun; }); _yukle(); },
+            onTap: () { setState(() { _seciliTarih = gun; _aramaMetni = ''; }); _yukle(); },
             child: Container(
               width: 52,
               margin: const EdgeInsets.only(right: 8),
@@ -161,6 +161,7 @@ class _BeslenmeEkraniState extends State<BeslenmeEkrani> {
         ]),
         const SizedBox(height: 16),
         TextField(
+          key: ValueKey(_seciliTarih.toString()),
           onChanged: (v) => setState(() { _aramaMetni = v; }),
           style: kBody(context, color: kText(context)),
           decoration: InputDecoration(

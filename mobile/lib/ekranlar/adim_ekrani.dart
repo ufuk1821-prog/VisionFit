@@ -320,7 +320,7 @@ class _AdimEkraniState extends State<AdimEkrani> {
 
   Widget _tarihPaneli(BuildContext context) {
     return Container(
-      width: 72,
+      width: 76,
       decoration: BoxDecoration(color: kSurfaceLow(context), border: Border(right: BorderSide(color: kBorder(context)))),
       child: ListView(
         children: _mevcutGunler.map((tarih) {
@@ -329,11 +329,14 @@ class _AdimEkraniState extends State<AdimEkrani> {
           return GestureDetector(
             onTap: () => setState(() { _seciliTarih = tarih; }),
             child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
               decoration: BoxDecoration(color: secili ? kRed.withOpacity(0.12) : Colors.transparent, border: Border(left: BorderSide(color: secili ? kRed : Colors.transparent, width: 3))),
-              child: Column(children: [
-                Text(t != null ? _ayKisa(t.month) : '', style: kLabel(context, size: 9, color: secili ? kRed : kHint(context))),
-                Text(t != null ? '${t.day}' : '', style: kHeadline(context, size: 18, weight: FontWeight.w800, color: secili ? kRed : kText(context))),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Text(t != null ? _ayKisa(t.month) : '', style: kLabel(context, size: 9, color: secili ? kRed : kHint(context)), maxLines: 1),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(t != null ? '${t.day}' : '', style: kHeadline(context, size: 18, weight: FontWeight.w800, color: secili ? kRed : kText(context))),
+                ),
                 if (_gunKayitlari(tarih).isNotEmpty) Container(width: 5, height: 5, margin: const EdgeInsets.only(top: 3), decoration: const BoxDecoration(color: kRed, shape: BoxShape.circle)),
               ]),
             ),

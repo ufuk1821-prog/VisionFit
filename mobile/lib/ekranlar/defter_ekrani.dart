@@ -17,6 +17,7 @@ class _DefterEkraniState extends State<DefterEkrani> {
   String _aiAnaliz = '';
   bool _aiYukleniyor = false;
   bool _tarihlerAcik = false;
+  int _yuklemeSayaci = 0;
 
   static Map<String, dynamic> _bosKayit() => {'hareket': '', 'set_sayisi': '', 'tekrar_sayisi': '', 'agirlik': ''};
 
@@ -33,6 +34,7 @@ class _DefterEkraniState extends State<DefterEkrani> {
   }
 
   Future<void> _yukle() async {
+    setState(() { _satirlar = [_bosKayit()]; });
     try {
       final veri = await ApiServisi.getJson('/api/workout-notes/$_tarihStr');
       if (veri is List && veri.isNotEmpty) {
@@ -41,12 +43,12 @@ class _DefterEkraniState extends State<DefterEkrani> {
             'hareket': r['hareket'] ?? '', 'set_sayisi': '${r['set_sayisi'] ?? ''}',
             'tekrar_sayisi': '${r['tekrar_sayisi'] ?? ''}', 'agirlik': '${r['agirlik'] ?? ''}',
           }).toList();
-          _kaydedildiMesaj = ''; _aiAnaliz = '';
+          _kaydedildiMesaj = ''; _aiAnaliz = ''; _yuklemeSayaci++;
         });
       } else {
-        setState(() { _satirlar = [_bosKayit()]; _kaydedildiMesaj = ''; _aiAnaliz = ''; });
+        setState(() { _satirlar = [_bosKayit()]; _kaydedildiMesaj = ''; _aiAnaliz = ''; _yuklemeSayaci++; });
       }
-    } catch (_) { setState(() { _satirlar = [_bosKayit()]; }); }
+    } catch (_) { setState(() { _satirlar = [_bosKayit()]; _yuklemeSayaci++; }); }
   }
 
   Future<void> _kaydet() async {
@@ -238,7 +240,7 @@ class _DefterEkraniState extends State<DefterEkrani> {
 
   Widget _tablo(BuildContext context) {
     return Container(
-      key: ValueKey(_tarihStr),
+      key: ValueKey('$_tarihStr-$_yuklemeSayaci'),
       decoration: BoxDecoration(color: kSurfaceLow(context), borderRadius: BorderRadius.circular(12), border: Border.all(color: kBorderAlt(context))),
       child: Column(children: [
         Container(
@@ -280,7 +282,7 @@ class _DefterEkraniState extends State<DefterEkrani> {
 
   Widget _input(BuildContext context, int satirIndex, String alan, String hint, {bool sayi = false}) {
     return TextFormField(
-      key: ValueKey('$_tarihStr$satirIndex$alan'),
+      key: ValueKey('$_tarihStr-$_yuklemeSayaci-$satirIndex-$alan'),
       initialValue: _satirlar[satirIndex][alan] ?? '',
       keyboardType: sayi ? TextInputType.number : TextInputType.text,
       style: kBody(context, size: 12, color: kText(context)),

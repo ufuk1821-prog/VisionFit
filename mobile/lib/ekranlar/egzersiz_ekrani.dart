@@ -346,6 +346,27 @@ setSelected('');
             Text('Seçili: ${kasGruplari[_seciliGrup] ?? _seciliGrup}', style: kBody(context, size: 14, weight: FontWeight.w600, color: kRed)),
           ]),
         ),
+        if (_seciliGrup == 'ust_gogus' || _seciliGrup == 'alt_gogus') ...[
+          const SizedBox(height: 10),
+          Row(children: [
+            Expanded(child: GestureDetector(
+              onTap: () => setState(() { _seciliGrup = 'ust_gogus'; }),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 9),
+                decoration: BoxDecoration(color: _seciliGrup == 'ust_gogus' ? kRed : kSurfaceLow(context), borderRadius: const BorderRadius.horizontal(left: Radius.circular(8)), border: Border.all(color: kRed)),
+                child: Text('ÜST GÖĞÜS', textAlign: TextAlign.center, style: kLabel(context, size: 10, color: _seciliGrup == 'ust_gogus' ? Colors.white : kRed)),
+              ),
+            )),
+            Expanded(child: GestureDetector(
+              onTap: () => setState(() { _seciliGrup = 'alt_gogus'; }),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 9),
+                decoration: BoxDecoration(color: _seciliGrup == 'alt_gogus' ? kRed : kSurfaceLow(context), borderRadius: const BorderRadius.horizontal(right: Radius.circular(8)), border: Border.all(color: kRed)),
+                child: Text('ALT GÖĞÜS', textAlign: TextAlign.center, style: kLabel(context, size: 10, color: _seciliGrup == 'alt_gogus' ? Colors.white : kRed)),
+              ),
+            )),
+          ]),
+        ],
         const SizedBox(height: 16),
         Row(children: [
           Text('${kasGruplari[_seciliGrup]} HAREKETLERİ', style: kLabel(context)),
