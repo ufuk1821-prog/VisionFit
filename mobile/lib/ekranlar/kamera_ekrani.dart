@@ -1,11 +1,12 @@
+import 'dart:io';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:camera/camera.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:video_thumbnail/video_thumbnail.dart' as vt;
 import 'package:video_player/video_player.dart';
 import 'package:path_provider/path_provider.dart';
-import 'dart:io';
 import '../tema.dart';
 import '../servisler/api_servisi.dart';
 
@@ -313,67 +314,80 @@ class _VideoAnalizSekme extends StatefulWidget {
 
 class _VideoAnalizSekmeState extends State<_VideoAnalizSekme> {
   File? _video;
+  VideoPlayerController? _playerController;
   bool _yukleniyor = false;
   Map<String, dynamic>? _sonuc;
   String _hata = '';
   int _ilerleme = 0;
   int _toplamKare = 0;
   final _poseDetector = PoseDetector(options: PoseDetectorOptions(mode: PoseDetectionMode.single));
+  final GlobalKey _repaintKey = GlobalKey();
 
   Future<void> _videoSec() async {
     final picker = ImagePicker();
     final secilen = await picker.pickVideo(source: ImageSource.gallery);
     if (secilen == null) return;
-    setState(() { _video = File(secilen.path); _sonuc = null; _hata = ''; });
+    await _playerController?.dispose();
+    setState(() { _video = File(secilen.path); _sonuc = null; _hata = ''; _playerController = null; });
   }
 
   Future<void> _analizEt() async {
     if (_video == null) return;
     setState(() { _yukleniyor = true; _hata = ''; _ilerleme = 0; _toplamKare = 0; });
     try {
-      setState(() { _hata = 'Video süresi hesaplanıyor...'; });
+      setState(() { _hata = 'Video hazırlanıyor...'; });
       final controller = VideoPlayerController.file(_video!);
       await controller.initialize();
-      final sureMs = controller.value.duration.inMilliseconds;
-      await controller.dispose();
+      setState(() { _playerController = controller; });
 
+      final sureMs = controller.value.duration.inMilliseconds;
       if (sureMs <= 0) {
         setState(() { _hata = 'Video okunamadı. Lütfen farklı bir video deneyin.'; _yukleniyor = false; });
         return;
       }
 
-      final geciciKlasor = await getTemporaryDirectory();
-      const toplamKareSayisi = 20;
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      const toplamKareSayisi = 16;
       final kareler = <List<double>>[];
+      final geciciKlasor = await getTemporaryDirectory();
 
       setState(() { _hata = 'Videodaki kareler işleniyor...'; });
 
       for (int i = 0; i < toplamKareSayisi; i++) {
-        final zamanMs = ((sureMs - 200) * i / (toplamKareSayisi - 1)).round().clamp(0, sureMs);
+        final zamanMs = ((sureMs - 300) * i / (toplamKareSayisi - 1)).round().clamp(0, sureMs);
         try {
-          final kareYolu = await vt.VideoThumbnail.thumbnailFile(
-            video: _video!.path,
-            thumbnailPath: geciciKlasor.path,
-            imageFormat: vt.ImageFormat.JPEG,
-            timeMs: zamanMs,
-            quality: 80,
-          );
-          if (kareYolu != null) {
-            final poses = await _poseDetector.processImage(InputImage.fromFilePath(kareYolu));
-            if (poses.isNotEmpty) {
-              final pose = poses.first;
-              final lms = <double>[];
-              for (int j = 0; j < 33; j++) {
-                final lm = pose.landmarks[PoseLandmarkType.values[j]];
-                lms.addAll(lm != null ? [lm.x, lm.y, lm.z, lm.likelihood] : [0.0, 0.0, 0.0, 0.0]);
+          await controller.seekTo(Duration(milliseconds: zamanMs));
+          await Future.delayed(const Duration(milliseconds: 200));
+
+          final boundary = _repaintKey.currentContext?.findRenderObject();
+          if (boundary is RenderRepaintBoundary) {
+            final image = await boundary.toImage(pixelRatio: 1.0);
+            final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+            if (byteData != null) {
+              final dosyaYolu = '${geciciKlasor.path}/vf_kare_$i.png';
+              final dosya = File(dosyaYolu);
+              await dosya.writeAsBytes(byteData.buffer.asUint8List());
+
+              final poses = await _poseDetector.processImage(InputImage.fromFilePath(dosyaYolu));
+              if (poses.isNotEmpty) {
+                final pose = poses.first;
+                final lms = <double>[];
+                for (int j = 0; j < 33; j++) {
+                  final lm = pose.landmarks[PoseLandmarkType.values[j]];
+                  lms.addAll(lm != null ? [lm.x, lm.y, lm.z, lm.likelihood] : [0.0, 0.0, 0.0, 0.0]);
+                }
+                kareler.add(lms);
               }
-              kareler.add(lms);
+              try { dosya.deleteSync(); } catch (_) {}
             }
-            try { File(kareYolu).deleteSync(); } catch (_) {}
           }
         } catch (_) {}
         setState(() { _ilerleme = ((i + 1) / toplamKareSayisi * 100).round(); _toplamKare = i + 1; });
       }
+
+      await controller.dispose();
+      setState(() { _playerController = null; });
 
       if (kareler.isEmpty) {
         setState(() { _hata = 'Videoda vücut tespit edilemedi. Yandan çekilmiş, tüm vücudun göründüğü net bir video yükleyin.'; _yukleniyor = false; });
@@ -389,7 +403,11 @@ class _VideoAnalizSekmeState extends State<_VideoAnalizSekme> {
   }
 
   @override
-  void dispose() { _poseDetector.close(); super.dispose(); }
+  void dispose() {
+    _poseDetector.close();
+    _playerController?.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -412,13 +430,21 @@ class _VideoAnalizSekmeState extends State<_VideoAnalizSekme> {
             width: double.infinity, height: 180,
             decoration: BoxDecoration(color: kSurfaceLow(context), borderRadius: BorderRadius.circular(14), border: Border.all(color: _video != null ? kRed.withOpacity(0.5) : kBorder(context), width: 2)),
             child: _video != null
-                ? Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    const Icon(Icons.videocam_outlined, color: kRed, size: 48),
-                    const SizedBox(height: 12),
-                    Text(_video!.path.split('/').last, style: kBody(context, size: 13, color: kText(context)), overflow: TextOverflow.ellipsis),
-                    const SizedBox(height: 4),
-                    Text('Değiştirmek için tekrar tıkla', style: kLabel(context, size: 10)),
-                  ])
+                ? (_playerController != null && _playerController!.value.isInitialized
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: RepaintBoundary(
+                          key: _repaintKey,
+                          child: AspectRatio(aspectRatio: _playerController!.value.aspectRatio, child: VideoPlayer(_playerController!)),
+                        ),
+                      )
+                    : Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                        const Icon(Icons.videocam_outlined, color: kRed, size: 48),
+                        const SizedBox(height: 12),
+                        Text(_video!.path.split('/').last, style: kBody(context, size: 13, color: kText(context)), overflow: TextOverflow.ellipsis),
+                        const SizedBox(height: 4),
+                        Text('Değiştirmek için tekrar tıkla', style: kLabel(context, size: 10)),
+                      ]))
                 : Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                     Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: kSurfaceContainer(context), shape: BoxShape.circle), child: Icon(Icons.video_file_outlined, color: kHint(context), size: 36)),
                     const SizedBox(height: 12),

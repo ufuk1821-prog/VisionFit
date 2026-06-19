@@ -1,7 +1,7 @@
 from datetime import date as date_type
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from sqlalchemy import distinct
+from sqlalchemy import distinct, func
 from typing import List
 from app.core.database import get_db
 from app.core.security import get_current_user
@@ -10,7 +10,6 @@ from app.models.workout_note import WorkoutNote
 from app.models.workout_session_note import WorkoutSessionNote
 from app.schemas.workout_note import WorkoutNoteItem, WorkoutNoteRead
 from app.schemas.workout_session_note import WorkoutSessionNoteCreate, WorkoutSessionNoteRead
-from sqlalchemy import func
 
 router = APIRouter(prefix="/api/workout-notes", tags=["Antrenman Defteri"])
 
@@ -27,6 +26,65 @@ def get_dates(
         .all()
     )
     return [r[0].isoformat() for r in rows]
+
+
+@router.get("/pr-listesi")
+def get_pr_listesi(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    sonuclar = (
+        db.query(WorkoutNote.hareket, func.max(WorkoutNote.agirlik).label("en_yuksek_agirlik"))
+        .filter(WorkoutNote.user_id == current_user.id, WorkoutNote.agirlik.isnot(None))
+        .group_by(WorkoutNote.hareket)
+        .order_by(func.max(WorkoutNote.agirlik).desc())
+        .all()
+    )
+    return [{"hareket": r[0], "en_yuksek_agirlik": r[1]} for r in sonuclar]
+
+
+@router.get("/session/{tarih}", response_model=WorkoutSessionNoteRead)
+def get_session_note(
+    tarih: date_type,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    kayit = db.query(WorkoutSessionNote).filter(
+        WorkoutSessionNote.user_id == current_user.id,
+        WorkoutSessionNote.tarih == tarih
+    ).first()
+    if not kayit:
+        return WorkoutSessionNoteRead(id=0, tarih=tarih, oncelikli_odak=None, rpe=None, uyku_kalitesi=None)
+    return kayit
+
+
+@router.put("/session/{tarih}", response_model=WorkoutSessionNoteRead)
+def save_session_note(
+    tarih: date_type,
+    veri: WorkoutSessionNoteCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    kayit = db.query(WorkoutSessionNote).filter(
+        WorkoutSessionNote.user_id == current_user.id,
+        WorkoutSessionNote.tarih == tarih
+    ).first()
+    if kayit:
+        kayit.oncelikli_odak = veri.oncelikli_odak
+        kayit.rpe = veri.rpe
+        kayit.uyku_kalitesi = veri.uyku_kalitesi
+    else:
+        kayit = WorkoutSessionNote(
+            user_id=current_user.id,
+            tarih=tarih,
+            oncelikli_odak=veri.oncelikli_odak,
+            rpe=veri.rpe,
+            uyku_kalitesi=veri.uyku_kalitesi,
+        )
+        db.add(kayit)
+    db.commit()
+    db.refresh(kayit)
+    return kayit
 
 
 @router.get("/{tarih}", response_model=List[WorkoutNoteRead])
@@ -75,60 +133,3 @@ def save_notes_for_date(
         db.refresh(kayit)
 
     return kayitlar
-@router.get("/session/{tarih}", response_model=WorkoutSessionNoteRead)
-def get_session_note(
-    tarih: date_type,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    kayit = db.query(WorkoutSessionNote).filter(
-        WorkoutSessionNote.user_id == current_user.id,
-        WorkoutSessionNote.tarih == tarih
-    ).first()
-    if not kayit:
-        return WorkoutSessionNoteRead(id=0, tarih=tarih, oncelikli_odak=None, rpe=None, uyku_kalitesi=None)
-    return kayit
-
-
-@router.put("/session/{tarih}", response_model=WorkoutSessionNoteRead)
-def save_session_note(
-    tarih: date_type,
-    veri: WorkoutSessionNoteCreate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    kayit = db.query(WorkoutSessionNote).filter(
-        WorkoutSessionNote.user_id == current_user.id,
-        WorkoutSessionNote.tarih == tarih
-    ).first()
-    if kayit:
-        kayit.oncelikli_odak = veri.oncelikli_odak
-        kayit.rpe = veri.rpe
-        kayit.uyku_kalitesi = veri.uyku_kalitesi
-    else:
-        kayit = WorkoutSessionNote(
-            user_id=current_user.id,
-            tarih=tarih,
-            oncelikli_odak=veri.oncelikli_odak,
-            rpe=veri.rpe,
-            uyku_kalitesi=veri.uyku_kalitesi,
-        )
-        db.add(kayit)
-    db.commit()
-    db.refresh(kayit)
-    return kayit
-
-
-@router.get("/pr-listesi")
-def get_pr_listesi(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    sonuclar = (
-        db.query(WorkoutNote.hareket, func.max(WorkoutNote.agirlik).label("en_yuksek_agirlik"))
-        .filter(WorkoutNote.user_id == current_user.id, WorkoutNote.agirlik.isnot(None))
-        .group_by(WorkoutNote.hareket)
-        .order_by(func.max(WorkoutNote.agirlik).desc())
-        .all()
-    )
-    return [{"hareket": r[0], "en_yuksek_agirlik": r[1]} for r in sonuclar]
