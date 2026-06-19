@@ -2506,3 +2506,168 @@ textarea,
     gap: 8px;
   }
 }
+
+.card-title,
+.section-title,
+.bmi-card-title,
+.exercise-tag,
+.history-date,
+.meal-group-title,
+.notebook-table th,
+.history-table th,
+.card-subtext,
+.exercise-muscle,
+.empty-state-title,
+.rest-tip-label,
+.sidebar-profile-sub {
+  font-family: var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
+.card-title,
+.bmi-card-title,
+.exercise-tag,
+.notebook-table th,
+.history-table th,
+.rest-tip-label {
+  text-transform: uppercase;
+}
+
+.card {
+  border-left: 3px solid transparent;
+  background: var(--surface-2);
+}
+
+.status-card {
+  border-left: 3px solid var(--accent);
+  border-top: none;
+}
+
+.angle-card {
+  border-left: 3px solid var(--accent-blue);
+  border-top: none;
+}
+
+.confidence-card {
+  border-left: 3px solid var(--accent-2);
+  border-top: none;
+}
+
+.bmi-card {
+  border-left: 3px solid var(--accent);
+  border-top: none;
+  background: var(--surface-2);
+}
+
+.plan-card,
+.exercise-card,
+.timer-card,
+.notebook-table-wrapper,
+.history-card,
+.badge-card,
+.water-progress-card,
+.chart-card,
+.daily-total-card,
+.auth-box,
+.empty-state {
+  background: var(--surface-2);
+  border-color: var(--border);
+}
+
+.plan-card h3,
+.exercise-title,
+.welcome-text,
+.home-hero .welcome-text,
+.auth-side-panel h2,
+.food-modal-name {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+h1, h2 {
+  font-family: var(--font-display);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+}
+
+.submit-btn,
+.quick-action-btn,
+.banner-btn,
+.danger-btn,
+.notebook-save-btn,
+.tab-btn,
+.timer-btn {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.85rem;
+}
+
+.exercise-row,
+.history-card,
+.meal-item {
+  border-left: 3px solid transparent;
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.exercise-row:hover,
+.history-card:hover,
+.meal-item:hover {
+  border-left-color: var(--accent);
+}
+
+.badge-card {
+  border-left: 3px solid var(--accent);
+}
+
+.badge-card.locked {
+  border-left-color: var(--border);
+}
+
+.timer-display,
+.timer-ring-display,
+.history-score,
+.bmi-value {
+  font-family: var(--font-mono);
+}
+
+.auth-side-panel {
+  background: linear-gradient(160deg, var(--accent) 0%, #5a0d12 100%);
+}
+
+.auth-side-panel h2,
+.auth-feature-item {
+  font-family: var(--font-display);
+}
+
+.menu-btn {
+  background: var(--surface-2);
+  border-color: var(--border-outline);
+}
+
+.tab-btn.active {
+  border-left: 3px solid var(--accent);
+}
+
+input,
+select,
+textarea {
+  font-family: var(--font-body) !important;
+}
+
+.notebook-table input,
+.food-modal-row input,
+.timer-custom-row input {
+  font-family: var(--font-mono) !important;
+}
+
+.exercise-rank {
+  font-family: var(--font-display);
+  font-weight: 900;
+}
+
+.water-progress-fill {
+  background: var(--accent);
+}
