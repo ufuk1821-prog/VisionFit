@@ -54,7 +54,11 @@ class _FotografEkraniState extends State<FotografEkrani> {
         return;
       }
       final pose = poses.first;
-      final landmarks = pose.landmarks.values.map((lm) => [lm.x, lm.y, lm.z, lm.likelihood]).toList();
+      final landmarks = <double>[];
+      for (int i = 0; i < 33; i++) {
+        final lm = pose.landmarks[PoseLandmarkType.values[i]];
+        landmarks.addAll(lm != null ? [lm.x, lm.y, lm.z, lm.likelihood] : [0.0, 0.0, 0.0, 0.0]);
+      }
       final yanit = await ApiServisi.postJson('/api/analyze/${_hareket['endpoint']}', {'landmarks': landmarks});
       setState(() { _sonuc = Map<String, dynamic>.from(yanit); });
       if (_sonuc != null && _sonuc!['antrenor_notu'] != null) {

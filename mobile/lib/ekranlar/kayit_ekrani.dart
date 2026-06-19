@@ -14,8 +14,10 @@ class _KayitEkraniState extends State<KayitEkrani> {
   final _soyadCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _sifreCtrl = TextEditingController();
+  final _sifreTekrarCtrl = TextEditingController();
   bool _yukleniyor = false;
   bool _sifreGizli = true;
+  bool _sifreTekrarGizli = true;
   String _hata = '';
   String _basari = '';
 
@@ -25,12 +27,20 @@ class _KayitEkraniState extends State<KayitEkrani> {
 
   Future<void> _kayitOl() async {
     if (_adCtrl.text.isEmpty || _soyadCtrl.text.isEmpty ||
-        _emailCtrl.text.isEmpty || _sifreCtrl.text.isEmpty) {
+        _emailCtrl.text.isEmpty || _sifreCtrl.text.isEmpty || _sifreTekrarCtrl.text.isEmpty) {
       setState(() { _hata = 'Tüm alanları doldurun.'; });
+      return;
+    }
+    if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(_emailCtrl.text.trim())) {
+      setState(() { _hata = 'Geçerli bir email adresi girin.'; });
       return;
     }
     if (!_uzunlukOk || !_buyukHarfOk || !_ozelKarakterOk) {
       setState(() { _hata = 'Şifre koşullarını sağlamıyor.'; });
+      return;
+    }
+    if (_sifreCtrl.text != _sifreTekrarCtrl.text) {
+      setState(() { _hata = 'Şifreler eşleşmiyor.'; });
       return;
     }
     setState(() { _yukleniyor = true; _hata = ''; _basari = ''; });
@@ -42,13 +52,27 @@ class _KayitEkraniState extends State<KayitEkrani> {
       if (yanit['mesaj'] != null || yanit['email'] != null) {
         setState(() { _basari = 'Kayıt başarılı! Email adresinize doğrulama linki gönderildi.'; });
       } else {
-        setState(() { _hata = yanit['detail'] ?? 'Kayıt başarısız.'; });
+        setState(() { _hata = _hataMetniCikar(yanit['detail']); });
       }
     } catch (e) {
-      setState(() { _hata = 'Bir hata oluştu: $e'; });
+      setState(() { _hata = 'Bağlantı hatası, tekrar deneyin.'; });
     } finally {
       setState(() { _yukleniyor = false; });
     }
+  }
+
+  String _hataMetniCikar(dynamic detail) {
+    if (detail == null) return 'Kayıt başarısız.';
+    if (detail is String) return detail;
+    if (detail is List && detail.isNotEmpty) {
+      final ilk = detail.first;
+      if (ilk is Map && ilk['msg'] != null) {
+        final msg = ilk['msg'].toString();
+        if (msg.toLowerCase().contains('email')) return 'Geçerli bir email adresi girin.';
+        return msg;
+      }
+    }
+    return 'Kayıt başarısız.';
   }
 
   @override
@@ -154,6 +178,28 @@ class _KayitEkraniState extends State<KayitEkrani> {
                             ),
                           ),
                         ),
+                        const SizedBox(height: 20),
+                        Text('ŞİFRE TEKRAR', style: kLabel(context)),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: _sifreTekrarCtrl,
+                          obscureText: _sifreTekrarGizli,
+                          style: kBody(context, color: kText(context)),
+                          onChanged: (_) => setState(() {}),
+                          decoration: kInputDeko(context, '••••••••', Icons.lock_outline).copyWith(
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _sifreTekrarGizli ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                                color: kHint(context), size: 20,
+                              ),
+                              onPressed: () => setState(() { _sifreTekrarGizli = !_sifreTekrarGizli; }),
+                            ),
+                          ),
+                        ),
+                        if (_sifreTekrarCtrl.text.isNotEmpty && _sifreCtrl.text != _sifreTekrarCtrl.text) ...[
+                          const SizedBox(height: 6),
+                          Text('Şifreler eşleşmiyor.', style: kBody(context, size: 12, color: kRed)),
+                        ],
                         const SizedBox(height: 16),
                         Container(
                           padding: const EdgeInsets.all(12),

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
+import 'package:video_player/video_player.dart';
+import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import '../tema.dart';
 import '../servisler/api_servisi.dart';
@@ -328,25 +331,55 @@ class _VideoAnalizSekmeState extends State<_VideoAnalizSekme> {
     if (_video == null) return;
     setState(() { _yukleniyor = true; _hata = ''; _ilerleme = 0; _toplamKare = 0; });
     try {
+      setState(() { _hata = 'Video süresi hesaplanıyor...'; });
+      final controller = VideoPlayerController.file(_video!);
+      await controller.initialize();
+      final sureMs = controller.value.duration.inMilliseconds;
+      await controller.dispose();
+
+      if (sureMs <= 0) {
+        setState(() { _hata = 'Video okunamadı. Lütfen farklı bir video deneyin.'; _yukleniyor = false; });
+        return;
+      }
+
+      final geciciKlasor = await getTemporaryDirectory();
+      const toplamKareSayisi = 20;
       final kareler = <List<double>>[];
+
       setState(() { _hata = 'Videodaki kareler işleniyor...'; });
-      for (int i = 0; i < 20; i++) {
+
+      for (int i = 0; i < toplamKareSayisi; i++) {
+        final zamanMs = ((sureMs - 200) * i / (toplamKareSayisi - 1)).round().clamp(0, sureMs);
         try {
-          final poses = await _poseDetector.processImage(InputImage.fromFilePath(_video!.path));
-          if (poses.isNotEmpty) {
-            final pose = poses.first;
-            final lms = <double>[];
-            for (int j = 0; j < 33; j++) {
-              final lm = pose.landmarks[PoseLandmarkType.values[j]];
-              lms.addAll(lm != null ? [lm.x, lm.y, lm.z, lm.likelihood] : [0.0, 0.0, 0.0, 0.0]);
+          final kareYolu = await VideoThumbnail.thumbnailFile(
+            video: _video!.path,
+            thumbnailPath: geciciKlasor.path,
+            imageFormat: ImageFormat.JPEG,
+            timeMs: zamanMs,
+            quality: 80,
+          );
+          if (kareYolu != null) {
+            final poses = await _poseDetector.processImage(InputImage.fromFilePath(kareYolu));
+            if (poses.isNotEmpty) {
+              final pose = poses.first;
+              final lms = <double>[];
+              for (int j = 0; j < 33; j++) {
+                final lm = pose.landmarks[PoseLandmarkType.values[j]];
+                lms.addAll(lm != null ? [lm.x, lm.y, lm.z, lm.likelihood] : [0.0, 0.0, 0.0, 0.0]);
+              }
+              kareler.add(lms);
             }
-            kareler.add(lms);
+            try { File(kareYolu).deleteSync(); } catch (_) {}
           }
         } catch (_) {}
-        setState(() { _ilerleme = ((i + 1) / 20 * 100).round(); _toplamKare = i + 1; });
-        await Future.delayed(const Duration(milliseconds: 100));
+        setState(() { _ilerleme = ((i + 1) / toplamKareSayisi * 100).round(); _toplamKare = i + 1; });
       }
-      if (kareler.isEmpty) { setState(() { _hata = 'Videoda squat pozisyonu tespit edilemedi. Lütfen yandan çekilmiş net bir video yükleyin.'; _yukleniyor = false; }); return; }
+
+      if (kareler.isEmpty) {
+        setState(() { _hata = 'Videoda vücut tespit edilemedi. Yandan çekilmiş, tüm vücudun göründüğü net bir video yükleyin.'; _yukleniyor = false; });
+        return;
+      }
+
       setState(() { _hata = 'Backend\'e gönderiliyor...'; });
       final yanit = await ApiServisi.postJson('/api/analyze/session', {'frames': kareler});
       setState(() { _sonuc = Map<String, dynamic>.from(yanit); _yukleniyor = false; _hata = ''; });
