@@ -150,19 +150,45 @@ function Home() {
               <h3 className="font-stat-lg text-stat-lg">{stepsCount.toLocaleString('tr-TR')}</h3>
             </div>
             <div className="relative w-44 h-44 mx-auto my-6">
-              <svg viewBox="0 0 128 128" className="w-full h-full transform -rotate-90">
-                <circle className="text-surface-container-high" cx="64" cy="64" fill="transparent" r="58" stroke="currentColor" strokeWidth="8"></circle>
-                <circle
-                  className="text-primary-container" cx="64" cy="64" fill="transparent" r="58" stroke="currentColor"
-                  strokeDasharray={stepsCircumference} strokeDashoffset={stepsOffset} strokeLinecap="round" strokeWidth="8"
-                  style={{ transition: 'stroke-dashoffset 0.6s ease' }}
-                ></circle>
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-sm font-bold">%{Math.round(stepsPercent)}</span>
-                <span className="text-[8px] font-label-mono opacity-50 uppercase">HEDEF</span>
-              </div>
-            </div>
+  <svg
+    viewBox="0 0 128 128"
+    className="w-full h-full transform -rotate-90"
+  >
+    <circle
+      className="text-surface-container-high"
+      cx="64"
+      cy="64"
+      fill="transparent"
+      r="58"
+      stroke="currentColor"
+      strokeWidth="8"
+    />
+
+    <circle
+      className="text-primary-container"
+      cx="64"
+      cy="64"
+      fill="transparent"
+      r="58"
+      stroke="currentColor"
+      strokeDasharray={stepsCircumference}
+      strokeDashoffset={stepsOffset}
+      strokeLinecap="round"
+      strokeWidth="8"
+      style={{ transition: 'stroke-dashoffset 0.6s ease' }}
+    />
+  </svg>
+
+  <div className="absolute inset-0 flex flex-col items-center justify-center">
+    <span className="text-xl font-bold">
+      %{Math.round(stepsPercent)}
+    </span>
+
+    <span className="text-[11px] font-label-mono opacity-50 uppercase mt-1">
+      HEDEF
+    </span>
+  </div>
+</div>
           </div>
 
           <div className="bento-card p-6 col-span-1 md:col-span-2 border-blue-500/20">
