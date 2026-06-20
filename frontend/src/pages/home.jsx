@@ -5,15 +5,15 @@ import Sidebar from '../components/sidebar';
 import useCountUp from '../hooks/useCountUp';
 
 const QUICK_ACCESS = [
-  { path: '/dashboard', icon: 'videocam', label: 'KAMERA ANALİZİ' },
-  { path: '/plank', icon: 'photo_camera', label: 'FOTOĞRAF ANALİZİ' },
-  { path: '/history', icon: 'history', label: 'GEÇMİŞ' },
-  { path: '/exercises', icon: 'menu_book', label: 'KÜTÜPHANE' },
-  { path: '/workout-notebook', icon: 'edit_note', label: 'GÜNLÜK' },
-  { path: '/diet', icon: 'restaurant', label: 'DİYET' },
-  { path: '/nutrition', icon: 'nutrition', label: 'BESLENME' },
-  { path: '/steps', icon: 'directions_run', label: 'ADIMLAR' },
-  { path: '/badges', icon: 'military_tech', label: 'ROZETLER' },
+  { path: '/dashboard', icon: 'videocam', label: 'KAMERA ANALİZİ', bg: 'bg-brand-red/15', text: 'text-brand-red' },
+  { path: '/plank', icon: 'photo_camera', label: 'FOTOĞRAF ANALİZİ', bg: 'bg-purple-500/15', text: 'text-purple-400' },
+  { path: '/history', icon: 'history', label: 'GEÇMİŞ', bg: 'bg-emerald-500/15', text: 'text-emerald-400' },
+  { path: '/exercises', icon: 'menu_book', label: 'KÜTÜPHANE', bg: 'bg-indigo-500/15', text: 'text-indigo-400' },
+  { path: '/workout-notebook', icon: 'edit_note', label: 'GÜNLÜK', bg: 'bg-pink-500/15', text: 'text-pink-400' },
+  { path: '/diet', icon: 'restaurant', label: 'DİYET', bg: 'bg-amber-500/15', text: 'text-amber-400' },
+  { path: '/nutrition', icon: 'nutrition', label: 'BESLENME', bg: 'bg-blue-500/15', text: 'text-blue-400' },
+  { path: '/steps', icon: 'directions_run', label: 'ADIMLAR', bg: 'bg-orange-500/15', text: 'text-orange-400' },
+  { path: '/badges', icon: 'military_tech', label: 'ROZETLER', bg: 'bg-sky-500/15', text: 'text-sky-300' },
 ];
 
 const BMI_LABELS = { Zayif: 'ZAYIF', Normal: 'NORMAL', Kilolu: 'KİLOLU', Obez: 'OBEZ' };
@@ -99,20 +99,26 @@ function Home() {
             <p className="text-on-surface-variant font-label-mono mt-2">{tarihStr}</p>
           </div>
           <div className="flex gap-2">
-            <div className="px-4 py-2 bg-surface-container rounded-lg border border-outline-variant flex items-center gap-2">
+            <button
+              className="px-4 py-2 bg-surface-container rounded-lg border border-outline-variant flex items-center gap-2 hover:border-tertiary transition-colors cursor-pointer"
+              onClick={() => navigate('/history')}
+            >
               <span className="material-symbols-outlined text-tertiary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>bolt</span>
               <span className="text-label-mono text-xs uppercase tracking-tighter font-bold">{workouts.length} ANTRENMAN</span>
-            </div>
+            </button>
           </div>
         </header>
 
         {!profileComplete && (
-          <div className="mb-6 bg-primary-container/10 border border-primary-container/20 p-4 rounded-xl flex items-center justify-between flex-wrap gap-3">
+          <div
+            className="mb-6 bg-brand-red/10 border border-brand-red/30 p-4 rounded-xl flex items-center justify-between flex-wrap gap-3 cursor-pointer hover:bg-brand-red/15 transition-colors"
+            onClick={() => navigate('/profile')}
+          >
             <div className="flex items-center gap-3">
-              <span className="material-symbols-outlined text-primary-container">info</span>
-              <span className="text-label-mono text-sm font-bold tracking-widest text-primary-container uppercase">PROFİLİNİ TAMAMLA</span>
+              <span className="material-symbols-outlined text-brand-red">info</span>
+              <span className="text-label-mono text-sm font-bold tracking-widest text-brand-red uppercase">PROFİLİNİ TAMAMLA → KİŞİSEL DİYET PLANI AL</span>
             </div>
-            <button className="text-xs font-label-mono border-b border-primary-container text-primary-container" onClick={() => navigate('/profile')}>TAMAMLA</button>
+            <span className="text-xs font-label-mono border-b border-brand-red text-brand-red">TAMAMLA</span>
           </div>
         )}
 
@@ -204,12 +210,15 @@ function Home() {
           </div>
         </div>
 
-          <div className="col-span-1 md:col-span-4 lg:col-span-4 bg-primary-container/10 border border-primary-container/20 p-4 rounded-xl flex items-center justify-between">
+          <div
+            className="col-span-1 md:col-span-4 lg:col-span-4 bg-primary-container/10 border border-primary-container/20 p-4 rounded-xl flex items-center justify-between cursor-pointer hover:bg-primary-container/15 transition-colors"
+            onClick={() => navigate('/history')}
+          >
             <div className="flex items-center gap-3">
               <span className="material-symbols-outlined text-primary-container" style={{ fontVariationSettings: "'FILL' 1" }}>fitness_center</span>
               <span className="text-label-mono text-sm font-bold tracking-widest text-primary-container uppercase">TOPLAM ANTRENMAN: {workouts.length}</span>
             </div>
-            <button className="text-xs font-label-mono border-b border-primary-container text-primary-container" onClick={() => navigate('/history')}>DETAYLAR</button>
+            <span className="text-xs font-label-mono border-b border-primary-container text-primary-container">DETAYLAR</span>
           </div>
 
           <div className="col-span-1 md:col-span-4 lg:col-span-6 bg-gradient-to-r from-[#E8313F] to-[#93001a] p-8 rounded-2xl relative overflow-hidden flex flex-col md:flex-row items-center gap-6">
@@ -234,13 +243,15 @@ function Home() {
             <span className="text-label-mono text-xs text-on-surface-variant uppercase">TÜMÜ</span>
           </div>
           <div className="flex overflow-x-auto gap-4 pb-4 scrollbar-hide">
-            {QUICK_ACCESS.map(({ path, icon, label }) => (
+            {QUICK_ACCESS.map(({ path, icon, label, bg, text }) => (
               <div
                 key={path}
                 className="min-w-[190px] flex-1 bento-card p-6 flex flex-col justify-between h-40 cursor-pointer hover:bg-surface-container-high transition-colors"
                 onClick={() => navigate(path)}
               >
-                <span className="material-symbols-outlined text-primary text-2xl">{icon}</span>
+                <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${bg}`}>
+                  <span className={`material-symbols-outlined text-2xl ${text}`}>{icon}</span>
+                </div>
                 <div className="flex items-center justify-between mt-auto">
                   <span className="font-label-mono text-xs uppercase tracking-tighter">{label}</span>
                   <span className="material-symbols-outlined text-base">chevron_right</span>
