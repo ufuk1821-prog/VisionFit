@@ -1,19 +1,19 @@
 import os
 import requests
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from app.core.security import get_current_user
 
 router = APIRouter(prefix="/api/exercise-images", tags=["Egzersiz Görselleri"])
 
-UNSPLASH_ACCESS_KEY = os.getenv("UNSPLASH_ACCESS_KEY", "")
-UNSPLASH_URL = "https://api.unsplash.com/search/photos"
+PEXELS_API_KEY = os.getenv("PEXELS_API_KEY", "")
+PEXELS_URL = "https://api.pexels.com/v1/search"
 
 _cache = {}
 
 
 @router.get("/{sorgu}")
 async def gorsel_getir(sorgu: str, current_user=Depends(get_current_user)):
-    if not UNSPLASH_ACCESS_KEY:
+    if not PEXELS_API_KEY:
         return {"url": None}
 
     anahtar = sorgu.lower().strip()
@@ -22,23 +22,23 @@ async def gorsel_getir(sorgu: str, current_user=Depends(get_current_user)):
 
     try:
         yanit = requests.get(
-            UNSPLASH_URL,
+            PEXELS_URL,
             params={
-                "query": f"{sorgu} exercise gym",
+                "query": f"{sorgu} gym exercise workout",
                 "per_page": 1,
                 "orientation": "landscape",
             },
-            headers={"Authorization": f"Client-ID {UNSPLASH_ACCESS_KEY}"},
+            headers={"Authorization": PEXELS_API_KEY},
             timeout=10,
         )
         veri = yanit.json()
-        sonuclar = veri.get("results", [])
+        sonuclar = veri.get("photos", [])
 
         if not sonuclar:
             _cache[anahtar] = None
             return {"url": None}
 
-        url = sonuclar[0]["urls"]["regular"]
+        url = sonuclar[0]["src"]["large"]
         _cache[anahtar] = url
         return {"url": url}
     except Exception:
