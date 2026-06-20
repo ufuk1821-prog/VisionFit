@@ -8,7 +8,10 @@ function formatStopwatch(ms) {
   const s = totalSeconds % 60;
   const m = Math.floor(totalSeconds / 60);
   const h = Math.floor(m / 60);
-  return `${String(h).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(cs).padStart(2, '0')}`;
+  if (h > 0) {
+    return `${String(h).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(cs).padStart(2, '0')}`;
+  }
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(cs).padStart(2, '0')}`;
 }
 
 function playBeep() {
@@ -121,8 +124,8 @@ function Timer() {
           {tab === 'stopwatch' && (
             <section className="space-y-8">
               <div className="bento-card p-12 text-center flex flex-col items-center">
-                <div className="font-label-mono text-label-mono text-on-surface-variant uppercase mb-4 tracking-tighter">GEÇEN SÜRE</div>
-                <div className="font-label-mono text-6xl md:text-8xl lg:text-9xl tracking-tighter font-bold tabular-nums text-on-surface">
+                <div className="font-label-mono text-label-mono text-on-surface-variant uppercase mb-4 tracking-tighter">KRONOMETRE</div>
+                <div className="font-label-mono text-5xl md:text-6xl tracking-tighter font-bold tabular-nums text-on-surface">
                   {formatStopwatch(elapsed)}
                 </div>
                 <div className="flex items-center gap-12 mt-16">

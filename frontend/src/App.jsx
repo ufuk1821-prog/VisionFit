@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import Login from './pages/login';
@@ -69,6 +70,11 @@ function AnimatedRoutes({ isAuthenticated }) {
 
 function App() {
   const isAuthenticated = !!localStorage.getItem('token');
+
+  useEffect(() => {
+    const kayitliTema = localStorage.getItem('tema') || 'dark';
+    document.documentElement.setAttribute('data-theme', kayitliTema);
+  }, []);
 
   return (
     <BrowserRouter>

@@ -2,8 +2,10 @@ import { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/sidebar';
+import useTheme from '../hooks/useTheme';
 
 function Settings() {
+  const [tema, setTema] = useTheme();
   const [mevcutSifre, setMevcutSifre] = useState('');
   const [yeniSifre, setYeniSifre] = useState('');
   const [yeniSifreTekrar, setYeniSifreTekrar] = useState('');
@@ -84,14 +86,20 @@ function Settings() {
                     <span className="material-symbols-outlined group-hover:text-primary transition-colors">dark_mode</span>
                     <span className="font-body-md">Karanlık Mod</span>
                   </div>
-                  <input checked readOnly className="form-radio text-brand-red focus:ring-brand-red h-5 w-5 bg-surface-container" name="theme" type="radio" />
+                  <input
+                    checked={tema === 'dark'} onChange={() => setTema('dark')}
+                    className="form-radio text-brand-red focus:ring-brand-red h-5 w-5 bg-surface-container" name="theme" type="radio"
+                  />
                 </label>
-                <label className="flex items-center justify-between p-4 bg-surface-container-low rounded-lg border border-outline-variant cursor-pointer group active:scale-95 transition-all opacity-50">
+                <label className="flex items-center justify-between p-4 bg-surface-container-low rounded-lg border border-outline-variant cursor-pointer group active:scale-95 transition-all">
                   <div className="flex items-center gap-3">
                     <span className="material-symbols-outlined group-hover:text-primary transition-colors">light_mode</span>
                     <span className="font-body-md">Aydınlık Mod</span>
                   </div>
-                  <input className="form-radio text-brand-red focus:ring-brand-red h-5 w-5 bg-surface-container" name="theme" type="radio" disabled />
+                  <input
+                    checked={tema === 'light'} onChange={() => setTema('light')}
+                    className="form-radio text-brand-red focus:ring-brand-red h-5 w-5 bg-surface-container" name="theme" type="radio"
+                  />
                 </label>
               </div>
             </section>
