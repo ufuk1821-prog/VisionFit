@@ -93,11 +93,11 @@ function Exercises() {
                 <div className="flex gap-4">
                   <div>
                     <div className="text-[10px] font-label-mono text-on-surface-variant uppercase">Egzersiz</div>
-                    <div className="text-headline-md font-display-lg text-primary">{exerciseList.length}</div>
+                    <div className="text-headline-md font-display-lg text-blue-400">{exerciseList.length}</div>
                   </div>
                   <div>
                     <div className="text-[10px] font-label-mono text-on-surface-variant uppercase">Seçili</div>
-                    <div className="text-headline-md font-display-lg text-primary uppercase">{muscleInfo?.ad}</div>
+                    <div className="text-headline-md font-display-lg text-brand-red uppercase">{muscleInfo?.ad}</div>
                   </div>
                 </div>
               </div>
@@ -156,7 +156,7 @@ function Exercises() {
                     ) : (
                       <span className="material-symbols-outlined text-on-surface-variant text-5xl opacity-30">fitness_center</span>
                     )}
-                    <span className="absolute bottom-2 left-2 px-2 py-0.5 bg-brand-red text-white font-label-mono text-[10px] rounded">{String(i + 1).padStart(2, '0')}</span>
+                    <span className="absolute bottom-2 left-2 px-2 py-0.5 bg-purple-500 text-white font-label-mono text-[10px] rounded">{String(i + 1).padStart(2, '0')}</span>
                   </div>
                   <div className="flex justify-between items-start">
                     <div>
@@ -180,7 +180,7 @@ function Exercises() {
               <div>
                 <h2 className="font-display-lg text-headline-md uppercase text-primary">{selectedExercise.ad}</h2>
                 <div className="flex gap-2 mt-1">
-                  <span className="px-2 py-0.5 bg-brand-red/20 text-brand-red font-label-mono text-[10px] border border-brand-red/50 uppercase">{muscleInfo?.ad}</span>
+                  <span className="px-2 py-0.5 bg-purple-500/20 text-purple-300 font-label-mono text-[10px] border border-purple-500/50 uppercase">{muscleInfo?.ad}</span>
                 </div>
               </div>
               <button className="p-2 text-on-surface-variant hover:text-white" onClick={() => setSelectedExercise(null)}>
@@ -194,8 +194,8 @@ function Exercises() {
                 <p className="text-on-surface leading-relaxed">{selectedExercise.detay}</p>
               </div>
 
-              <div className="bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg">
-                <div className="flex items-center gap-2 mb-2 text-primary">
+              <div className="bg-amber-500/5 border-l-4 border-amber-400 p-4 rounded-r-lg">
+                <div className="flex items-center gap-2 mb-2 text-amber-400">
                   <span className="material-symbols-outlined text-sm">science</span>
                   <span className="font-label-mono text-label-mono uppercase text-xs font-bold">Bilimsel İpucu</span>
                 </div>

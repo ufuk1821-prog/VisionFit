@@ -123,19 +123,19 @@ function History() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-bento-gap mb-10">
             <div className="lg:col-span-8 flex flex-wrap gap-3 items-center">
               {[
-                { value: 'tumu', label: 'TÜMÜ', count: kayitlar.length },
-                { value: 'oturum', label: 'OTURUM', count: oturumKayitlari.length },
-                { value: 'anlik', label: 'ANLIK', count: anlikKayitlari.length },
+                { value: 'tumu', label: 'TÜMÜ', count: kayitlar.length, borderClass: 'border-l-brand-red' },
+                { value: 'oturum', label: 'OTURUM', count: oturumKayitlari.length, borderClass: 'border-l-purple-400' },
+                { value: 'anlik', label: 'ANLIK', count: anlikKayitlari.length, borderClass: 'border-l-blue-400' },
               ].map((opt) => {
                 const active = filtre === opt.value;
                 return (
                   <button
                     key={opt.value}
                     onClick={() => setFiltre(opt.value)}
-                    className={`px-6 py-2 rounded-full font-label-mono text-label-mono transition-colors ${
+                    className={`px-6 py-2 rounded-full font-label-mono text-label-mono transition-colors border-l-[3px] ${
                       active
-                        ? 'border-l-[3px] border-brand-red bg-surface-container-high text-on-surface'
-                        : 'border border-outline-variant bg-surface-container text-on-surface-variant hover:bg-surface-container-highest'
+                        ? `${opt.borderClass} bg-surface-container-high text-on-surface`
+                        : 'border-l-transparent border border-outline-variant bg-surface-container text-on-surface-variant hover:bg-surface-container-highest'
                     }`}
                   >
                     {opt.label} ({opt.count})
@@ -209,8 +209,8 @@ function History() {
                     onClick={() => setAcikKart(isOpen ? null : k.id)}
                   >
                     <div className="flex items-center gap-6">
-                      <div className="w-12 h-12 rounded-lg bg-surface-container-highest flex items-center justify-center border border-outline-variant">
-                        <span className="material-symbols-outlined text-primary text-[32px]">{icon}</span>
+                      <div className={`w-12 h-12 rounded-lg bg-surface-container-highest flex items-center justify-center border ${tip === 'oturum' ? 'border-purple-500/30' : 'border-blue-500/30'}`}>
+                        <span className={`material-symbols-outlined text-[32px] ${tip === 'oturum' ? 'text-purple-400' : 'text-blue-400'}`}>{icon}</span>
                       </div>
                       <div>
                         <h4 className="font-headline-md text-on-surface leading-tight">{etiket}</h4>
@@ -222,7 +222,11 @@ function History() {
 
                     <div className="flex items-center gap-8">
                       <div className="text-right">
-                        <span className={`px-3 py-1 rounded font-label-mono text-label-mono ${iyi ? 'bg-tertiary-container/20 text-tertiary' : 'bg-primary-container/20 text-primary-container'}`}>
+                        <span className={`px-3 py-1 rounded font-label-mono text-label-mono ${
+                          k.eminlik_skoru >= 75 ? 'bg-emerald-500/15 text-emerald-400' :
+                          k.eminlik_skoru >= 50 ? 'bg-amber-500/15 text-amber-400' :
+                          'bg-brand-red/15 text-brand-red'
+                        }`}>
                           {k.eminlik_skoru}% BAŞARI
                         </span>
                         <p className="text-body-sm text-on-surface-variant mt-1">{skorEtiket(k.eminlik_skoru)}</p>

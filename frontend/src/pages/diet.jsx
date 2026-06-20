@@ -11,9 +11,9 @@ const AKTIFLIK_OPTIONS = [
 ];
 
 const HEDEF_OPTIONS = [
-  { value: 'kilo_verme', label: 'Kilo Ver', desc: 'Yağ yakımı odaklı kalori açığı.', icon: 'trending_down' },
-  { value: 'kilo_koruma', label: 'Formu Koru', desc: 'Stabil metabolizma ve enerji dengesi.', icon: 'balance' },
-  { value: 'kilo_alma', label: 'Kilo Al', desc: 'Kas kütlesi için kalori fazlası.', icon: 'fitness_center' },
+  { value: 'kilo_verme', label: 'Kilo Ver', desc: 'Yağ yakımı odaklı kalori açığı.', icon: 'trending_down', renk: 'text-blue-400' },
+  { value: 'kilo_koruma', label: 'Formu Koru', desc: 'Stabil metabolizma ve enerji dengesi.', icon: 'balance', renk: 'text-emerald-400' },
+  { value: 'kilo_alma', label: 'Kilo Al', desc: 'Kas kütlesi için kalori fazlası.', icon: 'fitness_center', renk: 'text-brand-red' },
 ];
 
 const OGUN_GORSEL = { kahvalti: 'KAHVALTI', ogle: 'ÖĞLE YEMEĞİ', aksam: 'AKŞAM YEMEĞİ' };
@@ -116,7 +116,7 @@ function Diet() {
           <div className="grid grid-cols-12 gap-bento-gap">
             <div className="col-span-12 lg:col-span-4 bg-surface-container rounded-2xl p-6 border border-outline-variant flex flex-col gap-6">
               <div className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-primary">analytics</span>
+                <span className="material-symbols-outlined text-blue-400">analytics</span>
                 <h2 className="font-headline-md text-headline-md text-on-surface">Ölçümler</h2>
               </div>
 
@@ -197,7 +197,7 @@ function Diet() {
                       className={`p-6 rounded-2xl cursor-pointer relative overflow-hidden transition-all ${active ? 'bg-surface-container-high border-[2px] border-primary' : 'bg-surface-container border border-outline-variant hover:border-primary'}`}
                     >
                       {active && <div className="absolute top-0 left-0 w-1 h-full bg-primary"></div>}
-                      <span className="material-symbols-outlined text-4xl mb-4 text-primary inline-block">{h.icon}</span>
+                      <span className={`material-symbols-outlined text-4xl mb-4 inline-block ${h.renk}`}>{h.icon}</span>
                       <h3 className="font-headline-md text-headline-md mb-1 text-on-surface">{h.label}</h3>
                       <p className="font-body-sm text-body-sm text-on-surface-variant">{h.desc}</p>
                     </div>
@@ -267,10 +267,13 @@ function Diet() {
                 </div>
 
                 <div className="col-span-12 grid grid-cols-1 lg:grid-cols-3 gap-bento-gap">
-                  {diet.planlar.map((plan, index) => (
+                  {diet.planlar.map((plan, index) => {
+                    const planRenkler = ['text-blue-400', 'text-purple-400', 'text-amber-400'];
+                    const planRenk = planRenkler[index % planRenkler.length];
+                    return (
                     <div key={index} className="bg-surface-container rounded-2xl border border-outline-variant overflow-hidden flex flex-col">
                       <div className="h-12 relative flex items-end p-4 bg-surface-container-low">
-                        <span className="font-label-mono text-label-mono text-primary-container uppercase">{plan.baslik}</span>
+                        <span className={`font-label-mono text-label-mono uppercase ${planRenk}`}>{plan.baslik}</span>
                       </div>
                       <div className="p-6 pt-2">
                         <ul className="text-on-surface-variant font-body-sm space-y-1 mb-4">
@@ -284,7 +287,8 @@ function Diet() {
                         <p className="font-label-mono text-label-mono text-on-surface-variant mt-3">{plan.kalori} kcal</p>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}

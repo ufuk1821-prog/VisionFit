@@ -326,7 +326,7 @@ function FotografliAnaliz() {
             <div className="flex flex-col gap-bento-gap">
               <div className="bg-surface-container-high rounded-2xl border border-outline-variant p-6 relative overflow-hidden h-full">
                 <div className="absolute top-0 right-0 p-4">
-                  <span className="font-label-mono text-[10px] bg-brand-red/10 text-brand-red px-2 py-1 rounded border border-brand-red/20 uppercase tracking-widest">Analiz Raporu</span>
+                  <span className="font-label-mono text-[10px] bg-purple-500/10 text-purple-300 px-2 py-1 rounded border border-purple-500/20 uppercase tracking-widest">Analiz Raporu</span>
                 </div>
 
                 <div className="mt-8 flex flex-col items-center">
@@ -346,7 +346,7 @@ function FotografliAnaliz() {
 
                   <div className="w-full">
                     <div className="p-4 bg-surface-container-lowest border border-outline-variant rounded-xl mb-4">
-                      <h4 className="font-label-mono text-xs text-brand-red mb-2 flex items-center gap-2">
+                      <h4 className="font-label-mono text-xs text-purple-400 mb-2 flex items-center gap-2">
                         <span className="material-symbols-outlined text-sm">smart_toy</span>
                         KOÇUN NOTU
                       </h4>
@@ -388,7 +388,7 @@ function FotografliAnaliz() {
               <ul className="space-y-4">
                 {hareket.nasilCalisir.map((t, i) => (
                   <li className="flex gap-3" key={i}>
-                    <span className="font-label-mono text-brand-red">{String(i + 1).padStart(2, '0')}</span>
+                    <span className="font-label-mono text-purple-400">{String(i + 1).padStart(2, '0')}</span>
                     <p className="font-body-sm text-on-surface-variant">{t}</p>
                   </li>
                 ))}
@@ -398,13 +398,13 @@ function FotografliAnaliz() {
             <div className="bg-surface-container rounded-2xl border border-outline-variant p-6 hover:border-outline transition-colors">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center">
-                  <span className="material-symbols-outlined text-brand-red">lightbulb</span>
+                  <span className="material-symbols-outlined text-amber-400">lightbulb</span>
                 </div>
                 <h3 className="font-headline-md text-on-surface">İpuçları</h3>
               </div>
               <div className="space-y-3">
                 {hareket.ipuclari.map((t, i) => (
-                  <div key={i} className={`p-3 bg-surface-container-lowest rounded-lg border-l-4 ${i === 0 ? 'border-brand-red' : 'border-outline-variant'}`}>
+                  <div key={i} className={`p-3 bg-surface-container-lowest rounded-lg border-l-4 ${i === 0 ? 'border-amber-400' : 'border-outline-variant'}`}>
                     <p className="font-body-sm text-on-surface">{t}</p>
                   </div>
                 ))}

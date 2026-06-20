@@ -101,7 +101,7 @@ function Profile() {
           <form className="grid grid-cols-1 md:grid-cols-12 gap-bento-gap" onSubmit={handleSubmit}>
             <section className="md:col-span-12 bento-card p-6 rounded-2xl">
               <h3 className="font-headline-md text-headline-md mb-6 flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary">badge</span>
+                <span className="material-symbols-outlined text-blue-400">badge</span>
                 Kişisel Bilgiler
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -124,7 +124,7 @@ function Profile() {
 
             <section className="md:col-span-8 bento-card p-6 rounded-2xl">
               <h3 className="font-headline-md text-headline-md mb-6 flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary">monitoring</span>
+                <span className="material-symbols-outlined text-emerald-400">monitoring</span>
                 Vücut Ölçüleri
               </h3>
               <div className="grid grid-cols-3 gap-4">
@@ -154,7 +154,7 @@ function Profile() {
 
             <section className="md:col-span-4 bento-card p-6 rounded-2xl flex flex-col justify-between">
               <h3 className="font-headline-md text-headline-md mb-4 flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary">wc</span>
+                <span className="material-symbols-outlined text-purple-400">wc</span>
                 Cinsiyet
               </h3>
               <div className="flex flex-col gap-3">
@@ -171,7 +171,7 @@ function Profile() {
 
             <section className="md:col-span-12 bento-card p-6 rounded-2xl">
               <h3 className="font-headline-md text-headline-md mb-6 flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary">bolt</span>
+                <span className="material-symbols-outlined text-amber-400">bolt</span>
                 Aktivite Seviyesi
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-3">
@@ -207,7 +207,7 @@ function Profile() {
             </section>
 
             {hata && <p className="md:col-span-12 text-brand-red text-sm">{hata}</p>}
-            {mesaj && <p className="md:col-span-12 text-tertiary text-sm">{mesaj}</p>}
+            {mesaj && <p className="md:col-span-12 text-emerald-400 text-sm">{mesaj}</p>}
 
             <div className="md:col-span-12 flex justify-end items-center gap-4 py-6">
               <button className="px-12 py-3 bg-[#E8313F] text-white rounded-lg font-headline-md text-body-md shadow-[0_0_20px_rgba(232,49,63,0.3)] hover:scale-105 active:scale-95 transition-all" type="submit" disabled={kaydediliyor}>

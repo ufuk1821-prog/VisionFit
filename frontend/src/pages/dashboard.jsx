@@ -137,26 +137,26 @@ function VideoAnalizBolumu({ apiUrl, token }) {
             )}
 
             {!secilenVideo && (
-              <div className="bg-surface-container-high border border-outline-variant rounded-xl p-5 mt-2">
+              <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-5 mt-2">
                 <div className="flex items-center gap-2 mb-3">
-                  <span className="material-symbols-outlined text-primary text-xl">tips_and_updates</span>
+                  <span className="material-symbols-outlined text-blue-400 text-xl">tips_and_updates</span>
                   <h4 className="font-label-mono text-label-mono text-on-surface uppercase">İyi Bir Video İçin</h4>
                 </div>
                 <ul className="space-y-3">
                   <li className="flex gap-2">
-                    <span className="material-symbols-outlined text-primary text-base">check</span>
+                    <span className="material-symbols-outlined text-blue-400 text-base">check</span>
                     <p className="font-body-sm text-on-surface-variant">Kamerayı yere sabit, tam yandan konumlandırın.</p>
                   </li>
                   <li className="flex gap-2">
-                    <span className="material-symbols-outlined text-primary text-base">check</span>
+                    <span className="material-symbols-outlined text-blue-400 text-base">check</span>
                     <p className="font-body-sm text-on-surface-variant">Tüm vücudunuz baştan ayağa kadraja sığsın.</p>
                   </li>
                   <li className="flex gap-2">
-                    <span className="material-symbols-outlined text-primary text-base">check</span>
+                    <span className="material-symbols-outlined text-blue-400 text-base">check</span>
                     <p className="font-body-sm text-on-surface-variant">En az 3-5 tekrar yapılan bir kayıt yükleyin.</p>
                   </li>
                   <li className="flex gap-2">
-                    <span className="material-symbols-outlined text-primary text-base">check</span>
+                    <span className="material-symbols-outlined text-blue-400 text-base">check</span>
                     <p className="font-body-sm text-on-surface-variant">Aydınlık bir ortamda, dar kıyafetle çekim yapın.</p>
                   </li>
                 </ul>
@@ -492,7 +492,7 @@ function Dashboard() {
 
                     <div className="bento-card p-6">
                       <div className="flex items-center gap-2 mb-4">
-                        <span className="material-symbols-outlined text-primary">smart_toy</span>
+                        <span className="material-symbols-outlined text-purple-400">smart_toy</span>
                         <h3 className="font-headline-md text-headline-md">AI Antrenör Yorumu</h3>
                       </div>
                       {!aiYorum && !aiHata && (

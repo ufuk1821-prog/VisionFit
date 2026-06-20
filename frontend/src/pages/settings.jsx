@@ -71,7 +71,7 @@ function Settings() {
             <section className="col-span-1 md:col-span-4 bento-card p-6 flex flex-col justify-between">
               <div>
                 <div className="flex items-center gap-2 mb-6">
-                  <span className="material-symbols-outlined text-primary">palette</span>
+                  <span className="material-symbols-outlined text-purple-400">palette</span>
                   <h3 className="font-label-mono text-label-mono uppercase">GÖRÜNÜM</h3>
                 </div>
                 <p className="font-body-sm text-on-surface-variant mb-6 leading-relaxed">
@@ -98,7 +98,7 @@ function Settings() {
 
             <section className="col-span-1 md:col-span-8 bento-card p-6">
               <div className="flex items-center gap-2 mb-6">
-                <span className="material-symbols-outlined text-primary">lock</span>
+                <span className="material-symbols-outlined text-blue-400">lock</span>
                 <h3 className="font-label-mono text-label-mono uppercase">GÜVENLİK PROTOKOLÜ</h3>
               </div>
               <form className="space-y-6" onSubmit={sifreGuncelle}>
@@ -155,7 +155,7 @@ function Settings() {
                 </div>
 
                 {hata && <p className="text-brand-red text-sm">{hata}</p>}
-                {mesaj && <p className="text-tertiary text-sm">{mesaj}</p>}
+                {mesaj && <p className="text-emerald-400 text-sm">{mesaj}</p>}
 
                 <div className="pt-4 flex justify-end">
                   <button className="btn-primary-red flex items-center gap-2" type="submit" disabled={yukleniyor}>
@@ -168,16 +168,16 @@ function Settings() {
 
             <section className="col-span-1 md:col-span-4 bento-card p-6 bg-[#161616]">
               <div className="flex items-center gap-2 mb-4">
-                <span className="material-symbols-outlined text-primary">data_usage</span>
+                <span className="material-symbols-outlined text-emerald-400">data_usage</span>
                 <h3 className="font-label-mono text-label-mono uppercase">VERİ ANALİTİĞİ</h3>
               </div>
               <div className="space-y-4">
                 <div className="flex justify-between items-end">
                   <span className="font-body-sm text-on-surface-variant">Bulut Depolama</span>
-                  <span className="font-label-mono text-primary">SINIRSIZ</span>
+                  <span className="font-label-mono text-emerald-400">SINIRSIZ</span>
                 </div>
                 <div className="w-full h-1 bg-surface-container-high rounded-full overflow-hidden">
-                  <div className="h-full bg-brand-red w-full"></div>
+                  <div className="h-full bg-emerald-400 w-full"></div>
                 </div>
                 <p className="text-[10px] font-label-mono text-on-surface-variant uppercase leading-tight">
                   Veriler bulut sunucusunda anlık senkronize edilir

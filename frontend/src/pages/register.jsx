@@ -71,7 +71,7 @@ function Register() {
       <div className="bg-surface-container rounded-xl border border-outline-variant shadow-2xl overflow-hidden">
         <div className="px-8 pt-10 pb-6 text-center">
           <h1 className="font-display-lg text-display-lg-mobile md:text-display-lg text-primary mb-2 uppercase tracking-tighter">VisionFit</h1>
-          <p className="font-label-mono text-label-mono text-on-surface-variant uppercase tracking-widest">Performans Telemetrisi Kayıt Sistemi</p>
+          <p className="font-label-mono text-label-mono text-on-surface-variant uppercase tracking-widest">En İyi Haline Ulaş.</p>
         </div>
 
         {success ? (
@@ -130,10 +130,13 @@ function Register() {
               <div className="relative">
                 <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/50">lock</span>
                 <input
-                  className="w-full bg-surface-container-lowest border border-outline-variant rounded-lg pl-12 pr-4 py-3 text-on-surface focus:border-primary outline-none transition-all placeholder-on-surface-variant/30"
-                  id="password" placeholder="••••••••" required type="password"
+                  className="w-full bg-surface-container-lowest border border-outline-variant rounded-lg pl-12 pr-12 py-3 text-on-surface focus:border-primary outline-none transition-all placeholder-on-surface-variant/30"
+                  id="password" placeholder="••••••••" required type={sifreGoster ? 'text' : 'password'}
                   value={password} onChange={(e) => setPassword(e.target.value)}
                 />
+                <button type="button" onClick={() => setSifreGoster((v) => !v)} className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant/50 hover:text-on-surface bg-transparent border-none cursor-pointer p-0">
+                  <span className="material-symbols-outlined text-xl">{sifreGoster ? 'visibility_off' : 'visibility'}</span>
+                </button>
               </div>
             </div>
 

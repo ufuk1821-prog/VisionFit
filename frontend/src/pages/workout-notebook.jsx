@@ -137,7 +137,7 @@ function WorkoutNotebook() {
           <section className="col-span-12 lg:col-span-9 bg-surface-container rounded-xl border border-outline-variant overflow-hidden">
             <div className="p-6 border-b border-outline-variant flex justify-between items-center">
               <h3 className="font-headline-md text-on-surface flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary">fitness_center</span>
+                <span className="material-symbols-outlined text-blue-400">fitness_center</span>
                 Bugünkü Antrenman
               </h3>
               <button onClick={handleAddRow} className="p-2 bg-primary-container text-on-primary-container rounded-lg hover:opacity-90 transition-opacity">
@@ -194,7 +194,7 @@ function WorkoutNotebook() {
                           <td className="p-5 text-right">
                             <button
                               onClick={() => handleDeleteRow(i)} disabled={rows.length === 1}
-                              className="text-on-surface-variant hover:text-primary transition-colors disabled:opacity-30"
+                              className="text-on-surface-variant hover:text-brand-red transition-colors disabled:opacity-30"
                             >
                               <span className="material-symbols-outlined text-2xl">delete_outline</span>
                             </button>
@@ -214,7 +214,15 @@ function WorkoutNotebook() {
                   </button>
                 </div>
 
-                {savedMessage && <div className="mx-6 mb-4 p-3 bg-primary-container/10 border border-primary-container/30 rounded-lg text-sm">{savedMessage}</div>}
+                {savedMessage && (
+                  <div className={`mx-6 mb-4 p-3 rounded-lg text-sm border ${
+                    savedMessage === 'Kaydedildi.'
+                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                      : 'bg-brand-red/10 border-brand-red/30 text-brand-red'
+                  }`}>
+                    {savedMessage}
+                  </div>
+                )}
               </>
             )}
           </section>

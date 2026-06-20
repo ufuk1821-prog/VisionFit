@@ -90,7 +90,7 @@ function Badges() {
                     <h4 className="font-headline-md text-headline-md text-on-surface">{rozet.baslik}</h4>
                     <p className="text-on-surface-variant text-body-sm">{rozet.aciklama}</p>
                     {rozet.kazanilma_tarihi && (
-                      <p className="font-label-mono text-[10px] text-primary pt-2">KAZANILDI: {new Date(rozet.kazanilma_tarihi).toLocaleDateString('tr-TR')}</p>
+                      <p className={`font-label-mono text-[10px] pt-2 ${SEVIYE_RENK[rozet.seviye] || 'text-primary'}`}>KAZANILDI: {new Date(rozet.kazanilma_tarihi).toLocaleDateString('tr-TR')}</p>
                     )}
                   </div>
                 </div>
