@@ -39,7 +39,7 @@ function Exercises() {
           </div>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-bento-gap max-w-[1400px] mx-auto">
+        <div className={`grid grid-cols-1 ${activeTab === 'liste' ? '' : 'lg:grid-cols-12'} gap-bento-gap max-w-[1400px] mx-auto`}>
           {activeTab === 'diyagram' ? (
             <section className="lg:col-span-5 bg-surface-container rounded-xl border border-outline-variant p-6 relative overflow-hidden flex flex-col items-center min-h-[720px]">
               <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
@@ -82,13 +82,13 @@ function Exercises() {
               </div>
             </section>
           ) : (
-            <section className="lg:col-span-5 bg-surface-container rounded-xl border border-outline-variant p-6">
-              <div className="grid grid-cols-2 gap-2">
+            <section className="lg:col-span-12 bg-surface-container rounded-xl border border-outline-variant p-8 min-h-[720px]">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {MUSCLE_GROUPS.map((m) => (
                   <button
                     key={m.key}
                     onClick={() => setSelectedMuscle(m.key)}
-                    className={`p-3 rounded-lg border font-label-mono text-label-mono uppercase text-xs text-left transition-all ${
+                    className={`p-6 rounded-xl border font-label-mono text-label-mono uppercase text-sm text-left transition-all hover:scale-[1.02] ${
                       selectedMuscle === m.key ? 'border-brand-red bg-brand-red/10 text-brand-red' : 'border-outline-variant text-on-surface-variant hover:bg-surface-container-high'
                     }`}
                   >
@@ -99,7 +99,7 @@ function Exercises() {
             </section>
           )}
 
-          <section className="lg:col-span-7 flex flex-col gap-bento-gap">
+          <section className={`flex flex-col gap-bento-gap ${activeTab === 'liste' ? 'mt-6' : 'lg:col-span-7'}`}>
             {subGroups.length > 1 && (
               <div className="flex flex-wrap gap-2">
                 {subGroups.map((key) => {
