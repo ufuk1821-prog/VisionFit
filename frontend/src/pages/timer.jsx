@@ -150,9 +150,9 @@ function Timer() {
                   <div className="flex-1 overflow-y-auto space-y-3 pr-2">
                     {laps.length === 0 && <div className="text-on-surface-variant font-label-mono text-center py-10 opacity-30">TUR KAYDI YOK</div>}
                     {laps.map((lap, i) => (
-                      <div key={i} className="flex justify-between items-center bg-surface-container-low p-3 rounded border border-outline-variant">
-                        <span className="font-label-mono text-on-surface-variant">TUR {laps.length - i}</span>
-                        <span className="font-label-mono text-on-surface text-lg">{formatStopwatch(lap)}</span>
+                      <div key={i} className="flex justify-between items-center bg-surface-container-low p-4 rounded-lg border border-outline-variant">
+                        <span className="font-label-mono text-on-surface-variant text-base">TUR {laps.length - i}</span>
+                        <span className="font-label-mono text-on-surface text-xl">{formatStopwatch(lap)}</span>
                       </div>
                     ))}
                   </div>

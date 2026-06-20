@@ -24,8 +24,8 @@ async def gorsel_getir(sorgu: str, current_user=Depends(get_current_user)):
         yanit = requests.get(
             PEXELS_URL,
             params={
-                "query": f"{sorgu} gym exercise workout",
-                "per_page": 1,
+                "query": f"{sorgu} exercise fitness technique",
+                "per_page": 5,
                 "orientation": "landscape",
             },
             headers={"Authorization": PEXELS_API_KEY},
@@ -33,6 +33,20 @@ async def gorsel_getir(sorgu: str, current_user=Depends(get_current_user)):
         )
         veri = yanit.json()
         sonuclar = veri.get("photos", [])
+
+        if not sonuclar:
+            yanit2 = requests.get(
+                PEXELS_URL,
+                params={
+                    "query": f"{sorgu} gym workout",
+                    "per_page": 5,
+                    "orientation": "landscape",
+                },
+                headers={"Authorization": PEXELS_API_KEY},
+                timeout=10,
+            )
+            veri = yanit2.json()
+            sonuclar = veri.get("photos", [])
 
         if not sonuclar:
             _cache[anahtar] = None

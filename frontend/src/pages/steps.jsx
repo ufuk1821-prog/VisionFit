@@ -177,19 +177,19 @@ function Steps() {
                   {kayitlar.map((k) => {
                     const aktivite = AKTIVITE_OPTIONS.find((o) => o.value === k.aktivite_tipi);
                     return (
-                      <div key={k.id} className="p-4 md:p-6 flex items-center justify-between hover:bg-surface-container-high transition-colors">
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center border border-outline-variant">
-                            <span className="material-symbols-outlined text-primary text-[20px]">{aktivite?.icon ?? 'directions_walk'}</span>
+                      <div key={k.id} className="p-6 md:p-7 flex items-center justify-between hover:bg-surface-container-high transition-colors">
+                        <div className="flex items-center gap-5">
+                          <div className="w-14 h-14 rounded-full bg-surface-container-highest flex items-center justify-center border border-outline-variant">
+                            <span className="material-symbols-outlined text-primary text-[26px]">{aktivite?.icon ?? 'directions_walk'}</span>
                           </div>
                           <div>
-                            <p className="font-bold text-on-surface">{aktivite?.label ?? k.aktivite_tipi}</p>
-                            <p className="text-[12px] text-on-surface-variant font-label-mono">{new Date(k.tarih).toLocaleString('tr-TR')}</p>
+                            <p className="font-bold text-lg text-on-surface">{aktivite?.label ?? k.aktivite_tipi}</p>
+                            <p className="text-sm text-on-surface-variant font-label-mono mt-0.5">{new Date(k.tarih).toLocaleString('tr-TR')}</p>
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="font-stat-lg text-[20px] text-primary">{k.adim_sayisi.toLocaleString('tr-TR')}</p>
-                          <p className="text-[10px] text-on-surface-variant font-label-mono uppercase">ADIM</p>
+                          <p className="font-stat-lg text-2xl text-primary">{k.adim_sayisi.toLocaleString('tr-TR')}</p>
+                          <p className="text-xs text-on-surface-variant font-label-mono uppercase">ADIM</p>
                         </div>
                       </div>
                     );

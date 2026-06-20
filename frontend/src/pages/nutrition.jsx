@@ -17,6 +17,18 @@ const WATER_GOAL = 2500;
 const overlayVariants = { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } };
 const modalVariants = { initial: { opacity: 0, scale: 0.9, y: 16 }, animate: { opacity: 1, scale: 1, y: 0 }, exit: { opacity: 0, scale: 0.92, y: 12 } };
 
+function todayISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function formatTarihGoster(dateStr) {
+  const GUN_ADLARI = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+  const d = new Date(`${dateStr}T00:00:00`);
+  const [yil, ay, gun] = dateStr.split('-');
+  return `${gun}.${ay}.${yil} - ${GUN_ADLARI[d.getDay()]}`;
+}
+
 function Nutrition() {
   const [activeTab, setActiveTab] = useState('yemek');
   const [foods, setFoods] = useState([]);
@@ -27,19 +39,25 @@ function Nutrition() {
   const [meals, setMeals] = useState([]);
   const [waterLogs, setWaterLogs] = useState([]);
   const [customWater, setCustomWater] = useState('');
+  const [selectedDate, setSelectedDate] = useState(todayISO());
   const token = localStorage.getItem('token');
   const headers = { Authorization: `Bearer ${token}` };
   const apiUrl = import.meta.env.VITE_API_URL;
+  const bugunMu = selectedDate === todayISO();
 
-  const fetchMeals = () => axios.get(`${apiUrl}/api/nutrition/meals/today`, { headers }).then((res) => setMeals(res.data)).catch(() => {});
-  const fetchWater = () => axios.get(`${apiUrl}/api/nutrition/water/today`, { headers }).then((res) => setWaterLogs(res.data)).catch(() => {});
+  const fetchMeals = () => axios.get(`${apiUrl}/api/nutrition/meals/today?tarih=${selectedDate}`, { headers }).then((res) => setMeals(res.data)).catch(() => {});
+  const fetchWater = () => axios.get(`${apiUrl}/api/nutrition/water/today?tarih=${selectedDate}`, { headers }).then((res) => setWaterLogs(res.data)).catch(() => {});
 
   useEffect(() => {
     axios.get(`${apiUrl}/api/nutrition/foods`, { headers }).then((res) => setFoods(res.data)).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
     fetchMeals();
     fetchWater();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [selectedDate]);
 
   const filteredFoods = searchTerm.length > 0
     ? foods.filter((f) => f.ad.toLocaleLowerCase('tr-TR').includes(searchTerm.toLocaleLowerCase('tr-TR'))).slice(0, 8)
@@ -56,14 +74,19 @@ function Nutrition() {
     e.preventDefault();
     if (!selectedFood || !modalGram) return;
     try {
-      await axios.post(`${apiUrl}/api/nutrition/meals`, { ogun_tipi: ogunTipi, besin_anahtari: selectedFood.anahtar, gram: parseFloat(modalGram) }, { headers });
+      const tarihIso = bugunMu ? new Date().toISOString() : `${selectedDate}T12:00:00`;
+      await axios.post(`${apiUrl}/api/nutrition/meals`, { ogun_tipi: ogunTipi, besin_anahtari: selectedFood.anahtar, gram: parseFloat(modalGram), tarih: tarihIso }, { headers });
       handleCloseModal();
       fetchMeals();
     } catch {}
   };
 
   const handleDeleteMeal = async (id) => { await axios.delete(`${apiUrl}/api/nutrition/meals/${id}`, { headers }); fetchMeals(); };
-  const handleAddWater = async (miktar) => { await axios.post(`${apiUrl}/api/nutrition/water`, { miktar_ml: miktar }, { headers }); fetchWater(); };
+  const handleAddWater = async (miktar) => {
+    const tarihIso = bugunMu ? new Date().toISOString() : `${selectedDate}T12:00:00`;
+    await axios.post(`${apiUrl}/api/nutrition/water`, { miktar_ml: miktar, tarih: tarihIso }, { headers });
+    fetchWater();
+  };
   const handleCustomWater = async (e) => { e.preventDefault(); if (!customWater) return; await handleAddWater(parseInt(customWater, 10)); setCustomWater(''); };
   const handleDeleteWater = async (id) => { await axios.delete(`${apiUrl}/api/nutrition/water/${id}`, { headers }); fetchWater(); };
 
@@ -81,9 +104,25 @@ function Nutrition() {
       <Sidebar />
       <main className="md:ml-64 min-h-screen pt-20 md:pt-10 pb-24 md:pb-10 px-gutter md:px-12">
         <div className="max-w-5xl mx-auto">
-        <header className="mb-8">
-          <h1 className="font-display-lg text-display-lg-mobile md:text-display-lg text-on-surface">BESLENME <span className="text-primary">TAKİBİ</span></h1>
-          <p className="font-label-mono text-label-mono text-on-surface-variant tracking-widest mt-2 uppercase">GÜNLÜK KALORİ VE MAKRO VERİLERİ</p>
+        <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+            <h1 className="font-display-lg text-display-lg-mobile md:text-display-lg text-on-surface">BESLENME <span className="text-primary">TAKİBİ</span></h1>
+            <p className="font-label-mono text-label-mono text-blue-300 mt-2">{formatTarihGoster(selectedDate)}{bugunMu ? ' (Bugün)' : ''}</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <input
+              type="date" value={selectedDate} max={todayISO()} onChange={(e) => setSelectedDate(e.target.value)}
+              className="bg-surface-container-low border border-outline-variant text-on-surface px-4 py-2 rounded-lg font-label-mono text-xs focus:border-blue-400 focus:ring-0"
+            />
+            {!bugunMu && (
+              <button
+                onClick={() => setSelectedDate(todayISO())}
+                className="px-4 py-2 bg-surface-container-high border border-outline-variant rounded-lg font-label-mono text-xs uppercase hover:border-blue-400 transition-colors"
+              >
+                Bugüne Dön
+              </button>
+            )}
+          </div>
         </header>
 
         <div className="flex gap-4 mb-8 border-b border-outline-variant pb-px">
@@ -227,15 +266,15 @@ function Nutrition() {
                       </div>
                       <div className="space-y-2">
                         {ogunMeals.map((m) => (
-                          <div key={m.id} className="flex justify-between items-center text-sm py-2 border-b border-outline-variant/30 last:border-b-0">
+                          <div key={m.id} className="flex justify-between items-center text-base py-3 border-b border-outline-variant/30 last:border-b-0">
                             <div>
-                              <span className="text-on-surface-variant">{m.besin_adi} ({m.gram}g)</span>
-                              <div className="text-[10px] text-on-surface-variant/70 font-label-mono">P: {m.protein_g}g · K: {m.karbonhidrat_g}g · Y: {m.yag_g}g</div>
+                              <span className="text-on-surface">{m.besin_adi} ({m.gram}g)</span>
+                              <div className="text-xs text-on-surface-variant/80 font-label-mono mt-0.5">P: {m.protein_g}g · K: {m.karbonhidrat_g}g · Y: {m.yag_g}g</div>
                             </div>
                             <div className="flex items-center gap-3">
-                              <span className="font-label-mono text-brand-red">{m.kalori} kcal</span>
+                              <span className="font-label-mono text-brand-red font-bold">{m.kalori} kcal</span>
                               <button onClick={() => handleDeleteMeal(m.id)} className="text-on-surface-variant hover:text-brand-red">
-                                <span className="material-symbols-outlined text-base">delete_outline</span>
+                                <span className="material-symbols-outlined text-lg">delete_outline</span>
                               </button>
                             </div>
                           </div>

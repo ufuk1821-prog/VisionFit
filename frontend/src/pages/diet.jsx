@@ -276,7 +276,7 @@ function Diet() {
                         <span className={`font-label-mono text-label-mono uppercase ${planRenk}`}>{plan.baslik}</span>
                       </div>
                       <div className="p-6 pt-2">
-                        <ul className="text-on-surface-variant font-body-sm space-y-1 mb-4">
+                        <ul className="text-on-surface font-body-md space-y-2 mb-4">
                           {plan.ornek_ogunler.map((ogun, i) => <li key={i}>• {ogun}</li>)}
                         </ul>
                         <div className="flex flex-wrap gap-2">

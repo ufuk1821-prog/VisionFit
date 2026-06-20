@@ -2403,3 +2403,31 @@ textarea,
     gap: 8px;
   }
 }
+
+.loading-text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-align: center;
+  color: var(--text-muted);
+  padding: 60px 24px;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.loading-text::before {
+  content: '';
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

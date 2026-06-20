@@ -74,7 +74,7 @@ function Badges() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-bento-gap">
               {kazanilanlar.map((rozet) => (
-                <div key={rozet.key} className="bg-surface-container border border-outline-variant p-6 rounded-xl flex gap-5 items-start relative overflow-hidden transition-colors hover:border-brand-red">
+                <div key={rozet.key} className="bg-surface-container border border-outline-variant p-7 rounded-xl flex gap-6 items-start relative overflow-hidden transition-colors hover:border-brand-red">
                   <div className="absolute top-0 right-0 p-2 opacity-10">
                     <span className="material-symbols-outlined text-6xl">military_tech</span>
                   </div>

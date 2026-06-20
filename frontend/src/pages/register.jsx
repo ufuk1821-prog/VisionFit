@@ -144,8 +144,13 @@ function Register() {
               {PASSWORD_RULES.map((rule) => {
                 const valid = rule.test(password);
                 return (
-                  <div key={rule.label} className={`flex items-center gap-3 font-label-mono text-[10px] uppercase tracking-wider transition-colors duration-200 ${valid ? 'text-primary' : 'text-on-surface-variant'}`}>
-                    <span className="material-symbols-outlined text-[16px]">{valid ? 'check_circle' : 'radio_button_unchecked'}</span>
+                  <div
+                    key={rule.label}
+                    className={`flex items-center gap-3 font-label-mono text-[10px] uppercase tracking-wider transition-all duration-200 px-3 py-2 rounded-md ${
+                      valid ? 'text-emerald-400 bg-emerald-500/10' : 'text-on-surface-variant'
+                    }`}
+                  >
+                    <span className={`material-symbols-outlined text-[16px] ${valid ? 'text-emerald-400' : ''}`}>{valid ? 'check_circle' : 'radio_button_unchecked'}</span>
                     {rule.label}
                   </div>
                 );

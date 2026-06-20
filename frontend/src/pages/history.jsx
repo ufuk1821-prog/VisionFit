@@ -129,7 +129,7 @@ function History() {
         )}
 
         {!loading && kayitlar.length > 0 && (
-          <div className="space-y-4">
+          <div className="space-y-5">
             {filtrelenmisKayitlar.map((k) => {
               const tip = tipBelirle(k.hareket_adi);
               const etiket = etiketBelirle(k.hareket_adi);
@@ -155,39 +155,39 @@ function History() {
                   className={`bento-card bg-surface-container-low rounded-xl overflow-hidden border-l-[3px] transition-colors ${isOpen || isTarget ? 'border-brand-red' : 'border-transparent'}`}
                 >
                   <div
-                    className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer hover:bg-surface-container transition-colors"
+                    className="p-8 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer hover:bg-surface-container transition-colors"
                     onClick={() => setAcikKart(isOpen ? null : k.id)}
                   >
                     <div className="flex items-center gap-6">
-                      <div className={`w-12 h-12 rounded-lg bg-surface-container-highest flex items-center justify-center border ${tip === 'oturum' ? 'border-purple-500/30' : 'border-blue-500/30'}`}>
-                        <span className={`material-symbols-outlined text-[32px] ${tip === 'oturum' ? 'text-purple-400' : 'text-blue-400'}`}>{icon}</span>
+                      <div className={`w-16 h-16 rounded-lg bg-surface-container-highest flex items-center justify-center border ${tip === 'oturum' ? 'border-purple-500/30' : 'border-blue-500/30'}`}>
+                        <span className={`material-symbols-outlined text-[40px] ${tip === 'oturum' ? 'text-purple-400' : 'text-blue-400'}`}>{icon}</span>
                       </div>
                       <div>
-                        <h4 className="font-headline-md text-on-surface leading-tight">{etiket}</h4>
-                        <p className="font-label-mono text-label-mono text-on-surface-variant uppercase tracking-wider">
+                        <h4 className="font-headline-md text-2xl text-on-surface leading-tight">{etiket}</h4>
+                        <p className="font-label-mono text-sm text-on-surface-variant uppercase tracking-wider mt-1">
                           {new Date(k.tarih).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' })}
                         </p>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-8">
+                    <div className="flex items-center gap-10">
                       <div className="text-right">
-                        <span className={`px-3 py-1 rounded font-label-mono text-label-mono ${
+                        <span className={`px-4 py-1.5 rounded text-base font-label-mono ${
                           k.eminlik_skoru >= 75 ? 'bg-emerald-500/15 text-emerald-400' :
                           k.eminlik_skoru >= 50 ? 'bg-amber-500/15 text-amber-400' :
                           'bg-brand-red/15 text-brand-red'
                         }`}>
                           {k.eminlik_skoru}% BAŞARI
                         </span>
-                        <p className="text-body-sm text-on-surface-variant mt-1">{skorEtiket(k.eminlik_skoru)}</p>
+                        <p className="text-base text-on-surface-variant mt-1.5">{skorEtiket(k.eminlik_skoru)}</p>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-3">
                         <div className="relative">
                           <button
                             onClick={(e) => { e.stopPropagation(); setAcikMenu(acikMenu === k.id ? null : k.id); }}
                             className="p-2 hover:bg-surface-container-highest rounded-lg transition-colors"
                           >
-                            <span className="material-symbols-outlined text-on-surface-variant">more_vert</span>
+                            <span className="material-symbols-outlined text-2xl text-on-surface-variant">more_vert</span>
                           </button>
                           {acikMenu === k.id && (
                             <div className="absolute top-10 right-0 bg-surface-container rounded-lg shadow-xl z-10 overflow-hidden border border-outline-variant">
@@ -197,7 +197,7 @@ function History() {
                             </div>
                           )}
                         </div>
-                        <span className={`material-symbols-outlined text-primary transition-transform ${isOpen ? 'rotate-180' : ''}`}>expand_more</span>
+                        <span className={`material-symbols-outlined text-2xl text-primary transition-transform ${isOpen ? 'rotate-180' : ''}`}>expand_more</span>
                       </div>
                     </div>
                   </div>
