@@ -36,15 +36,20 @@ app = modal.App("visionfit-llm")
 class VisionFitLLM:
     @modal.enter()
     def model_yukle(self):
-        from transformers import AutoModelForCausalLM, AutoTokenizer
+        from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
         import torch
+
+        kuantizasyon_ayari = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_compute_dtype=torch.float16,
+        )
 
         self.tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
         self.model = AutoModelForCausalLM.from_pretrained(
             MODEL_ID,
-            torch_dtype=torch.float16,
+            dtype=torch.float16,
             device_map="cuda",
-            load_in_4bit=True,
+            quantization_config=kuantizasyon_ayari,
         )
         self.model.eval()
 
