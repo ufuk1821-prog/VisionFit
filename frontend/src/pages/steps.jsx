@@ -12,6 +12,11 @@ const AKTIVITE_OPTIONS = [
 
 const GOAL = 10000;
 
+function todayISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 function Steps() {
   const [adimSayisi, setAdimSayisi] = useState('');
   const [aktiviteTipi, setAktiviteTipi] = useState('');
@@ -19,7 +24,9 @@ function Steps() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(todayISO());
   const token = localStorage.getItem('token');
+  const bugunMu = selectedDate === todayISO();
 
   const fetchKayitlar = () => {
     axios.get(`${import.meta.env.VITE_API_URL}/api/steps`, { headers: { Authorization: `Bearer ${token}` } })
@@ -33,9 +40,10 @@ function Steps() {
     setError('');
     setLoading(true);
     try {
+      const tarihIso = bugunMu ? new Date().toISOString() : `${selectedDate}T12:00:00`;
       await axios.post(
         `${import.meta.env.VITE_API_URL}/api/steps`,
-        { adim_sayisi: parseInt(adimSayisi, 10), aktivite_tipi: aktiviteTipi },
+        { adim_sayisi: parseInt(adimSayisi, 10), aktivite_tipi: aktiviteTipi, tarih: tarihIso },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setAdimSayisi('');
@@ -49,26 +57,47 @@ function Steps() {
     }
   };
 
-  const bugun = new Date();
-  const bugunkuKayitlar = kayitlar.filter((k) => new Date(k.tarih).toDateString() === bugun.toDateString());
-  const toplamAdim = bugunkuKayitlar.reduce((acc, k) => acc + k.adim_sayisi, 0);
-  const toplamKalori = bugunkuKayitlar.reduce((acc, k) => acc + (k.yakilan_kalori || 0), 0);
+  const secilenGun = new Date(`${selectedDate}T00:00:00`);
+  const secilenGunKayitlari = kayitlar.filter((k) => new Date(k.tarih).toDateString() === secilenGun.toDateString());
+  const toplamAdim = secilenGunKayitlari.reduce((acc, k) => acc + k.adim_sayisi, 0);
+  const toplamKalori = secilenGunKayitlari.reduce((acc, k) => acc + (k.yakilan_kalori || 0), 0);
   const toplamMesafe = (toplamAdim * 0.0008).toFixed(1);
   const hedefYuzde = (toplamAdim / GOAL) * 100;
 
   const ringCircumference = 2 * Math.PI * 108;
   const ringOffset = ringCircumference * (1 - Math.min(toplamAdim / GOAL, 1));
 
-  const ayAdi = bugun.toLocaleDateString('tr-TR', { month: 'short' }).toUpperCase();
+  const ayAdi = secilenGun.toLocaleDateString('tr-TR', { month: 'short' }).toUpperCase();
 
   return (
     <div>
       <Sidebar />
       <main className="md:ml-64 pt-20 md:pt-10 px-gutter md:px-section-padding min-h-screen">
         <div className="max-w-5xl mx-auto flex flex-col md:flex-row gap-gutter">
-          <div className="flex flex-row md:flex-col items-center md:items-start justify-center md:justify-start gap-2 py-4 md:py-8 min-w-[80px] border-b md:border-b-0 md:border-r border-outline-variant/30">
-            <div className="bg-primary text-on-primary-container px-3 py-1 rounded font-black text-stat-lg">{bugun.getDate()}</div>
-            <div className="font-label-mono text-label-mono uppercase tracking-widest text-on-surface-variant">{ayAdi}</div>
+          <div className="flex flex-row md:flex-col items-center md:items-start justify-center md:justify-start gap-3 py-4 md:py-8 min-w-[90px] border-b md:border-b-0 md:border-r border-outline-variant/30">
+            <button
+              onClick={() => {
+                const onceki = new Date(secilenGun);
+                onceki.setDate(onceki.getDate() - 1);
+                setSelectedDate(`${onceki.getFullYear()}-${String(onceki.getMonth() + 1).padStart(2, '0')}-${String(onceki.getDate()).padStart(2, '0')}`);
+              }}
+              className="md:hidden p-2 text-on-surface-variant hover:text-primary"
+            >
+              <span className="material-symbols-outlined">chevron_left</span>
+            </button>
+            <div className="flex flex-col items-center md:items-start gap-2">
+              <div className="bg-primary text-on-primary-container px-3 py-1 rounded font-black text-stat-lg">{secilenGun.getDate()}</div>
+              <div className="font-label-mono text-label-mono uppercase tracking-widest text-on-surface-variant">{ayAdi}</div>
+              {!bugunMu && (
+                <button onClick={() => setSelectedDate(todayISO())} className="text-[10px] font-label-mono text-blue-400 uppercase hover:underline">
+                  Bugün
+                </button>
+              )}
+            </div>
+            <input
+              type="date" value={selectedDate} max={todayISO()} onChange={(e) => setSelectedDate(e.target.value)}
+              className="hidden md:block mt-1 bg-surface-container-low border border-outline-variant text-on-surface px-2 py-1 rounded font-label-mono text-[10px] w-full"
+            />
           </div>
 
           <div className="flex-1 space-y-bento-gap">

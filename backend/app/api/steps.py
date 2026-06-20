@@ -30,11 +30,20 @@ def log_steps(
 
     yakilan_kalori = calculate_calories_burned(data.adim_sayisi, data.aktivite_tipi, current_user.kilo)
 
+    from datetime import datetime as dt
+    hedef_tarih = dt.now()
+    if data.tarih:
+        try:
+            hedef_tarih = dt.fromisoformat(data.tarih)
+        except ValueError:
+            pass
+
     kayit = StepLog(
         user_id=current_user.id,
         adim_sayisi=data.adim_sayisi,
         aktivite_tipi=data.aktivite_tipi,
         yakilan_kalori=yakilan_kalori,
+        tarih=hedef_tarih,
     )
     db.add(kayit)
     db.commit()

@@ -2,19 +2,19 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import logoImg from '../assets/logo.png';
 
 const NAV_ITEMS = [
-  { path: '/', label: 'PANEL', icon: 'dashboard', text: 'text-on-surface-variant' },
-  { path: '/dashboard', label: 'KAMERA ANALİZİ', icon: 'videocam', text: 'text-brand-red' },
-  { path: '/plank', label: 'FOTOĞRAF ANALİZİ', icon: 'photo_camera', text: 'text-purple-400' },
-  { path: '/history', label: 'GEÇMİŞ', icon: 'history', text: 'text-emerald-400' },
-  { path: '/exercises', label: 'KÜTÜPHANE', icon: 'menu_book', text: 'text-indigo-400' },
-  { path: '/workout-notebook', label: 'GÜNLÜK', icon: 'edit_note', text: 'text-pink-400' },
-  { path: '/diet', label: 'DİYET', icon: 'restaurant', text: 'text-amber-400' },
-  { path: '/nutrition', label: 'BESLENME', icon: 'nutrition', text: 'text-blue-400' },
-  { path: '/steps', label: 'ADIMLAR', icon: 'directions_run', text: 'text-orange-400' },
-  { path: '/timer', label: 'ZAMANLAYICI', icon: 'timer', text: 'text-teal-400' },
-  { path: '/badges', label: 'ROZETLER', icon: 'military_tech', text: 'text-sky-300' },
-  { path: '/settings', label: 'AYARLAR', icon: 'settings', text: 'text-on-surface-variant' },
-  { path: '/profile', label: 'PROFİLİM', icon: 'person', text: 'text-on-surface-variant' },
+  { path: '/', label: 'ANA SAYFA', icon: 'home' },
+  { path: '/dashboard', label: 'KAMERA ANALİZİ', icon: 'videocam' },
+  { path: '/plank', label: 'FOTOĞRAFLI ANALİZ', icon: 'photo_camera' },
+  { path: '/history', label: 'GEÇMİŞ', icon: 'history' },
+  { path: '/exercises', label: 'EGZERSİZ KÜTÜPHANESİ', icon: 'menu_book' },
+  { path: '/workout-notebook', label: 'ANTRENMAN DEFTERİ', icon: 'calendar_month' },
+  { path: '/diet', label: 'DİYET ÖNERİSİ', icon: 'restaurant' },
+  { path: '/nutrition', label: 'BESLENME TAKİBİ', icon: 'home_work' },
+  { path: '/steps', label: 'ADIM SAYACI', icon: 'directions_walk' },
+  { path: '/timer', label: 'KRONOMETRE', icon: 'timer' },
+  { path: '/badges', label: 'ROZETLERİM', icon: 'military_tech' },
+  { path: '/settings', label: 'AYARLAR', icon: 'settings' },
+  { path: '/profile', label: 'PROFİLİM', icon: 'person' },
 ];
 
 const MOBILE_NAV_ITEMS = [
@@ -44,9 +44,9 @@ function Sidebar() {
   })();
 
   const navButtonClass = (active) => {
-    const base = 'flex items-center w-full text-left px-6 py-3 border-l-[3px] transition-all duration-200 cursor-pointer';
-    const activeClass = 'border-brand-red bg-surface-container-high text-on-surface font-bold';
-    const inactiveClass = 'border-transparent text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest';
+    const base = 'flex items-center w-full text-left px-6 py-3 rounded-r-lg transition-all duration-200 cursor-pointer';
+    const activeClass = 'bg-brand-red/15 border-l-[3px] border-brand-red text-brand-red font-bold';
+    const inactiveClass = 'border-l-[3px] border-transparent text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest';
     return `${base} ${active ? activeClass : inactiveClass}`;
   };
 
@@ -67,7 +67,7 @@ function Sidebar() {
               const active = location.pathname === item.path;
               return (
                 <button key={item.path} type="button" className={navButtonClass(active)} onClick={() => navigate(item.path)}>
-                  <span className={`material-symbols-outlined mr-3 ${item.text}`}>{item.icon}</span>
+                  <span className="material-symbols-outlined mr-3">{item.icon}</span>
                   <span className="font-label-mono text-label-mono uppercase">{item.label}</span>
                 </button>
               );
