@@ -4,10 +4,10 @@ import Sidebar from '../components/sidebar';
 import EmptyState from '../components/EmptyState';
 
 const AKTIVITE_OPTIONS = [
-  { value: 'yuruyus', label: 'Yürüyüş', icon: 'directions_walk' },
-  { value: 'tempolu_yuruyus', label: 'Tempolu Yürüyüş', icon: 'directions_walk' },
-  { value: 'kosu', label: 'Koşu', icon: 'directions_run' },
-  { value: 'tempolu_kosu', label: 'Tempolu Koşu', icon: 'directions_run' },
+  { value: 'yuruyus', label: 'Yürüyüş', icon: 'directions_walk', borderClass: 'border-amber-400/40', iconClass: 'text-amber-400' },
+  { value: 'tempolu_yuruyus', label: 'Tempolu Yürüyüş', icon: 'directions_walk', borderClass: 'border-blue-400/40', iconClass: 'text-blue-400' },
+  { value: 'kosu', label: 'Koşu', icon: 'directions_run', borderClass: 'border-emerald-400/40', iconClass: 'text-emerald-400' },
+  { value: 'tempolu_kosu', label: 'Tempolu Koşu', icon: 'directions_run', borderClass: 'border-purple-400/40', iconClass: 'text-purple-400' },
 ];
 
 const GOAL = 10000;
@@ -179,8 +179,8 @@ function Steps() {
                     return (
                       <div key={k.id} className="p-6 md:p-7 flex items-center justify-between hover:bg-surface-container-high transition-colors">
                         <div className="flex items-center gap-5">
-                          <div className="w-14 h-14 rounded-full bg-surface-container-highest flex items-center justify-center border border-outline-variant">
-                            <span className="material-symbols-outlined text-primary text-[26px]">{aktivite?.icon ?? 'directions_walk'}</span>
+                          <div className={`w-14 h-14 rounded-full bg-surface-container-highest flex items-center justify-center border-2 ${aktivite?.borderClass ?? 'border-outline-variant'}`}>
+                            <span className={`material-symbols-outlined text-[26px] ${aktivite?.iconClass ?? 'text-primary'}`}>{aktivite?.icon ?? 'directions_walk'}</span>
                           </div>
                           <div>
                             <p className="font-bold text-lg text-on-surface">{aktivite?.label ?? k.aktivite_tipi}</p>

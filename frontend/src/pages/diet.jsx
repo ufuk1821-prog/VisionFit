@@ -280,9 +280,9 @@ function Diet() {
                           {plan.ornek_ogunler.map((ogun, i) => <li key={i}>• {ogun}</li>)}
                         </ul>
                         <div className="flex flex-wrap gap-2">
-                          <span className="px-2 py-1 bg-surface-container-highest rounded text-[10px] font-label-mono text-primary-container">P: {plan.protein_g}g</span>
-                          <span className="px-2 py-1 bg-surface-container-highest rounded text-[10px] font-label-mono text-on-tertiary-container">K: {plan.karbonhidrat_g}g</span>
-                          <span className="px-2 py-1 bg-surface-container-highest rounded text-[10px] font-label-mono text-secondary">Y: {plan.yag_g}g</span>
+                          <span className="px-2.5 py-1 bg-emerald-500/15 border border-emerald-500/30 rounded text-[10px] font-label-mono text-emerald-400 font-bold">P: {plan.protein_g}g</span>
+                          <span className="px-2.5 py-1 bg-amber-500/15 border border-amber-500/30 rounded text-[10px] font-label-mono text-amber-400 font-bold">K: {plan.karbonhidrat_g}g</span>
+                          <span className="px-2.5 py-1 bg-purple-500/15 border border-purple-500/30 rounded text-[10px] font-label-mono text-purple-300 font-bold">Y: {plan.yag_g}g</span>
                         </div>
                         <p className="font-label-mono text-label-mono text-on-surface-variant mt-3">{plan.kalori} kcal</p>
                       </div>
