@@ -74,30 +74,32 @@ function Steps() {
       <Sidebar />
       <main className="md:ml-64 pt-20 md:pt-10 px-gutter md:px-section-padding min-h-screen">
         <div className="max-w-5xl mx-auto flex flex-col md:flex-row gap-gutter">
-          <div className="flex flex-row md:flex-col items-center md:items-start justify-center md:justify-start gap-3 py-4 md:py-8 min-w-[90px] border-b md:border-b-0 md:border-r border-outline-variant/30">
-            <button
-              onClick={() => {
-                const onceki = new Date(secilenGun);
-                onceki.setDate(onceki.getDate() - 1);
-                setSelectedDate(`${onceki.getFullYear()}-${String(onceki.getMonth() + 1).padStart(2, '0')}-${String(onceki.getDate()).padStart(2, '0')}`);
-              }}
-              className="md:hidden p-2 text-on-surface-variant hover:text-primary"
-            >
-              <span className="material-symbols-outlined">chevron_left</span>
-            </button>
-            <div className="flex flex-col items-center md:items-start gap-2">
+          <div className="flex flex-col items-center md:items-start gap-3 py-4 md:py-6 min-w-[90px] border-b md:border-b-0 md:border-r border-outline-variant/30">
+            <div className="flex flex-col items-center md:items-start gap-1.5 pb-3">
               <div className="bg-primary text-on-primary-container px-3 py-1 rounded font-black text-stat-lg">{secilenGun.getDate()}</div>
               <div className="font-label-mono text-label-mono uppercase tracking-widest text-on-surface-variant">{ayAdi}</div>
-              {!bugunMu && (
-                <button onClick={() => setSelectedDate(todayISO())} className="text-[10px] font-label-mono text-blue-400 uppercase hover:underline">
-                  Bugün
-                </button>
-              )}
+              {bugunMu && <span className="text-[9px] font-label-mono text-blue-400 uppercase">Bugün</span>}
             </div>
-            <input
-              type="date" value={selectedDate} max={todayISO()} onChange={(e) => setSelectedDate(e.target.value)}
-              className="hidden md:block mt-1 bg-surface-container-low border border-outline-variant text-on-surface px-2 py-1 rounded font-label-mono text-[10px] w-full"
-            />
+            <div className="flex md:flex-col gap-2 overflow-x-auto md:overflow-x-visible md:overflow-y-auto md:max-h-[420px] w-full pb-2 md:pb-0 md:pr-1">
+              {Array.from({ length: 30 }).map((_, i) => {
+                const gun = new Date();
+                gun.setDate(gun.getDate() - i);
+                const gunIso = `${gun.getFullYear()}-${String(gun.getMonth() + 1).padStart(2, '0')}-${String(gun.getDate()).padStart(2, '0')}`;
+                const aktif = gunIso === selectedDate;
+                const gunAdiKisa = gun.toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' }).toUpperCase();
+                return (
+                  <button
+                    key={gunIso}
+                    onClick={() => setSelectedDate(gunIso)}
+                    className={`shrink-0 px-3 py-2 rounded-lg font-label-mono text-[11px] uppercase whitespace-nowrap transition-colors ${
+                      aktif ? 'bg-primary/15 border border-primary text-primary font-bold' : 'border border-outline-variant text-on-surface-variant hover:bg-surface-container-high'
+                    }`}
+                  >
+                    {gunAdiKisa}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <div className="flex-1 space-y-bento-gap">
