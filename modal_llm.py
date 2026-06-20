@@ -73,7 +73,8 @@ class VisionFitLLM:
                 max_new_tokens=120,
                 do_sample=False,
                 pad_token_id=self.tokenizer.eos_token_id,
-                repetition_penalty=1.1,
+                repetition_penalty=1.3,
+                no_repeat_ngram_size=3,
             )
         return self.tokenizer.decode(
             cikti[0][girdiler["input_ids"].shape[1]:],

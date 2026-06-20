@@ -37,6 +37,46 @@ SISTEM_TALIMATI = (
     "Diz hizanı biraz daha kontrol edersen sonraki antrenmanda daha iyi sonuç alırsın."
 )
 
+TURKCE_COK_SIK_KELIMELER = {
+    "bir", "bu", "şu", "o", "ve", "ile", "ya", "ki", "de", "da", "için", "gibi", "ama", "fakat",
+    "çünkü", "eğer", "hem", "ya da", "veya", "ne", "her", "hiç", "tüm", "bütün", "kadar", "daha",
+    "en", "çok", "az", "biraz", "fazla", "yine", "tekrar", "yeni", "eski", "iyi", "kötü", "güzel",
+    "kolay", "zor", "büyük", "küçük", "yüksek", "düşük", "uzun", "kısa", "hızlı", "yavaş",
+    "sen", "senin", "seni", "sana", "ben", "benim", "biz", "bizim", "siz", "sizin", "onlar",
+    "olan", "olarak", "olur", "oldu", "olacak", "olmalı", "olabilir", "yapmak", "yapıyor",
+    "yaptın", "yapabilirsin", "yapmalısın", "ediyor", "etmek", "eder", "etti", "edebilir",
+    "var", "yok", "değil", "mi", "mı", "mu", "mü", "evet", "hayır", "lütfen", "teşekkür",
+    "bugün", "yarın", "dün", "şimdi", "sonra", "önce", "artık", "henüz", "hâlâ", "zaten",
+    "antrenman", "egzersiz", "form", "hareket", "vücut", "kas", "kilo", "diyet", "beslenme",
+    "kalori", "protein", "karbonhidrat", "yağ", "su", "uyku", "dinlenme", "set", "tekrar",
+    "ağırlık", "squat", "skor", "performans", "gelişim", "ilerleme", "hedef", "plan", "sonuç",
+    "iyi", "harika", "tebrikler", "dikkat", "öneri", "tavsiye", "kontrol", "denge", "düzen",
+    "düzgün", "doğru", "yanlış", "eksik", "tam", "kısmen", "genel", "özel", "günlük", "haftalık",
+    "aylık", "süre", "zaman", "enerji", "güç", "kuvvet", "esneklik", "denge", "duruş", "postür",
+    "omuz", "kalça", "diz", "bel", "sırt", "göğüs", "kol", "bacak", "boyun", "karın",
+    "korumalı", "korumalısın", "geliştirebilirsin", "artırabilirsin", "azaltmalısın",
+    "devam", "başla", "bitir", "tamamla", "kaydet", "takip", "izle", "ölç", "hesapla",
+    "yağ", "kas", "kütle", "oran", "seviye", "düzey", "aşama", "adım", "yol", "süreç",
+}
+
+def _kelime_turkce_mi(kelime):
+    k = kelime.lower()
+    if k in TURKCE_COK_SIK_KELIMELER:
+        return True
+    if len(k) < 4:
+        return True
+    TURKCE_EKLER = (
+        "lar", "ler", "dan", "den", "tan", "ten", "nın", "nin", "nun", "nün",
+        "ın", "in", "un", "ün", "a", "e", "ı", "i", "u", "ü", "yor", "dı", "di",
+        "du", "dü", "tı", "ti", "tu", "tü", "ecek", "acak", "miş", "mış", "muş",
+        "müş", "ebilir", "abilir", "malı", "meli", "sın", "sin", "sun", "sün",
+        "lık", "lik", "luk", "lük", "siz", "sız", "suz", "süz", "li", "lı", "lu", "lü",
+    )
+    if k.endswith(TURKCE_EKLER):
+        return True
+    return False
+
+
 def _yanit_uret(talimat, girdi):
     try:
         yanit = requests.post(
@@ -51,7 +91,7 @@ def _yanit_uret(talimat, girdi):
         yorum = veri.get("yorum", "")
         if not yorum:
             return "Şu anda yapay zeka servisine erişilemiyor, lütfen birkaç saniye sonra tekrar deneyin."
-        
+
         import re
         cumleler = re.split(r'(?<=[.!?])\s+', yorum.strip())
         turkce_cumleler = []
@@ -59,6 +99,8 @@ def _yanit_uret(talimat, girdi):
             if re.search(r'[\u3000-\u9fff\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff]', c):
                 continue
             if re.search(r'[éàèêëâîïôûùäõãñ]', c):
+                continue
+            if re.search(r'[\u0600-\u06ff]', c):
                 continue
             kelimeler = re.findall(r'\b\w+\b', c)
             ingilizce_sayisi = len(re.findall(r'\b[a-zA-Z]{5,}\b', c))
@@ -68,11 +110,19 @@ def _yanit_uret(talimat, girdi):
                 continue
             if len(c) < 5:
                 continue
+
+            anlamli_kelimeler = [k for k in kelimeler if len(k) >= 4 and k.isalpha()]
+            if len(anlamli_kelimeler) >= 2:
+                turkce_sayisi = sum(1 for k in anlamli_kelimeler if _kelime_turkce_mi(k))
+                turkce_orani = turkce_sayisi / len(anlamli_kelimeler)
+                if turkce_orani < 0.6:
+                    continue
+
             turkce_cumleler.append(c)
-        
+
         if not turkce_cumleler:
             return "Şu anda yapay zeka servisine erişilemiyor, lütfen birkaç saniye sonra tekrar deneyin."
-        
+
         return " ".join(turkce_cumleler[:4])
     except Exception as e:
         print(f"MODAL HATA: {e}")
