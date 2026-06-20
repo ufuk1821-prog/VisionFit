@@ -41,7 +41,7 @@ function Exercises() {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-bento-gap max-w-[1400px] mx-auto">
           {activeTab === 'diyagram' ? (
-            <section className="lg:col-span-5 bg-surface-container rounded-xl border border-outline-variant p-6 relative overflow-hidden flex flex-col items-center">
+            <section className="lg:col-span-5 bg-surface-container rounded-xl border border-outline-variant p-6 relative overflow-hidden flex flex-col items-center min-h-[720px]">
               <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
                 <span className="font-label-mono text-label-mono text-on-surface-variant uppercase tracking-widest text-[10px]">Aktif Katman</span>
                 <span className="px-2 py-1 bg-brand-red/10 border border-brand-red text-brand-red font-label-mono text-label-mono uppercase">Kas Sistemi</span>
@@ -64,7 +64,7 @@ function Exercises() {
                 </button>
               </div>
 
-              <div className="relative w-full mt-16 mb-4 flex justify-center">
+              <div className="relative w-full mt-16 mb-4 flex justify-center flex-1 items-center">
                 <MuscleDiagram selectedMuscle={selectedMuscle} onSelectMuscle={setSelectedMuscle} onArka={onArka} />
               </div>
 

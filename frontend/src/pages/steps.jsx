@@ -65,7 +65,7 @@ function Steps() {
     <div>
       <Sidebar />
       <main className="md:ml-64 pt-20 md:pt-10 px-gutter md:px-section-padding min-h-screen">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row gap-gutter">
+        <div className="max-w-5xl mx-auto flex flex-col md:flex-row gap-gutter">
           <div className="flex flex-row md:flex-col items-center md:items-start justify-center md:justify-start gap-2 py-4 md:py-8 min-w-[80px] border-b md:border-b-0 md:border-r border-outline-variant/30">
             <div className="bg-primary text-on-primary-container px-3 py-1 rounded font-black text-stat-lg">{bugun.getDate()}</div>
             <div className="font-label-mono text-label-mono uppercase tracking-widest text-on-surface-variant">{ayAdi}</div>

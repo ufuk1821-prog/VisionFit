@@ -98,21 +98,21 @@ function VideoAnalizBolumu({ apiUrl, token }) {
 
   return (
     <div className="flex-1 flex items-center justify-center p-6">
-      <div className="w-full max-w-3xl bento-card p-8">
+      <div className="w-full max-w-6xl bento-card p-10">
         <h2 className="font-headline-md text-headline-md mb-2">Video Analizi</h2>
         <p className="text-on-surface-variant font-body-sm mb-6">Yandan çekilmiş, tüm vücudunuzun göründüğü bir squat videosu yükleyin.</p>
 
-        <div className="grid md:grid-cols-2 gap-bento-gap">
-          <div>
-            <video ref={videoRef2} className="w-full aspect-video bg-black rounded-xl border border-outline-variant" style={{ display: secilenVideo ? 'block' : 'none' }} controls />
+        <div className="grid md:grid-cols-3 gap-bento-gap">
+          <div className="md:col-span-2">
+            <video ref={videoRef2} className="w-full aspect-[4/3] min-h-[420px] bg-black rounded-xl border border-outline-variant object-cover" style={{ display: secilenVideo ? 'block' : 'none' }} controls />
             {!secilenVideo && (
-              <div className="w-full aspect-video bg-surface-container-lowest rounded-xl border border-outline-variant flex items-center justify-center text-on-surface-variant text-sm">
+              <div className="w-full aspect-[4/3] min-h-[420px] bg-surface-container-lowest rounded-xl border border-outline-variant flex items-center justify-center text-on-surface-variant text-sm">
                 Video seçilmedi
               </div>
             )}
           </div>
 
-          <div className="flex flex-col gap-3 justify-center">
+          <div className="flex flex-col gap-3 justify-center md:col-span-1">
             <label className="font-label-mono text-label-mono text-on-surface-variant uppercase">Video Seç</label>
             <input type="file" accept="video/*" onChange={videoSec} className="hidden" id="video-input" />
             <label htmlFor="video-input" className="px-6 py-3 bg-surface-container-high border border-outline-variant rounded-lg text-center cursor-pointer font-label-mono text-label-mono uppercase">

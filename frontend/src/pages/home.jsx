@@ -8,8 +8,11 @@ const QUICK_ACCESS = [
   { path: '/dashboard', icon: 'videocam', label: 'KAMERA ANALİZİ' },
   { path: '/plank', icon: 'photo_camera', label: 'FOTOĞRAF ANALİZİ' },
   { path: '/history', icon: 'history', label: 'GEÇMİŞ' },
+  { path: '/exercises', icon: 'menu_book', label: 'KÜTÜPHANE' },
+  { path: '/workout-notebook', icon: 'edit_note', label: 'GÜNLÜK' },
   { path: '/diet', icon: 'restaurant', label: 'DİYET' },
   { path: '/nutrition', icon: 'nutrition', label: 'BESLENME' },
+  { path: '/steps', icon: 'directions_run', label: 'ADIMLAR' },
   { path: '/badges', icon: 'military_tech', label: 'ROZETLER' },
 ];
 
@@ -208,7 +211,7 @@ function Home() {
             {QUICK_ACCESS.map(({ path, icon, label }) => (
               <div
                 key={path}
-                className="min-w-[200px] bento-card p-5 flex flex-col justify-between h-32 cursor-pointer hover:bg-surface-container-high transition-colors"
+                className="min-w-[160px] flex-1 bento-card p-5 flex flex-col justify-between h-32 cursor-pointer hover:bg-surface-container-high transition-colors"
                 onClick={() => navigate(path)}
               >
                 <span className="material-symbols-outlined text-primary">{icon}</span>

@@ -50,14 +50,15 @@ function MuscleDiagram({ selectedMuscle, onSelectMuscle }) {
   };
 
   const modelStyle = {
-    width: '200px',
+    width: '380px',
     padding: '0',
     cursor: 'pointer',
   };
 
   const svgStyle = {
-    width: '200px',
+    width: '380px',
     height: 'auto',
+    maxHeight: '560px',
   };
 
   return (

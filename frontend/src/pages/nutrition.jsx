@@ -79,7 +79,8 @@ function Nutrition() {
   return (
     <div>
       <Sidebar />
-      <main className="md:ml-64 min-h-screen pt-20 md:pt-10 pb-24 md:pb-10 px-gutter md:px-12 max-w-7xl mx-auto">
+      <main className="md:ml-64 min-h-screen pt-20 md:pt-10 pb-24 md:pb-10 px-gutter md:px-12">
+        <div className="max-w-5xl mx-auto">
         <header className="mb-8">
           <h1 className="font-display-lg text-display-lg-mobile md:text-display-lg text-on-surface">BESLENME <span className="text-primary">TAKİBİ</span></h1>
           <p className="font-label-mono text-label-mono text-on-surface-variant tracking-widest mt-2 uppercase">GÜNLÜK KALORİ VE MAKRO VERİLERİ</p>
@@ -310,6 +311,7 @@ function Nutrition() {
             </div>
           </div>
         )}
+        </div>
       </main>
     </div>
   );

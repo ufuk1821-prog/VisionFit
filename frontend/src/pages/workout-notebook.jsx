@@ -134,7 +134,7 @@ function WorkoutNotebook() {
         </header>
 
         <div className="grid grid-cols-12 gap-bento-gap">
-          <section className="col-span-12 lg:col-span-8 bg-surface-container rounded-xl border border-outline-variant overflow-hidden">
+          <section className="col-span-12 lg:col-span-9 bg-surface-container rounded-xl border border-outline-variant overflow-hidden">
             <div className="p-6 border-b border-outline-variant flex justify-between items-center">
               <h3 className="font-headline-md text-on-surface flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary">fitness_center</span>
@@ -152,51 +152,51 @@ function WorkoutNotebook() {
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse">
                     <thead>
-                      <tr className="bg-surface-container-low text-left font-label-mono text-[10px] text-on-surface-variant uppercase tracking-widest">
-                        <th className="p-4 border-b border-outline-variant">Egzersiz</th>
-                        <th className="p-4 border-b border-outline-variant text-center">Set</th>
-                        <th className="p-4 border-b border-outline-variant text-center">Tekrar</th>
-                        <th className="p-4 border-b border-outline-variant text-center">Ağırlık (kg)</th>
-                        <th className="p-4 border-b border-outline-variant text-right">Eylem</th>
-                      </tr>
+                      <tr className="bg-surface-container-low text-left font-label-mono text-sm text-on-surface-variant uppercase tracking-widest">
+                       <th className="p-5 border-b border-outline-variant">Egzersiz</th>
+                       <th className="p-5 border-b border-outline-variant text-center">Set</th>
+                       <th className="p-5 border-b border-outline-variant text-center">Tekrar</th>
+                       <th className="p-5 border-b border-outline-variant text-center">Ağırlık (kg)</th>
+                       <th className="p-5 border-b border-outline-variant text-right">Eylem</th>
+                     </tr>
                     </thead>
                     <tbody>
                       {rows.map((row, i) => (
                         <tr key={i} className="group hover:bg-surface-container-high transition-colors border-b border-outline-variant/30">
-                          <td className="p-4">
+                          <td className="p-5">
                             <input
                               type="text" placeholder="Egzersiz adı" value={row.hareket}
                               onChange={(e) => handleRowChange(i, 'hareket', e.target.value)}
-                              className="w-full bg-transparent border-0 text-on-surface font-body-md focus:ring-0 p-0 outline-none"
+                              className="w-full bg-transparent border-0 text-on-surface text-lg font-body-md focus:ring-0 p-0 outline-none"
                             />
                           </td>
-                          <td className="p-4 text-center">
+                          <td className="p-5 text-center">
                             <input
                               type="number" min="0" value={row.set_sayisi}
                               onChange={(e) => handleRowChange(i, 'set_sayisi', e.target.value)}
-                              className="w-12 bg-surface-container-lowest border border-outline-variant text-center text-on-surface font-label-mono rounded text-sm py-1"
+                              className="w-20 bg-surface-container-lowest border border-outline-variant text-center text-on-surface font-label-mono rounded-lg text-lg py-3"
                             />
                           </td>
-                          <td className="p-4 text-center">
+                          <td className="p-5 text-center">
                             <input
                               type="number" min="0" value={row.tekrar_sayisi}
                               onChange={(e) => handleRowChange(i, 'tekrar_sayisi', e.target.value)}
-                              className="w-12 bg-surface-container-lowest border border-outline-variant text-center text-on-surface font-label-mono rounded text-sm py-1"
+                              className="w-20 bg-surface-container-lowest border border-outline-variant text-center text-on-surface font-label-mono rounded-lg text-lg py-3"
                             />
                           </td>
-                          <td className="p-4 text-center">
+                          <td className="p-5 text-center">
                             <input
                               type="number" min="0" step="0.5" value={row.agirlik}
                               onChange={(e) => handleRowChange(i, 'agirlik', e.target.value)}
-                              className="w-16 bg-surface-container-lowest border border-outline-variant text-center text-on-surface font-label-mono rounded text-sm py-1"
+                              className="w-24 bg-surface-container-lowest border border-outline-variant text-center text-on-surface font-label-mono rounded-lg text-lg py-3"
                             />
                           </td>
-                          <td className="p-4 text-right">
+                          <td className="p-5 text-right">
                             <button
                               onClick={() => handleDeleteRow(i)} disabled={rows.length === 1}
                               className="text-on-surface-variant hover:text-primary transition-colors disabled:opacity-30"
                             >
-                              <span className="material-symbols-outlined text-[20px]">delete_outline</span>
+                              <span className="material-symbols-outlined text-2xl">delete_outline</span>
                             </button>
                           </td>
                         </tr>
@@ -219,7 +219,7 @@ function WorkoutNotebook() {
             )}
           </section>
 
-          <aside className="col-span-12 lg:col-span-4 flex flex-col gap-bento-gap">
+          <aside className="col-span-12 lg:col-span-3 flex flex-col gap-bento-gap">
             <div className="bg-surface-container rounded-xl border border-outline-variant p-6">
               <h4 className="font-label-mono text-xs text-secondary-container font-bold uppercase tracking-widest mb-4 flex items-center gap-2">
                 <span className="material-symbols-outlined text-secondary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
