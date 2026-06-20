@@ -16,7 +16,7 @@ export default {
         'secondary-container': '#571bc1',
         'error-container': '#93000a',
         'error': '#ffb4ab',
-        'on-surface-variant': '#e5bdbb',
+        'on-surface-variant': '#a8a39f',
         'surface-container': '#20201f',
         'primary': '#E8313F',
         'inverse-on-surface': '#313030',
