@@ -149,8 +149,8 @@ function Home() {
               <span className="font-label-mono text-label-mono text-on-surface-variant block mb-4">ADIMLAR</span>
               <h3 className="font-stat-lg text-stat-lg">{stepsCount.toLocaleString('tr-TR')}</h3>
             </div>
-            <div className="relative w-32 h-32 mx-auto my-6">
-              <svg className="w-full h-full transform -rotate-90">
+            <div className="relative w-44 h-44 mx-auto my-6">
+              <svg viewBox="0 0 128 128" className="w-full h-full transform -rotate-90">
                 <circle className="text-surface-container-high" cx="64" cy="64" fill="transparent" r="58" stroke="currentColor" strokeWidth="8"></circle>
                 <circle
                   className="text-primary-container" cx="64" cy="64" fill="transparent" r="58" stroke="currentColor"
