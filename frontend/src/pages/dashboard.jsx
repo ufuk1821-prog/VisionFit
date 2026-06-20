@@ -135,6 +135,33 @@ function VideoAnalizBolumu({ apiUrl, token }) {
                 <p className="text-body-sm text-on-surface-variant mt-1">{videoSonuc.gelistirilecek_mesaj}</p>
               </div>
             )}
+
+            {!secilenVideo && (
+              <div className="bg-surface-container-high border border-outline-variant rounded-xl p-5 mt-2">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="material-symbols-outlined text-primary text-xl">tips_and_updates</span>
+                  <h4 className="font-label-mono text-label-mono text-on-surface uppercase">İyi Bir Video İçin</h4>
+                </div>
+                <ul className="space-y-3">
+                  <li className="flex gap-2">
+                    <span className="material-symbols-outlined text-primary text-base">check</span>
+                    <p className="font-body-sm text-on-surface-variant">Kamerayı yere sabit, tam yandan konumlandırın.</p>
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="material-symbols-outlined text-primary text-base">check</span>
+                    <p className="font-body-sm text-on-surface-variant">Tüm vücudunuz baştan ayağa kadraja sığsın.</p>
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="material-symbols-outlined text-primary text-base">check</span>
+                    <p className="font-body-sm text-on-surface-variant">En az 3-5 tekrar yapılan bir kayıt yükleyin.</p>
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="material-symbols-outlined text-primary text-base">check</span>
+                    <p className="font-body-sm text-on-surface-variant">Aydınlık bir ortamda, dar kıyafetle çekim yapın.</p>
+                  </li>
+                </ul>
+              </div>
+            )}
           </div>
         </div>
       </div>

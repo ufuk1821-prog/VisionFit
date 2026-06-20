@@ -31,3 +31,20 @@ body {
   @apply bg-background text-on-surface;
   font-family: 'Inter', sans-serif;
 }
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #131313;
+}
+::-webkit-scrollbar-thumb {
+  background: #333333;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #E8313F;
+}
+html {
+  scrollbar-color: #333333 #131313;
+}

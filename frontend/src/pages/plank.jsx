@@ -5,28 +5,146 @@ import axios from 'axios';
 import Sidebar from '../components/sidebar';
 
 const HAREKETLER = [
-  { id: 'plank', label: 'Plank', endpoint: 'plank', dogruForm: 'Omuzlar, kalça ve ayak bilekleri tek bir düz çizgi üzerinde olmalı. Karın ve kalça kasları sıkı tutulmalı.' },
-  { id: 'sinav', label: 'Şınav', endpoint: 'sinav', dogruForm: 'Şınavın alt pozisyonunda omuzlar, kalça ve ayak bilekleri tek düz hat üzerinde olmalı.' },
-  { id: 'kopru', label: 'Köprü', endpoint: 'kopru', dogruForm: 'Köprünün tepe noktasında omuzlar, kalça ve dizler tek düz hat oluşturmalı.' },
-  { id: 'yan_plank', label: 'Yan Plank', endpoint: 'yan-plank', dogruForm: 'Vücudunuz baştan ayağa tek düz bir çizgi oluşturmalı.' },
-  { id: 'duvar_squat', label: 'Duvar Squat', endpoint: 'duvar-squat', dogruForm: 'Sırtınız duvara yaslı, dizleriniz yaklaşık 90 derece açıda olmalı.' },
-  { id: 'supermen', label: 'Süpermen', endpoint: 'supermen', dogruForm: 'Yüzüstü pozisyonda kollar ve bacaklar aynı anda yukarı kaldırılmalı.' },
-  { id: 'lunge', label: 'Lunge', endpoint: 'lunge', dogruForm: 'Öne adım at, ön diz 90° açıda olsun. Gövden dik, arka diz yere yakın.' },
-  { id: 'omuz_acikligi', label: 'Omuz Açıklığı', endpoint: 'omuz-acikligi', dogruForm: 'Kollar tam olarak yanlara, omuz hizasında T şeklinde açık.' },
-  { id: 'one_egilme', label: 'Öne Eğilme', endpoint: 'one-egilme', dogruForm: 'Ayakta dur, öne doğru eğil. Dizler düz veya hafif bükülü.' },
-  { id: 'ters_kopru', label: 'Ters Köprü', endpoint: 'ters-kopru', dogruForm: 'Yere otur, ellerini arkanıza koy, kalçanı yukarı kaldır.' },
-];
-
-const NASIL_CALISIR = [
-  'Yapay zeka 32 farklı eklem noktasını gerçek zamanlı haritalar.',
-  'Görüntü derinlik verisiyle 3D uzayda analiz edilir.',
-  'Milyonlarca profesyonel atlet verisiyle karşılaştırma yapılır.',
-];
-
-const IPUCLARI = [
-  'Fotoğrafı tam yandan veya tam karşıdan çekmeye özen gösterin.',
-  'Vücut hatlarınızı belli eden giysiler analizi kolaylaştırır.',
-  'Aydınlatmanın vücudun her iki tarafını da eşit aydınlatmasını sağlayın.',
+  {
+    id: 'plank', label: 'Plank', endpoint: 'plank',
+    dogruForm: 'Omuzlar, kalça ve ayak bilekleri tek bir düz çizgi üzerinde olmalı. Karın ve kalça kasları sıkı tutulmalı.',
+    nasilCalisir: [
+      'Omuz, kalça ve ayak bileği noktaları tespit edilir.',
+      'Bu üç noktanın oluşturduğu açı hesaplanır.',
+      'Açı 180°ye yakınsa form "iyi" olarak değerlendirilir.',
+    ],
+    ipuclari: [
+      'Fotoğraf tam yandan, tüm vücut kadrajda olacak şekilde çekilmeli.',
+      'Kalçanın ne yukarı kalkık ne aşağı çökük olmadığından emin olun.',
+      'Dirsekler omuz hizasında, düz bir açıyla yere bassın.',
+    ],
+  },
+  {
+    id: 'sinav', label: 'Şınav', endpoint: 'sinav',
+    dogruForm: 'Şınavın alt pozisyonunda omuzlar, kalça ve ayak bilekleri tek düz hat üzerinde olmalı.',
+    nasilCalisir: [
+      'Şınavın en alt (göğüs yere yakın) anındaki kare analiz edilir.',
+      'Vücut hattı düzlüğü plank ile aynı mantıkla ölçülür.',
+      'Dirsek açısı da ek bir referans olarak değerlendirilir.',
+    ],
+    ipuclari: [
+      'Fotoğrafı şınavın en alt noktasında çekin.',
+      'Kamerayı yere yakın, tam yandan konumlandırın.',
+      'Kalçanın havaya kalkmadığından emin olun.',
+    ],
+  },
+  {
+    id: 'kopru', label: 'Köprü', endpoint: 'kopru',
+    dogruForm: 'Köprünün tepe noktasında omuzlar, kalça ve dizler tek düz hat oluşturmalı.',
+    nasilCalisir: [
+      'Omuz, kalça ve diz noktaları işaretlenir.',
+      'Kalçanın omuz-diz hattına göre yüksekliği ölçülür.',
+      'Yeterli kalkış sağlanmışsa "iyi form" olarak işaretlenir.',
+    ],
+    ipuclari: [
+      'Fotoğrafı hareketin en yüksek (tepe) noktasında çekin.',
+      'Kamera yere yakın ve tam yandan olmalı.',
+      'Omuzlar yere sabit basmalı, baş gevşek olmalı.',
+    ],
+  },
+  {
+    id: 'yan_plank', label: 'Yan Plank', endpoint: 'yan-plank',
+    dogruForm: 'Vücudunuz baştan ayağa tek düz bir çizgi oluşturmalı.',
+    nasilCalisir: [
+      'Omuz, kalça ve ayak bileği noktaları tespit edilir.',
+      'Vücut hattının yana doğru düzlüğü hesaplanır.',
+      'Kalçanın düşüp düşmediği kontrol edilir.',
+    ],
+    ipuclari: [
+      'Fotoğrafı tam yandan, destek alan kol görünecek şekilde çekin.',
+      'Kalçanın yere doğru sarkmadığından emin olun.',
+      'Üstteki bacak ve kalça aynı hizada olmalı.',
+    ],
+  },
+  {
+    id: 'duvar_squat', label: 'Duvar Squat', endpoint: 'duvar-squat',
+    dogruForm: 'Sırtınız duvara yaslı, dizleriniz yaklaşık 90 derece açıda olmalı.',
+    nasilCalisir: [
+      'Kalça, diz ve ayak bileği noktalarından diz açısı hesaplanır.',
+      'Açı 90°ye yakınsa "iyi form" sonucu verilir.',
+      'Çok küçük veya çok büyük açılar "düzeltme gerekli" olarak işaretlenir.',
+    ],
+    ipuclari: [
+      'Fotoğrafı tam yandan, diz açısı net görünecek şekilde çekin.',
+      'Sırtın tamamen duvara yaslı olduğundan emin olun.',
+      'Ayaklar kalça genişliğinde ve düz olmalı.',
+    ],
+  },
+  {
+    id: 'supermen', label: 'Süpermen', endpoint: 'supermen',
+    dogruForm: 'Yüzüstü pozisyonda kollar ve bacaklar aynı anda yukarı kaldırılmalı.',
+    nasilCalisir: [
+      'Omuz, kalça ve ayak bileği noktaları işaretlenir.',
+      'Kol ve bacakların kalçaya göre yüksekliği ölçülür.',
+      'Simetrik ve yeterli kalkış varsa "iyi form" verilir.',
+    ],
+    ipuclari: [
+      'Fotoğrafı hareketin en yüksek noktasında, yandan çekin.',
+      'Kol ve bacakların aynı anda kalktığından emin olun.',
+      'Boynu zorlamadan, bakışı yere doğru tutun.',
+    ],
+  },
+  {
+    id: 'lunge', label: 'Lunge', endpoint: 'lunge',
+    dogruForm: 'Öne adım at, ön diz 90° açıda olsun. Gövden dik, arka diz yere yakın.',
+    nasilCalisir: [
+      'Ön bacağın kalça-diz-ayak bileği açısı ölçülür.',
+      'Gövdenin dikliği ayrı bir referans olarak değerlendirilir.',
+      'İdeal açıya yakınlık skoru belirler.',
+    ],
+    ipuclari: [
+      'Fotoğrafı tam yandan, alçalmanın en düşük noktasında çekin.',
+      'Ön diz, ayak ucunu geçmemeli.',
+      'Gövdeyi öne eğmeden dik tutun.',
+    ],
+  },
+  {
+    id: 'omuz_acikligi', label: 'Omuz Açıklığı', endpoint: 'omuz-acikligi',
+    dogruForm: 'Kollar tam olarak yanlara, omuz hizasında T şeklinde açık. Her iki kol aynı seviyede.',
+    nasilCalisir: [
+      'Bilek konumları omuz hizasıyla karşılaştırılır.',
+      'Her iki kolun açısı ayrı ayrı ölçülür.',
+      'Simetri ve doğru açı birlikte değerlendirilir.',
+    ],
+    ipuclari: [
+      'Fotoğrafı tam karşıdan, her iki kol görünecek şekilde çekin.',
+      'Kollar omuz hizasında, yere paralel olmalı.',
+      'Vücudu kameraya tam cepheden dönün.',
+    ],
+  },
+  {
+    id: 'one_egilme', label: 'Öne Eğilme', endpoint: 'one-egilme',
+    dogruForm: 'Ayakta dur, öne doğru eğil. Dizler düz veya hafif bükülü, eller yere mümkün olduğunca yakın.',
+    nasilCalisir: [
+      'Kalça açısı ölçülür.',
+      'Ellerin zemine olan mesafesi hesaplanır.',
+      'Esneklik seviyesi bu iki veriye göre belirlenir.',
+    ],
+    ipuclari: [
+      'Fotoğrafı tam yandan, eğilmenin en alt noktasında çekin.',
+      'Dizleri zorlamadan doğal bükülmeye izin verin.',
+      'Bacakların tamamı kadrajda olmalı.',
+    ],
+  },
+  {
+    id: 'ters_kopru', label: 'Ters Köprü', endpoint: 'ters-kopru',
+    dogruForm: 'Yere otur, ellerini arkanıza koy, kalçanı yukarı kaldır. Diz açısı ~90°, gövde düz.',
+    nasilCalisir: [
+      'Kalça yüksekliği ölçülür.',
+      'Diz açısı ayrıca hesaplanır.',
+      'İkisi birlikte form kalitesini belirler.',
+    ],
+    ipuclari: [
+      'Fotoğrafı tam yandan, kalçanın en yüksek noktasında çekin.',
+      'Diz açısının 90 dereceye yakın olduğundan emin olun.',
+      'Omuzdan dize kadar düz bir hat oluşturun.',
+    ],
+  },
 ];
 
 function FotografliAnaliz() {
@@ -268,7 +386,7 @@ function FotografliAnaliz() {
                 <h3 className="font-headline-md text-on-surface">Nasıl Çalışır?</h3>
               </div>
               <ul className="space-y-4">
-                {NASIL_CALISIR.map((t, i) => (
+                {hareket.nasilCalisir.map((t, i) => (
                   <li className="flex gap-3" key={i}>
                     <span className="font-label-mono text-brand-red">{String(i + 1).padStart(2, '0')}</span>
                     <p className="font-body-sm text-on-surface-variant">{t}</p>
@@ -285,7 +403,7 @@ function FotografliAnaliz() {
                 <h3 className="font-headline-md text-on-surface">İpuçları</h3>
               </div>
               <div className="space-y-3">
-                {IPUCLARI.map((t, i) => (
+                {hareket.ipuclari.map((t, i) => (
                   <div key={i} className={`p-3 bg-surface-container-lowest rounded-lg border-l-4 ${i === 0 ? 'border-brand-red' : 'border-outline-variant'}`}>
                     <p className="font-body-sm text-on-surface">{t}</p>
                   </div>

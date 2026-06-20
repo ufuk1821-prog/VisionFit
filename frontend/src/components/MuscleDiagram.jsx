@@ -39,9 +39,10 @@ export const SLUG_TO_GROUPS = {
   calves: ['baldir'],
 };
 
-function MuscleDiagram({ selectedMuscle, onSelectMuscle }) {
+function MuscleDiagram({ selectedMuscle, onSelectMuscle, onArka }) {
   const slug = GROUP_TO_SLUG[selectedMuscle];
   const data = slug ? [{ name: 'secili', muscles: [slug], frequency: 1 }] : [];
+  const gosterilenTip = onArka === 'arka' ? 'posterior' : 'anterior';
 
   const handleClick = ({ muscle }) => {
     const groups = SLUG_TO_GROUPS[muscle];
@@ -62,31 +63,17 @@ function MuscleDiagram({ selectedMuscle, onSelectMuscle }) {
   };
 
   return (
-    <div className="muscle-diagram-wrapper">
-      <div className="muscle-diagram">
-        <Model
-          type="anterior"
-          data={data}
-          onClick={handleClick}
-          bodyColor="#c4956a"
-          highlightedColors={['#e8313f']}
-          style={modelStyle}
-          svgStyle={svgStyle}
-        />
-        <div className="muscle-diagram-label">Ön</div>
-      </div>
-      <div className="muscle-diagram">
-        <Model
-          type="posterior"
-          data={data}
-          onClick={handleClick}
-          bodyColor="#c4956a"
-          highlightedColors={['#e8313f']}
-          style={modelStyle}
-          svgStyle={svgStyle}
-        />
-        <div className="muscle-diagram-label">Arka</div>
-      </div>
+    <div className="flex items-center justify-center">
+      <Model
+        key={gosterilenTip}
+        type={gosterilenTip}
+        data={data}
+        onClick={handleClick}
+        bodyColor="#c4956a"
+        highlightedColors={['#E8313F']}
+        style={modelStyle}
+        svgStyle={svgStyle}
+      />
     </div>
   );
 }
