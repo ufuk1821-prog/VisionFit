@@ -158,10 +158,10 @@ function Timer() {
                   </div>
                 </div>
 
-                <div className="bento-card p-6 bg-primary-container/10 border-primary-container/20 flex flex-col justify-between">
+                <div className="bento-card p-6 bg-amber-500/10 border-amber-500/20 flex flex-col justify-between">
                   <div>
-                    <span className="material-symbols-outlined text-primary text-3xl mb-4">info</span>
-                    <h4 className="font-headline-md text-primary mb-2">Performans İpucu</h4>
+                    <span className="material-symbols-outlined text-amber-400 text-3xl mb-4">info</span>
+                    <h4 className="font-headline-md text-amber-400 mb-2">Performans İpucu</h4>
                     <p className="text-on-surface-variant leading-relaxed">Set arası 60-90 saniye dinlenin. ATP depolarının yenilenmesi için bu süre kritiktir.</p>
                   </div>
                 </div>
@@ -223,7 +223,7 @@ function Timer() {
                     </button>
                   </div>
 
-                  {finished && <div className="font-label-mono text-tertiary uppercase">⏰ Süre doldu!</div>}
+                  {finished && <div className="font-label-mono text-emerald-400 uppercase">⏰ Süre doldu!</div>}
                 </div>
               </div>
 

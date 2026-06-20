@@ -55,7 +55,7 @@ function Sidebar() {
       <aside className="hidden md:flex flex-col h-screen fixed left-0 top-0 py-section-padding bg-surface-container border-r border-outline-variant w-64 z-50">
         <div className="px-6 mb-10">
           <h1 className="text-headline-md font-display-lg font-black text-primary tracking-tighter uppercase cursor-pointer" onClick={() => navigate('/')}>VisionFit</h1>
-          <p className="text-[10px] font-label-mono text-on-surface-variant tracking-widest mt-1 opacity-60">PERFORMANS TELEMETRİSİ</p>
+          <p className="text-[10px] font-label-mono text-on-surface-variant tracking-widest mt-1 opacity-60">EN İYİ HALİNE ULAŞ.</p>
         </div>
 
         <nav className="flex-1 overflow-y-auto scrollbar-hide">

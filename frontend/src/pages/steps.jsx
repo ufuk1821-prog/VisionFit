@@ -56,7 +56,7 @@ function Steps() {
   const toplamMesafe = (toplamAdim * 0.0008).toFixed(1);
   const hedefYuzde = (toplamAdim / GOAL) * 100;
 
-  const ringCircumference = 2 * Math.PI * 80;
+  const ringCircumference = 2 * Math.PI * 108;
   const ringOffset = ringCircumference * (1 - Math.min(toplamAdim / GOAL, 1));
 
   const ayAdi = bugun.toLocaleDateString('tr-TR', { month: 'short' }).toUpperCase();
@@ -85,17 +85,17 @@ function Steps() {
                   <span className="material-symbols-outlined text-primary-container/20 text-8xl scale-150 rotate-12">footprint</span>
                 </div>
                 <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
-                  <div className="relative w-48 h-48 flex items-center justify-center">
-                    <svg className="w-48 h-48 -rotate-90">
-                      <circle className="text-surface-container-highest" cx="96" cy="96" fill="transparent" r="80" stroke="currentColor" strokeWidth="12"></circle>
+                  <div className="relative w-64 h-64 flex items-center justify-center">
+                    <svg className="w-64 h-64 -rotate-90">
+                      <circle className="text-surface-container-highest" cx="128" cy="128" fill="transparent" r="108" stroke="currentColor" strokeWidth="16"></circle>
                       <circle
-                        className="text-primary" cx="96" cy="96" fill="transparent" r="80" stroke="currentColor" strokeWidth="12" strokeLinecap="round"
+                        className="text-primary" cx="128" cy="128" fill="transparent" r="108" stroke="currentColor" strokeWidth="16" strokeLinecap="round"
                         strokeDasharray={ringCircumference} strokeDashoffset={ringOffset}
                         style={{ transition: 'stroke-dashoffset 0.6s ease' }}
                       ></circle>
                     </svg>
                     <div className="absolute text-center">
-                      <span className="block font-label-mono text-label-mono text-on-surface-variant uppercase">%{Math.round(hedefYuzde)}</span>
+                      <span className="font-label-mono text-base text-on-surface-variant uppercase">%{Math.round(hedefYuzde)}</span>
                       {hedefYuzde >= 100 && <span className="material-symbols-outlined text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>stars</span>}
                     </div>
                   </div>

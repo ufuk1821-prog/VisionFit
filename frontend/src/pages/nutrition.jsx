@@ -104,48 +104,51 @@ function Nutrition() {
         {activeTab === 'yemek' && (
           <div className="space-y-8">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-bento-gap">
-              <div className="p-5 bg-surface-container border border-outline-variant rounded-xl relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-1 h-full bg-primary opacity-50"></div>
-                <span className="text-[10px] font-label-mono uppercase text-on-surface-variant block mb-1">KALORİ</span>
+              <div className="p-5 bg-surface-container border border-brand-red/20 rounded-xl relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-1 h-full bg-brand-red"></div>
+                <span className="text-[10px] font-label-mono uppercase text-brand-red/80 block mb-1">KALORİ</span>
                 <div className="flex items-baseline gap-2">
                   <span className="text-stat-lg font-stat-lg text-on-surface">{Math.round(toplamKalori)}</span>
                   <span className="text-label-mono text-[10px] opacity-60">/ 2500 kcal</span>
                 </div>
                 <div className="mt-3 w-full bg-surface-container-highest h-1 rounded-full overflow-hidden">
-                  <div className="bg-primary h-full" style={{ width: `${Math.min((toplamKalori / 2500) * 100, 100)}%` }}></div>
+                  <div className="bg-brand-red h-full" style={{ width: `${Math.min((toplamKalori / 2500) * 100, 100)}%` }}></div>
                 </div>
               </div>
 
-              <div className="p-5 bg-surface-container border border-outline-variant rounded-xl">
-                <span className="text-[10px] font-label-mono uppercase text-on-surface-variant block mb-1">PROTEİN</span>
+              <div className="p-5 bg-surface-container border border-emerald-500/20 rounded-xl relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-1 h-full bg-emerald-400"></div>
+                <span className="text-[10px] font-label-mono uppercase text-emerald-400 block mb-1">PROTEİN</span>
                 <div className="flex items-baseline gap-2">
                   <span className="text-stat-lg font-stat-lg text-on-surface">{Math.round(toplamProtein)}</span>
                   <span className="text-label-mono text-[10px] opacity-60">/ 180 g</span>
                 </div>
                 <div className="mt-3 w-full bg-surface-container-highest h-1 rounded-full overflow-hidden">
-                  <div className="bg-tertiary h-full" style={{ width: `${Math.min((toplamProtein / 180) * 100, 100)}%` }}></div>
+                  <div className="bg-emerald-400 h-full" style={{ width: `${Math.min((toplamProtein / 180) * 100, 100)}%` }}></div>
                 </div>
               </div>
 
-              <div className="p-5 bg-surface-container border border-outline-variant rounded-xl">
-                <span className="text-[10px] font-label-mono uppercase text-on-surface-variant block mb-1">KARBONHİDRAT</span>
+              <div className="p-5 bg-surface-container border border-amber-500/20 rounded-xl relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-1 h-full bg-amber-400"></div>
+                <span className="text-[10px] font-label-mono uppercase text-amber-400 block mb-1">KARBONHİDRAT</span>
                 <div className="flex items-baseline gap-2">
                   <span className="text-stat-lg font-stat-lg text-on-surface">{Math.round(toplamKarb)}</span>
                   <span className="text-label-mono text-[10px] opacity-60">/ 300 g</span>
                 </div>
                 <div className="mt-3 w-full bg-surface-container-highest h-1 rounded-full overflow-hidden">
-                  <div className="bg-secondary h-full" style={{ width: `${Math.min((toplamKarb / 300) * 100, 100)}%` }}></div>
+                  <div className="bg-amber-400 h-full" style={{ width: `${Math.min((toplamKarb / 300) * 100, 100)}%` }}></div>
                 </div>
               </div>
 
-              <div className="p-5 bg-surface-container border border-outline-variant rounded-xl">
-                <span className="text-[10px] font-label-mono uppercase text-on-surface-variant block mb-1">YAĞ</span>
+              <div className="p-5 bg-surface-container border border-purple-500/20 rounded-xl relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-1 h-full bg-purple-400"></div>
+                <span className="text-[10px] font-label-mono uppercase text-purple-400 block mb-1">YAĞ</span>
                 <div className="flex items-baseline gap-2">
                   <span className="text-stat-lg font-stat-lg text-on-surface">{Math.round(toplamYag)}</span>
                   <span className="text-label-mono text-[10px] opacity-60">/ 85 g</span>
                 </div>
                 <div className="mt-3 w-full bg-surface-container-highest h-1 rounded-full overflow-hidden">
-                  <div className="bg-error h-full" style={{ width: `${Math.min((toplamYag / 85) * 100, 100)}%` }}></div>
+                  <div className="bg-purple-400 h-full" style={{ width: `${Math.min((toplamYag / 85) * 100, 100)}%` }}></div>
                 </div>
               </div>
             </div>

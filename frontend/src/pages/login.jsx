@@ -6,6 +6,7 @@ import logoImg from '../assets/logo.png';
 function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [sifreGoster, setSifreGoster] = useState(false);
   const [error, setError] = useState('');
   const [needsVerification, setNeedsVerification] = useState(false);
   const [resendMessage, setResendMessage] = useState('');
@@ -88,16 +89,16 @@ function Login() {
           </div>
 
           <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <label className="font-label-mono text-label-mono text-outline-variant uppercase">Şifre</label>
-              <a className="font-label-mono text-label-mono text-brand-red hover:underline uppercase" href="#">Şifremi Unuttum</a>
-            </div>
+            <label className="font-label-mono text-label-mono text-outline-variant uppercase">Şifre</label>
             <div className="relative">
               <input
-                className="w-full bg-surface-container-low border border-outline-variant text-on-surface px-4 py-3 rounded-md transition-all focus:border-brand-red placeholder:text-surface-variant"
-                placeholder="••••••••" type="password"
+                className="w-full bg-surface-container-low border border-outline-variant text-on-surface px-4 py-3 pr-12 rounded-md transition-all focus:border-brand-red placeholder:text-surface-variant"
+                placeholder="••••••••" type={sifreGoster ? 'text' : 'password'}
                 value={password} onChange={(e) => setPassword(e.target.value)} required
               />
+              <button type="button" onClick={() => setSifreGoster((v) => !v)} className="absolute right-4 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface bg-transparent border-none cursor-pointer p-0">
+                <span className="material-symbols-outlined text-xl">{sifreGoster ? 'visibility_off' : 'visibility'}</span>
+              </button>
             </div>
           </div>
 

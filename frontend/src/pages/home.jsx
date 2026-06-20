@@ -165,18 +165,18 @@ function Home() {
             </div>
           </div>
 
-          <div className="bento-card p-6 col-span-1 md:col-span-2">
-            <span className="font-label-mono text-label-mono text-on-surface-variant block mb-4">SU TÜKETİMİ</span>
-            <div className="flex items-baseline gap-2">
-              <h3 className="font-stat-lg text-stat-lg">{waterL.toFixed(1)}L</h3>
-              <span className="text-on-surface-variant font-label-mono text-xs">/ {waterGoalL.toFixed(1)}L</span>
-            </div>
-            <div className="flex gap-1 mt-4">
-              {Array.from({ length: waterBars }).map((_, i) => (
-                <div key={i} className={`h-8 w-full rounded-sm ${i < filledBars ? 'bg-primary-container' : 'bg-surface-container-high'}`}></div>
-              ))}
-            </div>
+          <div className="bento-card p-6 col-span-1 md:col-span-2 border-blue-500/20">
+          <span className="font-label-mono text-label-mono text-blue-400 block mb-4">SU TÜKETİMİ</span>
+          <div className="flex items-baseline gap-2">
+            <h3 className="font-stat-lg text-stat-lg text-blue-300">{waterL.toFixed(1)}L</h3>
+            <span className="text-on-surface-variant font-label-mono text-xs">/ {waterGoalL.toFixed(1)}L</span>
           </div>
+          <div className="flex gap-1 mt-4">
+            {Array.from({ length: waterBars }).map((_, i) => (
+              <div key={i} className={`h-8 w-full rounded-sm ${i < filledBars ? 'bg-blue-400' : 'bg-surface-container-high'}`}></div>
+            ))}
+          </div>
+        </div>
 
           <div className="col-span-1 md:col-span-4 lg:col-span-4 bg-primary-container/10 border border-primary-container/20 p-4 rounded-xl flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -211,13 +211,13 @@ function Home() {
             {QUICK_ACCESS.map(({ path, icon, label }) => (
               <div
                 key={path}
-                className="min-w-[160px] flex-1 bento-card p-5 flex flex-col justify-between h-32 cursor-pointer hover:bg-surface-container-high transition-colors"
+                className="min-w-[190px] flex-1 bento-card p-6 flex flex-col justify-between h-40 cursor-pointer hover:bg-surface-container-high transition-colors"
                 onClick={() => navigate(path)}
               >
-                <span className="material-symbols-outlined text-primary">{icon}</span>
+                <span className="material-symbols-outlined text-primary text-2xl">{icon}</span>
                 <div className="flex items-center justify-between mt-auto">
-                  <span className="font-label-mono text-[11px] uppercase tracking-tighter">{label}</span>
-                  <span className="material-symbols-outlined text-sm">chevron_right</span>
+                  <span className="font-label-mono text-xs uppercase tracking-tighter">{label}</span>
+                  <span className="material-symbols-outlined text-base">chevron_right</span>
                 </div>
               </div>
             ))}

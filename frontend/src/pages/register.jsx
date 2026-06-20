@@ -5,7 +5,7 @@ import axios from 'axios';
 const PASSWORD_RULES = [
   { test: (p) => p.length >= 8, label: 'Minimum 8 karakter' },
   { test: (p) => /[A-Z]/.test(p), label: 'En az bir büyük harf' },
-  { test: (p) => /[@$!%*?&]/.test(p), label: 'En az bir özel karakter (@$!%*?&)' },
+  { test: (p) => /[!@#$%^&*(),.?":{}|<>_\-+=./\\[\]~`';]/.test(p), label: 'En az bir özel karakter' },
 ];
 
 function Register() {
@@ -14,6 +14,8 @@ function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
+  const [sifreGoster, setSifreGoster] = useState(false);
+  const [sifreTekrarGoster, setSifreTekrarGoster] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -149,12 +151,17 @@ function Register() {
 
             <div className="space-y-1.5">
               <label className="font-label-mono text-label-mono text-on-surface-variant uppercase">ŞİFRE TEKRAR</label>
-              <input
-                className="w-full bg-surface-container-lowest border rounded-lg px-4 py-3 text-on-surface focus:border-primary outline-none transition-all placeholder-on-surface-variant/30"
-                style={{ borderColor: passwordConfirm && password !== passwordConfirm ? '#E8313F' : undefined }}
-                placeholder="••••••••" type="password" required
-                value={passwordConfirm} onChange={(e) => setPasswordConfirm(e.target.value)}
-              />
+              <div className="relative">
+                <input
+                  className="w-full bg-surface-container-lowest border rounded-lg px-4 pr-12 py-3 text-on-surface focus:border-primary outline-none transition-all placeholder-on-surface-variant/30"
+                  style={{ borderColor: passwordConfirm && password !== passwordConfirm ? '#E8313F' : undefined }}
+                  placeholder="••••••••" type={sifreTekrarGoster ? 'text' : 'password'} required
+                  value={passwordConfirm} onChange={(e) => setPasswordConfirm(e.target.value)}
+                />
+                <button type="button" onClick={() => setSifreTekrarGoster((v) => !v)} className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant/50 hover:text-on-surface bg-transparent border-none cursor-pointer p-0">
+                  <span className="material-symbols-outlined text-xl">{sifreTekrarGoster ? 'visibility_off' : 'visibility'}</span>
+                </button>
+              </div>
               {passwordConfirm && password !== passwordConfirm && (
                 <span className="text-brand-red text-xs">Şifreler eşleşmiyor.</span>
               )}

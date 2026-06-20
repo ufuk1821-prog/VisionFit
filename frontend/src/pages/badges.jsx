@@ -8,7 +8,7 @@ const SEVIYE_GRADIENT = {
   Altin: 'from-yellow-300 via-yellow-600 to-yellow-900',
 };
 
-const SEVIYE_RENK = { Bronz: 'text-amber-600', Gumus: 'text-slate-300', Altin: 'text-yellow-500' };
+const SEVIYE_RENK = { Bronz: 'text-amber-500', Gumus: 'text-sky-300', Altin: 'text-yellow-400' };
 const SEVIYE_BG = { Bronz: 'bg-amber-600/10 border-amber-600/20 text-amber-600', Gumus: 'bg-slate-400/10 border-slate-400/20 text-slate-400', Altin: 'bg-yellow-500/10 border-yellow-500/20 text-yellow-500' };
 const SEVIYE_ETIKET = { Bronz: 'BRONZ TIER', Gumus: 'GÜMÜŞ TIER', Altin: 'ALTIN TIER' };
 
