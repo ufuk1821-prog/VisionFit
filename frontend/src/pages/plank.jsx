@@ -238,8 +238,8 @@ function FotografliAnaliz() {
     setHata('');
   };
 
-  const skorYuzde = sonuc?.skor ?? sonuc?.eminlik_skoru ?? 0;
-  const isIyi = sonuc?.durum?.includes('İyi');
+  const isIyi = sonuc?.durum?.includes('İyi') ?? false;
+  const skorYuzde = sonuc?.skor ?? 0;
   const gaugeCircumference = 251.2;
   const gaugeOffset = sonuc ? gaugeCircumference * (1 - skorYuzde / 100) : gaugeCircumference;
 

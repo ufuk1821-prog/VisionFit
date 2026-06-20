@@ -271,6 +271,7 @@ def _hat_analizi_kaydet(db, current_user, data, gerekli_noktalar, ust, orta, alt
     return {
         "kayit_id": yeni_kayit.id,
         "durum": durum,
+        "skor": form_skoru,
         "fark": round(float(fark), 4),
         "antrenor_mesaji": antrenor_mesaji
     }
@@ -389,6 +390,7 @@ async def analyze_duvar_squat(data: PoseData, db: Session = Depends(get_db), cur
     return {
         "kayit_id": yeni_kayit.id,
         "durum": durum,
+        "skor": form_skoru,
         "aci": round(aci, 1),
         "antrenor_mesaji": antrenor_mesaji
     }
@@ -530,7 +532,7 @@ async def analyze_lunge(data: PoseData, db: Session = Depends(get_db), current_u
         durum, skor, mesaj = "Yeterince Derin Değil", 60, f"Ön diz açısı geniş ({int(on_diz)}°). Daha aşağı çömelin."
     kayit = WorkoutHistory(user_id=current_user.id, hareket_adi="lunge", eminlik_skoru=skor, diz_acisi=int(round(on_diz)), antrenor_notu=f"{durum}: {mesaj}")
     db.add(kayit); db.commit(); db.refresh(kayit)
-    return {"kayit_id": kayit.id, "durum": durum, "antrenor_mesaji": mesaj}
+    return {"kayit_id": kayit.id, "durum": durum, "skor": skor, "antrenor_mesaji": mesaj}
 
 
 @router.post("/omuz-acikligi")
@@ -555,7 +557,7 @@ async def analyze_omuz_acikligi(data: PoseData, db: Session = Depends(get_db), c
         durum, skor, mesaj = "Kollar Omuz Hizasında Değil", 50, "Kollarınızı tam olarak yanlara, omuz hizasına açın."
     kayit = WorkoutHistory(user_id=current_user.id, hareket_adi="omuz_acikligi", eminlik_skoru=skor, diz_acisi=0, antrenor_notu=f"{durum}: {mesaj}")
     db.add(kayit); db.commit(); db.refresh(kayit)
-    return {"kayit_id": kayit.id, "durum": durum, "antrenor_mesaji": mesaj}
+    return {"kayit_id": kayit.id, "durum": durum, "skor": skor, "antrenor_mesaji": mesaj}
 
 
 @router.post("/one-egilme")
@@ -585,7 +587,7 @@ async def analyze_one_egilme(data: PoseData, db: Session = Depends(get_db), curr
         durum, skor, mesaj = "Geliştirme Gerekli", 40, "Düzenli germe egzersizleriyle esnekliğinizi artırabilirsiniz."
     kayit = WorkoutHistory(user_id=current_user.id, hareket_adi="one_egilme", eminlik_skoru=skor, diz_acisi=int(round(ort_kalca_aci)), antrenor_notu=f"{durum}: {mesaj}")
     db.add(kayit); db.commit(); db.refresh(kayit)
-    return {"kayit_id": kayit.id, "durum": durum, "antrenor_mesaji": mesaj}
+    return {"kayit_id": kayit.id, "durum": durum, "skor": skor, "antrenor_mesaji": mesaj}
 
 
 @router.post("/ters-kopru")
@@ -614,7 +616,7 @@ async def analyze_ters_kopru(data: PoseData, db: Session = Depends(get_db), curr
         durum, skor, mesaj = "Diz Açısı Hatalı", 65, f"Diz açısı {int(ort_diz)}°. Hedef 90° olmalı, ayakları ayarlayın."
     kayit = WorkoutHistory(user_id=current_user.id, hareket_adi="ters_kopru", eminlik_skoru=skor, diz_acisi=int(round(ort_diz)), antrenor_notu=f"{durum}: {mesaj}")
     db.add(kayit); db.commit(); db.refresh(kayit)
-    return {"kayit_id": kayit.id, "durum": durum, "antrenor_mesaji": mesaj}
+    return {"kayit_id": kayit.id, "durum": durum, "skor": skor, "antrenor_mesaji": mesaj}
 
 
 @router.get("/history", response_model=List[HistoryRead])
