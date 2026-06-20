@@ -17,7 +17,33 @@ function VideoAnalizBolumu({ apiUrl, token }) {
   const [videoYukleniyor, setVideoYukleniyor] = useState(false);
   const [videoHata, setVideoHata] = useState('');
   const [secilenVideo, setSecilenVideo] = useState(null);
+  const [videoAiYorum, setVideoAiYorum] = useState('');
+  const [videoAiYukleniyor, setVideoAiYukleniyor] = useState(false);
+  const [videoAiHata, setVideoAiHata] = useState('');
   const videoRef2 = useRef(null);
+
+  const videoAiYorumuAl = async () => {
+    if (!videoSonuc) return;
+    setVideoAiYukleniyor(true);
+    setVideoAiHata('');
+    setVideoAiYorum('');
+    try {
+      const skorlar = {
+        genel_form: videoSonuc.genel_form?.skor ?? 0,
+        omurga_notrluğu: videoSonuc.omurga_notrluğu?.skor ?? 0,
+        kalca_derinligi: videoSonuc.kalca_derinligi?.skor ?? 0,
+        diz_hizasi: videoSonuc.diz_hizasi?.skor ?? 0,
+        diz_cokusu: videoSonuc.diz_cokusu?.skor ?? 0,
+        agirlik_merkezi: videoSonuc.agirlik_merkezi?.skor ?? 0,
+      };
+      const res = await axios.post(`${apiUrl}/api/yerel-ai/antrenor-yorumu`, { skorlar }, { headers: { Authorization: `Bearer ${token}` } });
+      setVideoAiYorum(res.data.yorum);
+    } catch {
+      setVideoAiHata('AI yorumu alınamadı, lütfen tekrar deneyin.');
+    } finally {
+      setVideoAiYukleniyor(false);
+    }
+  };
 
   const videoSec = (e) => {
     const dosya = e.target.files[0];
@@ -133,6 +159,20 @@ function VideoAnalizBolumu({ apiUrl, token }) {
                 <div className="font-stat-lg text-stat-lg text-primary">%{videoSonuc.genel_skor}</div>
                 <p className="text-body-sm text-on-surface mt-2">{videoSonuc.olumlu_mesaj}</p>
                 <p className="text-body-sm text-on-surface-variant mt-1">{videoSonuc.gelistirilecek_mesaj}</p>
+
+                <div className="mt-4 pt-4 border-t border-outline-variant/30">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="material-symbols-outlined text-purple-400 text-base">smart_toy</span>
+                    <span className="font-label-mono text-[10px] text-purple-300 uppercase">AI Antrenör Yorumu</span>
+                  </div>
+                  {!videoAiYorum && !videoAiHata && (
+                    <button className="w-full py-2 bg-surface-container-high border border-outline-variant rounded-lg font-label-mono text-xs uppercase disabled:opacity-50" onClick={videoAiYorumuAl} disabled={videoAiYukleniyor}>
+                      {videoAiYukleniyor ? 'Yorum Hazırlanıyor...' : 'AI Yorumu Al'}
+                    </button>
+                  )}
+                  {videoAiYorum && <p className="text-body-sm text-on-surface leading-relaxed">{videoAiYorum}</p>}
+                  {videoAiHata && <p className="text-body-sm text-on-surface-variant">{videoAiHata}</p>}
+                </div>
               </div>
             )}
 

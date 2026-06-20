@@ -53,9 +53,12 @@ function Sidebar() {
   return (
     <>
       <aside className="hidden md:flex flex-col h-screen fixed left-0 top-0 py-section-padding bg-surface-container border-r border-outline-variant w-64 z-50">
-        <div className="px-6 mb-10">
-          <h1 className="text-headline-md font-display-lg font-black text-primary tracking-tighter uppercase cursor-pointer" onClick={() => navigate('/')}>VisionFit</h1>
-          <p className="text-[10px] font-label-mono text-on-surface-variant tracking-widest mt-1 opacity-60">EN İYİ HALİNE ULAŞ.</p>
+        <div className="px-6 mb-10 flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
+          <img src={logoImg} alt="VisionFit Logo" className="w-9 h-9 object-contain" />
+          <div>
+            <h1 className="text-headline-md font-display-lg font-black text-primary tracking-tighter uppercase leading-none">VisionFit</h1>
+            <p className="text-[9px] font-label-mono text-on-surface-variant tracking-widest mt-1 opacity-60">EN İYİ HALİNE ULAŞ.</p>
+          </div>
         </div>
 
         <nav className="flex-1 overflow-y-auto scrollbar-hide">

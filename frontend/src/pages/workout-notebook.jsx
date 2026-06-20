@@ -25,8 +25,6 @@ function WorkoutNotebook() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savedMessage, setSavedMessage] = useState('');
-  const [aiAnaliz, setAiAnaliz] = useState('');
-  const [aiYukleniyor, setAiYukleniyor] = useState(false);
   const token = localStorage.getItem('token');
   const headers = { Authorization: `Bearer ${token}` };
   const apiUrl = import.meta.env.VITE_API_URL;
@@ -86,27 +84,6 @@ function WorkoutNotebook() {
     }
   };
 
-  const aiAnalizAl = async () => {
-    const kayitliHareketler = rows.filter((r) => r.hareket && r.agirlik);
-    if (kayitliHareketler.length === 0) return;
-    setAiYukleniyor(true);
-    setAiAnaliz('');
-    const hareketGruplari = {};
-    kayitliHareketler.forEach((r) => {
-      if (!hareketGruplari[r.hareket]) hareketGruplari[r.hareket] = [];
-      hareketGruplari[r.hareket].push(parseFloat(r.agirlik));
-    });
-    const hareketListesi = Object.entries(hareketGruplari).map(([hareket, agirliklar]) => ({ hareket, agirliklar: agirliklar.filter((a) => !isNaN(a)) }));
-    try {
-      const res = await axios.post(`${apiUrl}/api/yerel-ai/defter-analizi`, { hareketler: hareketListesi }, { headers: { Authorization: `Bearer ${token}` } });
-      setAiAnaliz(res.data.yorum);
-    } catch {
-      setAiAnaliz('AI analizi alınamadı, lütfen tekrar deneyin.');
-    } finally {
-      setAiYukleniyor(false);
-    }
-  };
-
   return (
     <div>
       <Sidebar />
@@ -134,7 +111,7 @@ function WorkoutNotebook() {
         </header>
 
         <div className="grid grid-cols-12 gap-bento-gap">
-          <section className="col-span-12 lg:col-span-9 bg-surface-container rounded-xl border border-outline-variant overflow-hidden">
+          <section className="col-span-12 bg-surface-container rounded-xl border border-outline-variant overflow-hidden">
             <div className="p-6 border-b border-outline-variant flex justify-between items-center">
               <h3 className="font-headline-md text-on-surface flex items-center gap-2">
                 <span className="material-symbols-outlined text-blue-400">fitness_center</span>
@@ -227,25 +204,7 @@ function WorkoutNotebook() {
             )}
           </section>
 
-          <aside className="col-span-12 lg:col-span-3 flex flex-col gap-bento-gap">
-            <div className="bg-surface-container rounded-xl border border-outline-variant p-6">
-              <h4 className="font-label-mono text-xs text-secondary-container font-bold uppercase tracking-widest mb-4 flex items-center gap-2">
-                <span className="material-symbols-outlined text-secondary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
-                AI Gelişim Analizi
-              </h4>
-
-              {!aiAnaliz && (
-                <button
-                  onClick={aiAnalizAl} disabled={aiYukleniyor}
-                  className="w-full py-3 bg-secondary-container text-white rounded-lg font-label-mono text-label-mono uppercase hover:brightness-110 transition-all disabled:opacity-50"
-                >
-                  {aiYukleniyor ? 'Analiz Hazırlanıyor...' : 'AI ile Analiz Et'}
-                </button>
-              )}
-              {aiAnaliz && <p className="text-body-sm text-on-surface-variant italic leading-relaxed">{aiAnaliz}</p>}
-            </div>
-          </aside>
-        </div>
+          </div>
       </main>
     </div>
   );

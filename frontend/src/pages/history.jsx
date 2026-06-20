@@ -32,9 +32,6 @@ function History() {
   const [filtre, setFiltre] = useState('tumu');
   const [acikMenu, setAcikMenu] = useState(null);
   const [acikKart, setAcikKart] = useState(null);
-  const [analizSayi, setAnalizSayi] = useState(5);
-  const [analizSonuc, setAnalizSonuc] = useState('');
-  const [analizYukleniyor, setAnalizYukleniyor] = useState(false);
   const [searchParams] = useSearchParams();
   const hedefKayitId = searchParams.get('kayit');
   const hedefRef = useRef(null);
@@ -75,19 +72,6 @@ function History() {
 
   const filtrelenmisKayitlar = kayitlar.filter((k) => filtre === 'tumu' ? true : tipBelirle(k.hareket_adi) === filtre);
 
-  const handleAnalizEt = async () => {
-    setAnalizYukleniyor(true);
-    setAnalizSonuc('');
-    try {
-      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/yerel-ai/gecmis-analizi?sayi=${analizSayi}`, {}, { headers: { Authorization: `Bearer ${token}` } });
-      setAnalizSonuc(res.data.yorum);
-    } catch {
-      setAnalizSonuc('Analiz alınamadı, lütfen tekrar deneyin.');
-    } finally {
-      setAnalizYukleniyor(false);
-    }
-  };
-
   return (
     <div>
       <Sidebar />
@@ -120,61 +104,27 @@ function History() {
         )}
 
         {!loading && kayitlar.length > 0 && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-bento-gap mb-10">
-            <div className="lg:col-span-8 flex flex-wrap gap-3 items-center">
-              {[
-                { value: 'tumu', label: 'TÜMÜ', count: kayitlar.length, borderClass: 'border-l-brand-red' },
-                { value: 'oturum', label: 'OTURUM', count: oturumKayitlari.length, borderClass: 'border-l-purple-400' },
-                { value: 'anlik', label: 'ANLIK', count: anlikKayitlari.length, borderClass: 'border-l-blue-400' },
-              ].map((opt) => {
-                const active = filtre === opt.value;
-                return (
-                  <button
-                    key={opt.value}
-                    onClick={() => setFiltre(opt.value)}
-                    className={`px-6 py-2 rounded-full font-label-mono text-label-mono transition-colors border-l-[3px] ${
-                      active
-                        ? `${opt.borderClass} bg-surface-container-high text-on-surface`
-                        : 'border-l-transparent border border-outline-variant bg-surface-container text-on-surface-variant hover:bg-surface-container-highest'
-                    }`}
-                  >
-                    {opt.label} ({opt.count})
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="lg:col-span-4 bg-surface-container rounded-xl p-6 relative overflow-hidden" style={{ boxShadow: '0 0 20px rgba(87,27,193,0.2)' }}>
-              <div className="absolute -right-4 -top-4 opacity-10">
-                <span className="material-symbols-outlined text-[80px] text-secondary">psychology</span>
-              </div>
-              <h3 className="font-label-mono text-label-mono text-secondary uppercase mb-4 tracking-widest flex items-center gap-2">
-                <span className="material-symbols-outlined text-[18px]">auto_awesome</span>
-                AI ANALİZİ
-              </h3>
-              <p className="text-on-surface text-body-sm mb-4">Son N antrenmanı analiz et</p>
-              <div className="flex gap-2">
-                <input
-                  type="number" min={1} max={30}
-                  value={analizSayi}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (val === '' || val === '0') { setAnalizSayi(''); return; }
-                    setAnalizSayi(Math.min(30, Math.max(1, Number(val))));
-                  }}
-                  onBlur={() => { if (!analizSayi) setAnalizSayi(5); }}
-                  className="bg-surface-container-lowest border border-outline-variant rounded-lg px-4 py-2 w-20 text-center font-label-mono focus:border-brand-red focus:ring-0 focus:outline-none"
-                />
+          <div className="flex flex-wrap gap-3 items-center mb-10">
+            {[
+              { value: 'tumu', label: 'TÜMÜ', count: kayitlar.length, borderClass: 'border-l-brand-red' },
+              { value: 'oturum', label: 'OTURUM', count: oturumKayitlari.length, borderClass: 'border-l-purple-400' },
+              { value: 'anlik', label: 'ANLIK', count: anlikKayitlari.length, borderClass: 'border-l-blue-400' },
+            ].map((opt) => {
+              const active = filtre === opt.value;
+              return (
                 <button
-                  onClick={handleAnalizEt}
-                  disabled={analizYukleniyor}
-                  className="flex-1 bg-secondary-container text-white py-2 rounded-lg font-label-mono text-label-mono uppercase hover:brightness-110 transition-all active:scale-95 disabled:opacity-50"
+                  key={opt.value}
+                  onClick={() => setFiltre(opt.value)}
+                  className={`px-6 py-2 rounded-full font-label-mono text-label-mono transition-colors border-l-[3px] ${
+                    active
+                      ? `${opt.borderClass} bg-surface-container-high text-on-surface`
+                      : 'border-l-transparent border border-outline-variant bg-surface-container text-on-surface-variant hover:bg-surface-container-highest'
+                  }`}
                 >
-                  {analizYukleniyor ? 'ANALİZ...' : 'ANALİZ ET'}
+                  {opt.label} ({opt.count})
                 </button>
-              </div>
-              {analizSonuc && <p className="text-body-sm text-on-surface mt-4 leading-relaxed">{analizSonuc}</p>}
-            </div>
+              );
+            })}
           </div>
         )}
 
