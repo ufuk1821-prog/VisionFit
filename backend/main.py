@@ -13,7 +13,7 @@ from app.api.analyze import router as analyze_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    max_retries = 5
+    max_retries = 3
     for i in range(max_retries):
         try:
             Base.metadata.create_all(bind=engine)
@@ -28,9 +28,13 @@ async def lifespan(app: FastAPI):
                 conn.execute(text('ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS email_dogrulandi BOOLEAN DEFAULT TRUE'))
                 conn.execute(text('ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS dogrulama_token VARCHAR(100)'))
                 conn.commit()
+            print("Veritabani baglantisi basarili, migration tamamlandi.")
             break
-        except OperationalError:
-            time.sleep(2)
+        except Exception as e:
+            print(f"Veritabani baglanti denemesi {i+1}/{max_retries} basarisiz: {e}")
+            time.sleep(1)
+    else:
+        print("Veritabani baglantisi kurulamadi, uygulama yine de baslatiliyor.")
     yield
 
 app = FastAPI(
