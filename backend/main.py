@@ -8,7 +8,7 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from app.core.database import engine, Base
 from app.core.limiter import limiter
-from app.api import auth, users, steps, badges, nutrition, workout_notes, local_llm
+from app.api import auth, users, steps, badges, nutrition, workout_notes, local_llm, exercise_images
 from app.api.analyze import router as analyze_router
 
 @asynccontextmanager
@@ -64,6 +64,7 @@ app.include_router(steps.router)
 app.include_router(badges.router)
 app.include_router(nutrition.router)
 app.include_router(workout_notes.router)
+app.include_router(exercise_images.router)
 app.include_router(local_llm.router)
 app.include_router(analyze_router, prefix="/api/analyze", tags=["Analyze"])
 

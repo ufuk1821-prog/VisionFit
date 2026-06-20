@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import Sidebar from '../components/sidebar';
 import MuscleDiagram, { GROUP_TO_SLUG, SLUG_TO_GROUPS } from '../components/MuscleDiagram';
 import { MUSCLE_GROUPS, EXERCISES } from '../data/exercises';
@@ -8,11 +9,31 @@ function Exercises() {
   const [selectedExercise, setSelectedExercise] = useState(null);
   const [onArka, setOnArka] = useState('on');
   const [activeTab, setActiveTab] = useState('diyagram');
+  const [gorseller, setGorseller] = useState({});
 
   const muscleInfo = MUSCLE_GROUPS.find((m) => m.key === selectedMuscle);
   const exerciseList = EXERCISES[selectedMuscle] || [];
   const currentSlug = GROUP_TO_SLUG[selectedMuscle];
   const subGroups = SLUG_TO_GROUPS[currentSlug] || [selectedMuscle];
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const apiUrl = import.meta.env.VITE_API_URL;
+    exerciseList.forEach((ex) => {
+      if (gorseller[ex.ad] !== undefined) return;
+      axios
+        .get(`${apiUrl}/api/exercise-images/${encodeURIComponent(ex.ad)}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .then((res) => {
+          setGorseller((prev) => ({ ...prev, [ex.ad]: res.data.url }));
+        })
+        .catch(() => {
+          setGorseller((prev) => ({ ...prev, [ex.ad]: null }));
+        });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedMuscle]);
 
   return (
     <div>
@@ -130,7 +151,11 @@ function Exercises() {
                   onClick={() => setSelectedExercise(ex)}
                 >
                   <div className="relative w-full aspect-video rounded-lg overflow-hidden mb-4 border border-outline-variant bg-surface-container-low flex items-center justify-center">
-                    <span className="material-symbols-outlined text-on-surface-variant text-5xl opacity-30">fitness_center</span>
+                    {gorseller[ex.ad] ? (
+                      <img src={gorseller[ex.ad]} alt={ex.ad} className="w-full h-full object-cover" loading="lazy" />
+                    ) : (
+                      <span className="material-symbols-outlined text-on-surface-variant text-5xl opacity-30">fitness_center</span>
+                    )}
                     <span className="absolute bottom-2 left-2 px-2 py-0.5 bg-brand-red text-white font-label-mono text-[10px] rounded">{String(i + 1).padStart(2, '0')}</span>
                   </div>
                   <div className="flex justify-between items-start">
