@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from app.core.database import get_db
 from app.core.security import get_current_user
-from app.schemas.local_llm import AntrenorYorumuRequest, DiyetOnerisiRequest, DefterAnaliziRequest
+from app.schemas.local_llm import AntrenorYorumuRequest, DiyetOnerisiRequest
 from app.services import local_llm
 
 router = APIRouter(prefix="/api/yerel-ai", tags=["Yerel AI"])
