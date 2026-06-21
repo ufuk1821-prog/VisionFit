@@ -1,0 +1,38 @@
+{
+  "profil": {
+    "yas": 24,
+    "cinsiyet": "Erkek",
+    "boy_cm": 193,
+    "kilo_kg": 130,
+    "aktivite_duzeyi": "orta_hareketli",
+    "hedef": "kilo_verme",
+    "hedef_kalori": 2450
+  },
+  "plan": {
+    "plan_adi": "Dengeli Beslenme Planı",
+    "kahvalti": [
+      "Yulaf",
+      "Yoğurt",
+      "Muz"
+    ],
+    "ogle": [
+      "Tavuk göğsü",
+      "Bulgur",
+      "Salata"
+    ],
+    "aksam": [
+      "Sebze yemeği",
+      "Yoğurt"
+    ],
+    "ara_ogun": [
+      "Elma"
+    ],
+    "gunluk_kalori": 2450,
+    "porsiyon_bilgisi": {
+      "protein_g": 180,
+      "karbonhidrat_g": 260,
+      "yag_g": 75
+    }
+  },
+  "kullanici_notu": "Kilo vermek istiyorum."
+}

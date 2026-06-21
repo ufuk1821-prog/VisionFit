@@ -1,12 +1,11 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter_pose_detection/flutter_pose_detection.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:video_player/video_player.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:video_thumbnail/video_thumbnail.dart' as vt;
 import '../tema.dart';
 import '../servisler/api_servisi.dart';
 
@@ -139,8 +138,8 @@ class _CanliAnalizSekmeState extends State<_CanliAnalizSekme> {
     for (int i = 0; i < 30; i++) {
       if (_iptalEdildi || !mounted) return;
       await _kareCek();
-      setState(() { _kalanSure = 30 - ((i + 1) * 2); });
-      if (i < 29) await Future.delayed(const Duration(seconds: 2));
+      setState(() { _kalanSure = 30 - (i + 1); });
+      if (i < 29) await Future.delayed(const Duration(seconds: 1));
     }
     if (_iptalEdildi) return;
     if (_kareler.isEmpty) { setState(() { _hata = 'Vücut tespit edilemedi. Yanınızdan çekim yapın.'; _baslatildi = false; }); return; }
@@ -353,7 +352,6 @@ class _VideoAnalizSekmeState extends State<_VideoAnalizSekme> {
   int _ilerleme = 0;
   int _toplamKare = 0;
   NpuPoseDetector? _detector;
-  final GlobalKey _repaintKey = GlobalKey();
 
   Future<NpuPoseDetector> _detectorAl() async {
     if (_detector != null) return _detector!;
@@ -390,34 +388,50 @@ class _VideoAnalizSekmeState extends State<_VideoAnalizSekme> {
 
       const toplamKareSayisi = 40;
       final kareler = <List<double>>[];
-      final geciciKlasor = await getTemporaryDirectory();
 
       setState(() { _hata = 'Videodaki kareler işleniyor...'; });
 
       for (int i = 0; i < toplamKareSayisi; i++) {
-        final zamanMs = ((sureMs - 300) * i / (toplamKareSayisi - 1)).round().clamp(0, sureMs);
-        try {
-          await controller.seekTo(Duration(milliseconds: zamanMs));
-          await controller.play();
-          await Future.delayed(const Duration(milliseconds: 80));
-          await controller.pause();
-          await Future.delayed(const Duration(milliseconds: 150));
+        final zamanMs = ((sureMs - 1) * i / (toplamKareSayisi - 1))
+           .round()
+           .clamp(0, sureMs - 1);
 
-          final boundary = _repaintKey.currentContext?.findRenderObject();
-          if (boundary is RenderRepaintBoundary) {
-            final image = await boundary.toImage(pixelRatio: 3.0);
-            final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-            if (byteData != null) {
-              final goruntuBaytlari = byteData.buffer.asUint8List();
-              final sonuc = await detector.detectPose(goruntuBaytlari);
-              if (sonuc.hasPoses) {
-                final lms = pozuFlatListeCevirSenkron(sonuc.firstPose!, image.width.toDouble(), image.height.toDouble());
-                kareler.add(lms);
-              }
-            }
+        try {
+          final goruntuBaytlari = await vt.VideoThumbnail.thumbnailData(
+           video: _video!.path,
+           imageFormat: vt.ImageFormat.JPEG,
+           timeMs: zamanMs,
+           quality: 90,
+           maxWidth: 720,
+          );
+
+          if (goruntuBaytlari != null && goruntuBaytlari.isNotEmpty) {
+           final sonuc = await detector.detectPose(goruntuBaytlari);
+
+           if (sonuc.hasPoses && sonuc.firstPose != null) {
+             final codec = await ui.instantiateImageCodec(goruntuBaytlari);
+             final frame = await codec.getNextFrame();
+
+             final lms = pozuFlatListeCevirSenkron(
+               sonuc.firstPose!,
+               frame.image.width.toDouble(),
+               frame.image.height.toDouble(),
+             );
+
+             kareler.add(lms);
+             frame.image.dispose();
+           }
           }
-        } catch (_) {}
-        setState(() { _ilerleme = ((i + 1) / toplamKareSayisi * 100).round(); _toplamKare = i + 1; });
+        } catch (e) {
+          debugPrint('Video karesi $i işlenemedi: $e');
+        }
+
+        if (mounted) {
+          setState(() {
+           _ilerleme = ((i + 1) / toplamKareSayisi * 100).round();
+           _toplamKare = i + 1;
+          });
+        }
       }
 
       await controller.dispose();
@@ -467,9 +481,9 @@ class _VideoAnalizSekmeState extends State<_VideoAnalizSekme> {
                 ? (_playerController != null && _playerController!.value.isInitialized
                     ? ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        child: RepaintBoundary(
-                          key: _repaintKey,
-                          child: AspectRatio(aspectRatio: _playerController!.value.aspectRatio, child: VideoPlayer(_playerController!)),
+                        child: AspectRatio(
+                          aspectRatio: _playerController!.value.aspectRatio,
+                          child: VideoPlayer(_playerController!),
                         ),
                       )
                     : Column(mainAxisAlignment: MainAxisAlignment.center, children: [
