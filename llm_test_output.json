@@ -1,0 +1,13 @@
+﻿{
+    "profil":  "Kilo vermek hedefiyle 130 kg kilo ve 193 cm boyunda Erkek olarak tanÄ±mlandÄ±.",
+    "plan":  "Etli sebze yemeÄi, Tavuklu salata, Elma, Yulaf, YoÄurt iÃ§eren diyet",
+    "kullanici_notu":  "Protein alÄ±mÄ±mÄ± artÄ±rmak istiyorum.",
+    "yorum":  "PlanÄ±n protein iÃ§eriÄi dÃ¼ÅÃ¼k veya belirsiz gÃ¶rÃ¼nÃ¼yor. KullanÄ±cÄ± notuyla \u0027Protein alÄ±mÄ±mÄ± artÄ±rmak istiyorum.\u0027 konusunda not. KullanÄ±cÄ± notuyla \u0027Yulaf, YoÄurt\u0027 seÃ§eneÄi Ã§eliÅiyor. KullanÄ±cÄ± notuyla \u0027Elma\u0027 seÃ§eneÄi uyumlu gÃ¶rÃ¼nÃ¼yor. PlanÄ±n gÃ¼nlÃ¼k kalorisi 2200 kcal olarak verilmiÅ, ancak profil iÃ§inde kalori notu bulunmuyor. KullanÄ±cÄ± notuyla Ã§eliÅen Ã¶ÄÃ¼n deÄiÅtirilmeden bu plan uygun kabul edilmemeli.",
+    "dogrulama":  true,
+    "uyarilar":  [
+
+                 ],
+    "surum":  "v25-visionfit-qwen25-final-deterministic",
+    "model_id":  "213asdfdws/visionfit-llm-v2",
+    "kaynak":  "fine_tune_edilmis_llm"
+}

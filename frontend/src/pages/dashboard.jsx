@@ -20,6 +20,7 @@ function VideoAnalizBolumu({ apiUrl, token }) {
   const [videoAiYorum, setVideoAiYorum] = useState('');
   const [videoAiYukleniyor, setVideoAiYukleniyor] = useState(false);
   const [videoAiHata, setVideoAiHata] = useState('');
+  const [videoKategoriAcik, setVideoKategoriAcik] = useState(false);
   const videoRef2 = useRef(null);
 
   const videoAiYorumuAl = async () => {
@@ -28,15 +29,15 @@ function VideoAnalizBolumu({ apiUrl, token }) {
     setVideoAiHata('');
     setVideoAiYorum('');
     try {
-      const skorlar = {
-        genel_form: videoSonuc.genel_form?.skor ?? 0,
-        omurga_notrluğu: videoSonuc.omurga_notrluğu?.skor ?? 0,
-        kalca_derinligi: videoSonuc.kalca_derinligi?.skor ?? 0,
-        diz_hizasi: videoSonuc.diz_hizasi?.skor ?? 0,
-        diz_cokusu: videoSonuc.diz_cokusu?.skor ?? 0,
-        agirlik_merkezi: videoSonuc.agirlik_merkezi?.skor ?? 0,
-      };
-      const res = await axios.post(`${apiUrl}/api/yerel-ai/antrenor-yorumu`, { skorlar }, { headers: { Authorization: `Bearer ${token}` } });
+      const kategoriSkorlari = {};
+      Object.entries(KATEGORI_LABELS).forEach(([key, label]) => {
+        if (videoSonuc[key]) kategoriSkorlari[label] = videoSonuc[key].skor;
+      });
+      const res = await axios.post(
+        `${apiUrl}/api/yerel-ai/antrenor-yorumu`,
+        { hareket: 'squat', genel_skor: videoSonuc.genel_skor, kategori_skorlari: kategoriSkorlari },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       setVideoAiYorum(res.data.yorum);
     } catch {
       setVideoAiHata('AI yorumu alınamadı, lütfen tekrar deneyin.');
@@ -157,8 +158,28 @@ function VideoAnalizBolumu({ apiUrl, token }) {
               <div className="bento-card p-4 mt-2">
                 <div className="font-label-mono text-label-mono text-on-surface-variant uppercase mb-2">Analiz Sonucu</div>
                 <div className="font-stat-lg text-stat-lg text-primary">%{videoSonuc.genel_skor}</div>
-                <p className="text-body-sm text-on-surface mt-2">{videoSonuc.olumlu_mesaj}</p>
-                <p className="text-body-sm text-on-surface-variant mt-1">{videoSonuc.gelistirilecek_mesaj}</p>
+
+                <button
+                  onClick={() => setVideoKategoriAcik((v) => !v)}
+                  className="w-full mt-3 py-2 bg-surface-container-high border border-outline-variant rounded-lg flex items-center justify-between px-3"
+                >
+                  <span className="font-label-mono text-xs uppercase text-on-surface-variant">Antrenman Detayını Göster</span>
+                  <span className={`material-symbols-outlined text-primary text-base transition-transform ${videoKategoriAcik ? 'rotate-180' : ''}`}>expand_more</span>
+                </button>
+                {videoKategoriAcik && (
+                  <div className="grid grid-cols-2 gap-2 mt-3">
+                    {Object.entries(KATEGORI_LABELS).map(([key, label]) => {
+                      const kat = videoSonuc[key];
+                      if (!kat) return null;
+                      return (
+                        <div key={key} className="bg-surface-container-high rounded-lg p-3">
+                          <p className="font-label-mono text-[10px] text-on-surface-variant uppercase mb-1">{label}</p>
+                          <span className="font-stat-lg text-lg" style={{ color: kat.skor >= 75 ? '#41a447' : kat.skor >= 50 ? '#E8313F' : '#ffb4ab' }}>%{kat.skor}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
 
                 <div className="mt-4 pt-4 border-t border-outline-variant/30">
                   <div className="flex items-center gap-2 mb-2">
@@ -167,7 +188,7 @@ function VideoAnalizBolumu({ apiUrl, token }) {
                   </div>
                   {!videoAiYorum && !videoAiHata && (
                     <button className="w-full py-2 bg-surface-container-high border border-outline-variant rounded-lg font-label-mono text-xs uppercase disabled:opacity-50" onClick={videoAiYorumuAl} disabled={videoAiYukleniyor}>
-                      {videoAiYukleniyor ? 'Yorum Hazırlanıyor...' : 'AI Yorumu Al'}
+                      {videoAiYukleniyor ? 'Analiz Hazırlanıyor...' : 'DETAYLI AI YORUMU AL'}
                     </button>
                   )}
                   {videoAiYorum && <p className="text-body-sm text-on-surface leading-relaxed">{videoAiYorum}</p>}
@@ -506,43 +527,12 @@ function Dashboard() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-bento-gap">
-                      <div className="bg-tertiary-container/10 border border-tertiary-container/30 rounded-2xl p-6 flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-full bg-tertiary-container flex items-center justify-center text-on-tertiary flex-shrink-0">
-                          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                        </div>
-                        <div>
-                          <h4 className="font-headline-md text-on-surface text-base">En Güçlü Alan</h4>
-                          <p className="text-body-sm text-on-surface-variant">
-                            {Object.entries(KATEGORI_LABELS).reduce((en, [key, label]) => {
-                              const skor = result[key]?.skor ?? -1;
-                              return skor > (en.skor ?? -1) ? { label, skor } : en;
-                            }, {}).label}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="bg-error-container/20 border border-error-container/30 rounded-2xl p-6 flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-full bg-error-container flex items-center justify-center text-error flex-shrink-0">
-                          <span className="material-symbols-outlined">warning</span>
-                        </div>
-                        <div>
-                          <h4 className="font-headline-md text-on-surface text-base">Geliştirilmesi Gereken Alan</h4>
-                          <p className="text-body-sm text-on-surface-variant">
-                            {Object.entries(KATEGORI_LABELS).reduce((en, [key, label]) => {
-                              const skor = result[key]?.skor ?? 101;
-                              return skor < (en.skor ?? 101) ? { label, skor } : en;
-                            }, {}).label}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
                     <div className="bento-card p-0 overflow-hidden">
                       <button
                         onClick={() => setKategoriAcik((v) => !v)}
                         className="w-full p-5 flex items-center justify-between text-left hover:bg-surface-container-high transition-colors"
                       >
-                        <span className="font-label-mono text-label-mono uppercase text-on-surface-variant">Kategori Skorlarını Göster</span>
+                        <span className="font-label-mono text-label-mono uppercase text-on-surface-variant">Antrenman Detayını Göster</span>
                         <span className={`material-symbols-outlined text-primary transition-transform ${kategoriAcik ? 'rotate-180' : ''}`}>expand_more</span>
                       </button>
                       {kategoriAcik && (
@@ -554,7 +544,6 @@ function Dashboard() {
                               <div className="bg-surface-container-high rounded-xl p-4" key={key}>
                                 <p className="font-label-mono text-label-mono text-on-surface-variant uppercase mb-2">{label}</p>
                                 <span className="font-stat-lg text-2xl" style={{ color: kat.skor >= 75 ? '#41a447' : kat.skor >= 50 ? '#E8313F' : '#ffb4ab' }}>%{kat.skor}</span>
-                                <p className="text-body-sm text-on-surface-variant mt-2">{kat.mesaj}</p>
                               </div>
                             );
                           })}

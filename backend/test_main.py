@@ -508,30 +508,53 @@ def test_42_yerel_ai_endpoint_calisıyor():
     token = get_token("yerelai@test.com")
     headers = {"Authorization": f"Bearer {token}"}
 
-    with patch("app.services.local_llm._yanit_uret", return_value="Test yaniti."):
-        response = client.post("/api/yerel-ai/antrenor-yorumu", json={
-            "skorlar": {"Genel Form": 80}
-        }, headers=headers)
+    with patch(
+        "app.services.local_llm._modal_istek_gonder",
+        return_value={"yorum": "Test yaniti."},
+    ):
+        response = client.post(
+            "/api/yerel-ai/antrenor-yorumu",
+            json={
+                "hareket": "squat",
+                "genel_skor": 80,
+                "kategori_skorlari": {
+                    "Genel Form": 80,
+                },
+            },
+            headers=headers,
+        )
+
         assert response.status_code == 200
         assert "yorum" in response.json()
 
-        response = client.post("/api/yerel-ai/diyet-onerisi", json={
-            "bmi": 22.5,
-            "bmi_kategori": "Normal",
-            "hedef": "kilo_koruma",
-            "hedef_kalori": 2200,
-            "protein_g": 120,
-            "karbonhidrat_g": 220,
-            "yag_g": 70,
-            "istek": "test",
-        }, headers=headers)
-        assert response.status_code == 200
+        response = client.post(
+            "/api/yerel-ai/diyet-onerisi",
+            json={
+                "profil": {
+                    "yas": 24,
+                    "cinsiyet": "Erkek",
+                    "boy_cm": 193,
+                    "kilo_kg": 130,
+                    "aktivite_duzeyi": "Orta aktif",
+                    "hedef": "Kilo vermek",
+                    "hedef_kalori": 2200,
+                },
+                "plan": {
+                    "plan_adi": "Test Planı",
+                    "kahvalti": ["Yulaf", "Yoğurt"],
+                    "ogle": ["Tavuklu salata"],
+                    "aksam": ["Sebze yemeği", "Bulgur"],
+                    "ara_ogun": ["Elma"],
+                    "gunluk_kalori": 2200,
+                    "porsiyon_bilgisi": "Porsiyonlar test amaçlıdır.",
+                },
+                "kullanici_notu": "test",
+            },
+            headers=headers,
+        )
 
-        response = client.post("/api/yerel-ai/defter-analizi", json={
-            "hareketler": [{"hareket": "Bench Press", "agirliklar": [40, 42.5]}]
-        }, headers=headers)
         assert response.status_code == 200
-
+        assert "yorum" in response.json()
         # --- PLANK ANALIZI ---
 def plank_kare_olustur(omuz_y, kalca_y, ayak_y):
     frame = [0.0] * 132
@@ -733,15 +756,19 @@ def test_53_local_llm_basarili_yanit(monkeypatch):
 
     monkeypatch.setattr(local_llm.requests, "post", lambda *a, **k: SahteYanit())
 
-    sonuc = local_llm.antrenor_geri_bildirimi_uret({"Genel Form": 80})
+    sonuc = local_llm.antrenor_geri_bildirimi_uret("Squat", 80, {"Genel Form": 80})
     assert sonuc is not None
     assert len(sonuc) > 5
 
-    sonuc = local_llm.diyet_onerisi_uret(22.5, "Normal", "kilo_koruma", 2200, 120, 220, 70, "test")
+    sonuc = local_llm.diyet_onerisi_uret(
+        {"bmi": 22.5, "bmi_kategori": "Normal", "hedef": "kilo_koruma"},
+        {"hedef_kalori": 2200, "protein_g": 120, "karbonhidrat_g": 220, "yag_g": 70},
+        "test",
+    )
     assert sonuc is not None
     assert len(sonuc) > 5
 
-    sonuc = local_llm.defter_analizi_uret("Bench Press", [40, 42.5])
+    sonuc = local_llm.gecmis_analiz_uret("Squat", [{"tarih": "2026-06-01", "skor": 80}])
     assert sonuc is not None
     assert len(sonuc) > 5
 
@@ -752,7 +779,7 @@ def test_54_local_llm_baglanti_hatasi(monkeypatch):
 
     monkeypatch.setattr(local_llm.requests, "post", hata_firlat)
 
-    sonuc = local_llm.antrenor_geri_bildirimi_uret({"Genel Form": 80})
+    sonuc = local_llm.antrenor_geri_bildirimi_uret("Squat", 80, {"Genel Form": 80})
     assert sonuc == "Şu anda yapay zeka servisine erişilemiyor, lütfen birkaç saniye sonra tekrar deneyin."
 
     
