@@ -25,11 +25,7 @@ List<double> pozuFlatListeCevirSenkron(Pose pose, double genislik, double yuksek
   final liste = <double>[];
   for (final tip in mediapipeSirasi) {
     final lm = pose.getLandmark(tip);
-    if (lm != null) {
-      liste.addAll([lm.x / genislik, lm.y / yukseklik, lm.z / genislik, lm.visibility]);
-    } else {
-      liste.addAll([0.0, 0.0, 0.0, 0.0]);
-    }
+    liste.addAll([lm.x / genislik, lm.y / yukseklik, lm.z / genislik, lm.visibility]);
   }
   return liste;
 }
@@ -94,6 +90,9 @@ class _CanliAnalizSekmeState extends State<_CanliAnalizSekme> {
   String _hata = '';
   bool _iptalEdildi = false;
   NpuPoseDetector? _detector;
+  String _aiYorum = '';
+  bool _aiYukleniyor = false;
+  bool _detayAcik = false;
 
   @override
   void initState() { super.initState(); _kamerayiBaslat(); _detectorBaslat(); }
@@ -175,6 +174,32 @@ class _CanliAnalizSekmeState extends State<_CanliAnalizSekme> {
   }
 
   void _iptalEt() { setState(() { _iptalEdildi = true; _baslatildi = false; _geriSayim = 0; _kareler = []; _hata = ''; }); }
+
+  Future<void> _aiYorumuAl() async {
+    if (_sonuc == null) return;
+    setState(() { _aiYukleniyor = true; _aiYorum = ''; });
+    try {
+      final kategoriSkorlari = <String, dynamic>{
+        'Genel Form': _sonuc!['genel_form']?['skor'] ?? _sonuc!['genel_skor'],
+        'Omurga Nötrlüğü': _sonuc!['omurga_notrluğu']?['skor'],
+        'Kalça Derinliği': _sonuc!['kalca_derinligi']?['skor'],
+        'Diz Hizası': _sonuc!['diz_hizasi']?['skor'],
+        'Diz Çöküşü': _sonuc!['diz_cokusu']?['skor'],
+        'Ağırlık Merkezi': _sonuc!['agirlik_merkezi']?['skor'],
+      }..removeWhere((key, value) => value == null);
+
+      final yanit = await ApiServisi.postJson('/api/yerel-ai/antrenor-yorumu', {
+        'hareket': 'squat',
+        'genel_skor': _sonuc!['genel_skor'],
+        'kategori_skorlari': kategoriSkorlari,
+      });
+      setState(() { _aiYorum = yanit['yorum'] ?? ''; });
+    } catch (_) {
+      setState(() { _aiYorum = 'AI yorumu alınamadı, lütfen tekrar deneyin.'; });
+    } finally {
+      setState(() { _aiYukleniyor = false; });
+    }
+  }
 
   @override
   void dispose() { _controller?.dispose(); _detector?.dispose(); super.dispose(); }
@@ -271,17 +296,59 @@ class _CanliAnalizSekmeState extends State<_CanliAnalizSekme> {
             const SizedBox(height: 16),
             Text('Squat Analiz Sonucu', style: kHeadline(context, size: 18, weight: FontWeight.w700)),
             const SizedBox(height: 16),
-            Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-              _skorKarti(context, 'Genel Skor', '${(_sonuc!['genel_skor'] as num?)?.round() ?? 0}%', kRed),
-              _skorKarti(context, 'Squat Kare', '${_sonuc!['squat_kare'] ?? 0}', kBlue),
-              _skorKarti(context, 'Toplam Kare', '${_sonuc!['toplam_kare'] ?? 0}', kHint(context)),
-            ]),
-            const SizedBox(height: 14),
-            if ((_sonuc!['olumlu_mesaj'] ?? '').isNotEmpty)
-              Container(width: double.infinity, padding: const EdgeInsets.all(12), margin: const EdgeInsets.only(bottom: 8), decoration: BoxDecoration(color: kGreen.withOpacity(0.1), borderRadius: BorderRadius.circular(10), border: Border.all(color: kGreen.withOpacity(0.3))), child: Text('✅ ${_sonuc!['olumlu_mesaj']}', style: kBody(context, size: 13, color: kGreen))),
-            if ((_sonuc!['gelistirilecek_mesaj'] ?? '').isNotEmpty)
-              Container(width: double.infinity, padding: const EdgeInsets.all(12), margin: const EdgeInsets.only(bottom: 16), decoration: BoxDecoration(color: kRed.withOpacity(0.1), borderRadius: BorderRadius.circular(10), border: Border.all(color: kRed.withOpacity(0.3))), child: Text('💡 ${_sonuc!['gelistirilecek_mesaj']}', style: kBody(context, size: 13, color: kRed))),
-            SizedBox(width: double.infinity, height: 48, child: ElevatedButton(onPressed: () => setState(() { _sonuc = null; }), style: ElevatedButton.styleFrom(backgroundColor: kRed, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), elevation: 0), child: Text('TEKRAR ANALİZ ET', style: kLabel(context, size: 12, color: Colors.white)))),
+            Center(child: Text('${(_sonuc!['genel_skor'] as num?)?.round() ?? 0}%', style: kHeadline(context, size: 48, weight: FontWeight.w900, color: kRed))),
+            const SizedBox(height: 16),
+            GestureDetector(
+              onTap: () => setState(() { _detayAcik = !_detayAcik; }),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(color: kSurfaceContainer(context), borderRadius: BorderRadius.circular(10), border: Border.all(color: kBorder(context))),
+                child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                  Text('Antrenman Detayını Göster', style: kLabel(context, size: 11, color: kHint(context))),
+                  Icon(_detayAcik ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, color: kRed, size: 20),
+                ]),
+              ),
+            ),
+            if (_detayAcik) ...[
+              const SizedBox(height: 10),
+              Wrap(spacing: 10, runSpacing: 10, children: [
+                _kategoriSkoru(context, 'Genel Form', _sonuc!['genel_form']?['skor']),
+                _kategoriSkoru(context, 'Omurga Nötrlüğü', _sonuc!['omurga_notrluğu']?['skor']),
+                _kategoriSkoru(context, 'Kalça Derinliği', _sonuc!['kalca_derinligi']?['skor']),
+                _kategoriSkoru(context, 'Diz Hizası', _sonuc!['diz_hizasi']?['skor']),
+                _kategoriSkoru(context, 'Diz Çöküşü', _sonuc!['diz_cokusu']?['skor']),
+                _kategoriSkoru(context, 'Ağırlık Merkezi', _sonuc!['agirlik_merkezi']?['skor']),
+              ]),
+            ],
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(color: kPurple.withOpacity(0.06), borderRadius: BorderRadius.circular(12), border: Border.all(color: kPurple.withOpacity(0.3))),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Row(children: [
+                  const Icon(Icons.auto_awesome, color: kPurple, size: 16),
+                  const SizedBox(width: 6),
+                  Text('AI ANTRENÖR YORUMU', style: kLabel(context, size: 10, color: kPurple)),
+                ]),
+                const SizedBox(height: 10),
+                if (_aiYorum.isEmpty)
+                  SizedBox(
+                    width: double.infinity, height: 42,
+                    child: ElevatedButton(
+                      onPressed: _aiYukleniyor ? null : _aiYorumuAl,
+                      style: ElevatedButton.styleFrom(backgroundColor: kPurple, disabledBackgroundColor: kPurple.withOpacity(0.5), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), elevation: 0),
+                      child: _aiYukleniyor
+                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                          : Text('DETAYLI AI YORUMU AL', style: kLabel(context, size: 11, color: Colors.white)),
+                    ),
+                  )
+                else
+                  Text(_aiYorum, style: kBody(context, size: 13, color: kText(context))),
+              ]),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(width: double.infinity, height: 48, child: ElevatedButton(onPressed: () => setState(() { _sonuc = null; _aiYorum = ''; _detayAcik = false; }), style: ElevatedButton.styleFrom(backgroundColor: kRed, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), elevation: 0), child: Text('TEKRAR ANALİZ ET', style: kLabel(context, size: 12, color: Colors.white)))),
           ]),
         )),
       if (!_baslatildi && _sonuc == null && !_analizYukleniyor)
@@ -313,14 +380,17 @@ class _CanliAnalizSekmeState extends State<_CanliAnalizSekme> {
     ]);
   }
 
-  Widget _skorKarti(BuildContext context, String baslik, String deger, Color renk) {
+  Widget _kategoriSkoru(BuildContext context, String baslik, dynamic skorRaw) {
+    final skor = (skorRaw as num?)?.round() ?? 0;
+    final renk = skor >= 75 ? kGreen : (skor >= 50 ? kAmber : kRed);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(color: kSurfaceLowest(context), borderRadius: BorderRadius.circular(12)),
-      child: Column(children: [
-        Text(deger, style: kHeadline(context, size: 22, weight: FontWeight.w800, color: renk)),
+      width: (MediaQuery.of(context).size.width - 80) / 2,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(color: kSurfaceContainer(context), borderRadius: BorderRadius.circular(8)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(baslik, style: kLabel(context, size: 9)),
         const SizedBox(height: 4),
-        Text(baslik, style: kLabel(context, size: 10)),
+        Text('%$skor', style: kHeadline(context, size: 18, weight: FontWeight.w800, color: renk)),
       ]),
     );
   }
@@ -352,6 +422,9 @@ class _VideoAnalizSekmeState extends State<_VideoAnalizSekme> {
   int _ilerleme = 0;
   int _toplamKare = 0;
   NpuPoseDetector? _detector;
+  String _aiYorum = '';
+  bool _aiYukleniyor = false;
+  bool _detayAcik = false;
 
   Future<NpuPoseDetector> _detectorAl() async {
     if (_detector != null) return _detector!;
@@ -365,7 +438,7 @@ class _VideoAnalizSekmeState extends State<_VideoAnalizSekme> {
     final secilen = await picker.pickVideo(source: ImageSource.gallery);
     if (secilen == null) return;
     await _playerController?.dispose();
-    setState(() { _video = File(secilen.path); _sonuc = null; _hata = ''; _playerController = null; });
+    setState(() { _video = File(secilen.path); _sonuc = null; _hata = ''; _playerController = null; _aiYorum = ''; _detayAcik = false; });
   }
 
   Future<void> _analizEt() async {
@@ -447,6 +520,32 @@ class _VideoAnalizSekmeState extends State<_VideoAnalizSekme> {
       setState(() { _sonuc = Map<String, dynamic>.from(yanit); _yukleniyor = false; _hata = ''; });
     } catch (e) {
       setState(() { _hata = 'Analiz başarısız: $e'; _yukleniyor = false; });
+    }
+  }
+
+  Future<void> _aiYorumuAl() async {
+    if (_sonuc == null) return;
+    setState(() { _aiYukleniyor = true; _aiYorum = ''; });
+    try {
+      final kategoriSkorlari = <String, dynamic>{
+        'Genel Form': _sonuc!['genel_form']?['skor'] ?? _sonuc!['genel_skor'],
+        'Omurga Nötrlüğü': _sonuc!['omurga_notrluğu']?['skor'],
+        'Kalça Derinliği': _sonuc!['kalca_derinligi']?['skor'],
+        'Diz Hizası': _sonuc!['diz_hizasi']?['skor'],
+        'Diz Çöküşü': _sonuc!['diz_cokusu']?['skor'],
+        'Ağırlık Merkezi': _sonuc!['agirlik_merkezi']?['skor'],
+      }..removeWhere((key, value) => value == null);
+
+      final yanit = await ApiServisi.postJson('/api/yerel-ai/antrenor-yorumu', {
+        'hareket': 'squat',
+        'genel_skor': _sonuc!['genel_skor'],
+        'kategori_skorlari': kategoriSkorlari,
+      });
+      setState(() { _aiYorum = yanit['yorum'] ?? ''; });
+    } catch (_) {
+      setState(() { _aiYorum = 'AI yorumu alınamadı, lütfen tekrar deneyin.'; });
+    } finally {
+      setState(() { _aiYukleniyor = false; });
     }
   }
 
@@ -537,13 +636,57 @@ class _VideoAnalizSekmeState extends State<_VideoAnalizSekme> {
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('Video Analiz Sonucu', style: kHeadline(context, size: 16, weight: FontWeight.w700)),
               const SizedBox(height: 14),
-              Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-                _skorKarti(context, 'Genel Skor', '${(_sonuc!['genel_skor'] as num?)?.round() ?? 0}%', kRed),
-                _skorKarti(context, 'Squat Kare', '${_sonuc!['squat_kare'] ?? 0}', kBlue),
-                _skorKarti(context, 'Toplam Kare', '${_sonuc!['toplam_kare'] ?? 0}', kHint(context)),
-              ]),
-              if ((_sonuc!['olumlu_mesaj'] ?? '').isNotEmpty) ...[const SizedBox(height: 14), Container(width: double.infinity, padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: kGreen.withOpacity(0.1), borderRadius: BorderRadius.circular(10), border: Border.all(color: kGreen.withOpacity(0.3))), child: Text('✅ ${_sonuc!['olumlu_mesaj']}', style: kBody(context, size: 13, color: kGreen)))],
-              if ((_sonuc!['gelistirilecek_mesaj'] ?? '').isNotEmpty) ...[const SizedBox(height: 8), Container(width: double.infinity, padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: kRed.withOpacity(0.1), borderRadius: BorderRadius.circular(10), border: Border.all(color: kRed.withOpacity(0.3))), child: Text('💡 ${_sonuc!['gelistirilecek_mesaj']}', style: kBody(context, size: 13, color: kRed)))],
+              Center(child: Text('${(_sonuc!['genel_skor'] as num?)?.round() ?? 0}%', style: kHeadline(context, size: 40, weight: FontWeight.w900, color: kRed))),
+              const SizedBox(height: 14),
+              GestureDetector(
+                onTap: () => setState(() { _detayAcik = !_detayAcik; }),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(color: kSurfaceContainer(context), borderRadius: BorderRadius.circular(10), border: Border.all(color: kBorder(context))),
+                  child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                    Text('Antrenman Detayını Göster', style: kLabel(context, size: 11, color: kHint(context))),
+                    Icon(_detayAcik ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, color: kRed, size: 20),
+                  ]),
+                ),
+              ),
+              if (_detayAcik) ...[
+                const SizedBox(height: 10),
+                Wrap(spacing: 8, runSpacing: 8, children: [
+                  _kategoriSkoru(context, 'Genel Form', _sonuc!['genel_form']?['skor']),
+                  _kategoriSkoru(context, 'Omurga Nötrlüğü', _sonuc!['omurga_notrluğu']?['skor']),
+                  _kategoriSkoru(context, 'Kalça Derinliği', _sonuc!['kalca_derinligi']?['skor']),
+                  _kategoriSkoru(context, 'Diz Hizası', _sonuc!['diz_hizasi']?['skor']),
+                  _kategoriSkoru(context, 'Diz Çöküşü', _sonuc!['diz_cokusu']?['skor']),
+                  _kategoriSkoru(context, 'Ağırlık Merkezi', _sonuc!['agirlik_merkezi']?['skor']),
+                ]),
+              ],
+              const SizedBox(height: 14),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(color: kPurple.withOpacity(0.06), borderRadius: BorderRadius.circular(10), border: Border.all(color: kPurple.withOpacity(0.3))),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Row(children: [
+                    const Icon(Icons.auto_awesome, color: kPurple, size: 16),
+                    const SizedBox(width: 6),
+                    Text('AI ANTRENÖR YORUMU', style: kLabel(context, size: 10, color: kPurple)),
+                  ]),
+                  const SizedBox(height: 10),
+                  if (_aiYorum.isEmpty)
+                    SizedBox(
+                      width: double.infinity, height: 40,
+                      child: ElevatedButton(
+                        onPressed: _aiYukleniyor ? null : _aiYorumuAl,
+                        style: ElevatedButton.styleFrom(backgroundColor: kPurple, disabledBackgroundColor: kPurple.withOpacity(0.5), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), elevation: 0),
+                        child: _aiYukleniyor
+                            ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                            : Text('DETAYLI AI YORUMU AL', style: kLabel(context, size: 11, color: Colors.white)),
+                      ),
+                    )
+                  else
+                    Text(_aiYorum, style: kBody(context, size: 13, color: kText(context))),
+                ]),
+              ),
             ]),
           ),
         ],
@@ -552,14 +695,17 @@ class _VideoAnalizSekmeState extends State<_VideoAnalizSekme> {
     );
   }
 
-  Widget _skorKarti(BuildContext context, String baslik, String deger, Color renk) {
+  Widget _kategoriSkoru(BuildContext context, String baslik, dynamic skorRaw) {
+    final skor = (skorRaw as num?)?.round() ?? 0;
+    final renk = skor >= 75 ? kGreen : (skor >= 50 ? kAmber : kRed);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(color: kSurfaceLowest(context), borderRadius: BorderRadius.circular(12)),
-      child: Column(children: [
-        Text(deger, style: kHeadline(context, size: 22, weight: FontWeight.w800, color: renk)),
+      width: (MediaQuery.of(context).size.width - 64) / 2,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(color: kSurfaceContainer(context), borderRadius: BorderRadius.circular(8)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(baslik, style: kLabel(context, size: 9)),
         const SizedBox(height: 4),
-        Text(baslik, style: kLabel(context, size: 10)),
+        Text('%$skor', style: kHeadline(context, size: 18, weight: FontWeight.w800, color: renk)),
       ]),
     );
   }

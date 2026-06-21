@@ -40,11 +40,7 @@ Future<List<double>> pozuFlatListeCevir(Pose pose, Uint8List goruntuBaytlari) as
   final liste = <double>[];
   for (final tip in mediapipeSirasi) {
     final lm = pose.getLandmark(tip);
-    if (lm != null) {
-      liste.addAll([lm.x / genislik, lm.y / yukseklik, lm.z / genislik, lm.visibility]);
-    } else {
-      liste.addAll([0.0, 0.0, 0.0, 0.0]);
-    }
+    liste.addAll([lm.x / genislik, lm.y / yukseklik, lm.z / genislik, lm.visibility]);
   }
   return liste;
 }

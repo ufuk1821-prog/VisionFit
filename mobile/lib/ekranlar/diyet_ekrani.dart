@@ -22,6 +22,7 @@ class _DiyetEkraniState extends State<DiyetEkrani> {
   String _hata = '';
   String _aiOneri = '';
   bool _aiYukleniyor = false;
+  int _secilenPlanIndex = 0;
 
   final List<Map<String, String>> _aktiflikler = [
     {'value': 'sedanter', 'label': 'Hareketsiz (ofis işi)'},
@@ -63,12 +64,29 @@ class _DiyetEkraniState extends State<DiyetEkrani> {
     if (_sonuc == null) return;
     setState(() { _aiYukleniyor = true; _aiOneri = ''; });
     try {
-      final planlar = _sonuc!['planlar'] as List?;
-      final plan = planlar?.isNotEmpty == true ? planlar!.first : {};
+      final planlar = _sonuc!['planlar'] as List? ?? [];
+      final plan = planlar.isNotEmpty ? planlar[_secilenPlanIndex] : {};
+      final ogunler = (plan['ornek_ogunler'] as List? ?? []).map((e) => e.toString()).toList();
+
       final yanit = await ApiServisi.postJson('/api/yerel-ai/diyet-onerisi', {
-        'bmi': _sonuc!['bmi'], 'bmi_kategori': _sonuc!['bmi_kategori'], 'hedef': _sonuc!['hedef'],
-        'hedef_kalori': _sonuc!['hedef_kalori'], 'protein_g': plan['protein_g'] ?? 0,
-        'karbonhidrat_g': plan['karbonhidrat_g'] ?? 0, 'yag_g': plan['yag_g'] ?? 0, 'istek': _istekCtrl.text.trim(),
+        'profil': {
+          'yas': int.tryParse(_yasCtrl.text),
+          'cinsiyet': _cinsiyet,
+          'boy_cm': double.tryParse(_boyCtrl.text)?.round(),
+          'kilo_kg': double.tryParse(_kiloCtrl.text)?.round(),
+          'aktivite_duzeyi': _aktiflik,
+          'hedef': _hedef,
+          'hedef_kalori': _sonuc!['hedef_kalori'],
+        },
+        'plan': {
+          'plan_adi': plan['baslik'] ?? 'Plan',
+          'kahvalti': ogunler.isNotEmpty ? [ogunler[0]] : [],
+          'ogle': ogunler.length > 1 ? [ogunler[1]] : [],
+          'aksam': ogunler.length > 2 ? [ogunler[2]] : [],
+          'ara_ogun': [],
+          'gunluk_kalori': plan['kalori'] ?? 'Belirtilmemiş',
+        },
+        'kullanici_notu': _istekCtrl.text.trim(),
       });
       setState(() { _aiOneri = yanit['yorum'] ?? ''; });
     } catch (_) {
@@ -247,18 +265,31 @@ class _DiyetEkraniState extends State<DiyetEkrani> {
         )),
       ]),
       const SizedBox(height: 12),
-      ...planlar.map((plan) => _planKarti(context, plan)),
+      Text('Bir plan seç, AI önerisini ona göre alacaksın', style: kBody(context, size: 12, color: kHint(context))),
+      const SizedBox(height: 8),
+      ...planlar.asMap().entries.map((entry) => _planKarti(context, entry.value, entry.key)),
     ]);
   }
 
-  Widget _planKarti(BuildContext context, dynamic plan) {
+  Widget _planKarti(BuildContext context, dynamic plan, int index) {
     final ogunler = plan['ornek_ogunler'] as List? ?? [];
-    return Container(
+    final secili = _secilenPlanIndex == index;
+    return GestureDetector(
+      onTap: () => setState(() { _secilenPlanIndex = index; _aiOneri = ''; }),
+      child: Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: kSurfaceLow(context), borderRadius: BorderRadius.circular(12), border: Border.all(color: kBorderAlt(context))),
+      decoration: BoxDecoration(
+        color: kSurfaceLow(context),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: secili ? kRed : kBorderAlt(context), width: secili ? 2 : 1),
+      ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(plan['baslik'] ?? '', style: kBody(context, size: 15, weight: FontWeight.w700, color: kText(context))),
+        Row(children: [
+          Icon(secili ? Icons.radio_button_checked : Icons.radio_button_unchecked, color: secili ? kRed : kHint(context), size: 18),
+          const SizedBox(width: 8),
+          Expanded(child: Text(plan['baslik'] ?? '', style: kBody(context, size: 15, weight: FontWeight.w700, color: kText(context)))),
+        ]),
         const SizedBox(height: 6),
         Row(children: [
           _makroCip(context, '${plan['kalori']} kcal', kRed),
@@ -283,6 +314,7 @@ class _DiyetEkraniState extends State<DiyetEkrani> {
           )),
         ],
       ]),
+      ),
     );
   }
 
