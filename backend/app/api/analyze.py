@@ -97,7 +97,7 @@ def analyze_single_frame(lm_flat):
         [l_hip_x, l_hip_y], [l_knee_x, l_knee_y], [l_ankle_x, l_ankle_y]
     )
     avg_knee_angle = (knee_angle + knee_angle_left) / 2
-    in_squat = 70 <= avg_knee_angle <= 160
+    in_squat = 55 <= avg_knee_angle <= 135
 
     ml_correct = True
     ml_confidence = 90.0
@@ -115,22 +115,22 @@ def analyze_single_frame(lm_flat):
     shoulder_mid_x = (l_shoulder_x + r_shoulder_x) / 2
     hip_mid_x = (l_hip_x + r_hip_x) / 2
     forward_lean = abs(shoulder_mid_x - hip_mid_x)
-    spine_ok = forward_lean < 0.15
+    spine_ok = forward_lean < 0.10
 
     hip_mid_y = (l_hip_y + r_hip_y) / 2
     knee_mid_y = (l_knee_y + r_knee_y) / 2
-    depth_ok = hip_mid_y >= knee_mid_y * 0.92
+    depth_ok = avg_knee_angle <= 105
 
     r_knee_over = abs(r_knee_x - r_ankle_x)
     l_knee_over = abs(l_knee_x - l_ankle_x)
-    knee_alignment_ok = r_knee_over < 0.12 and l_knee_over < 0.12
+    knee_alignment_ok = r_knee_over < 0.08 and l_knee_over < 0.08
 
-    r_valgus = r_knee_x > r_ankle_x + 0.06
-    l_valgus = l_knee_x < l_ankle_x - 0.06
+    r_valgus = r_knee_x > r_ankle_x + 0.045
+    l_valgus = l_knee_x < l_ankle_x - 0.045
     no_valgus = not (r_valgus or l_valgus)
 
     ankle_mid_x = (l_ankle_x + r_ankle_x) / 2
-    weight_center_ok = abs(hip_mid_x - ankle_mid_x) < 0.12
+    weight_center_ok = abs(hip_mid_x - ankle_mid_x) < 0.08
 
     return {
         "in_squat": in_squat,
@@ -657,5 +657,3 @@ async def delete_history(
     db.delete(kayit)
     db.commit()
     return {"mesaj": "Kayıt silindi."}
-
-    

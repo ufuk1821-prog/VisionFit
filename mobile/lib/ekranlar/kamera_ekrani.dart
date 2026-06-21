@@ -136,11 +136,11 @@ class _CanliAnalizSekmeState extends State<_CanliAnalizSekme> {
       await Future.delayed(const Duration(seconds: 1));
     }
     setState(() { _geriSayim = 0; _kalanSure = 30; });
-    for (int i = 0; i < 15; i++) {
+    for (int i = 0; i < 30; i++) {
       if (_iptalEdildi || !mounted) return;
       await _kareCek();
       setState(() { _kalanSure = 30 - ((i + 1) * 2); });
-      if (i < 14) await Future.delayed(const Duration(seconds: 2));
+      if (i < 29) await Future.delayed(const Duration(seconds: 2));
     }
     if (_iptalEdildi) return;
     if (_kareler.isEmpty) { setState(() { _hata = 'Vücut tespit edilemedi. Yanınızdan çekim yapın.'; _baslatildi = false; }); return; }
@@ -388,7 +388,7 @@ class _VideoAnalizSekmeState extends State<_VideoAnalizSekme> {
 
       await Future.delayed(const Duration(milliseconds: 300));
 
-      const toplamKareSayisi = 16;
+      const toplamKareSayisi = 40;
       final kareler = <List<double>>[];
       final geciciKlasor = await getTemporaryDirectory();
 

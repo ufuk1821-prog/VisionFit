@@ -117,12 +117,6 @@ function Login() {
             <Link className="text-brand-red font-bold hover:text-white transition-colors ml-1" to="/register">Kayıt Ol</Link>
           </p>
         </div>
-
-        <div className="absolute -bottom-4 -right-4 pointer-events-none">
-          <p className="font-label-mono text-[10px] text-outline-variant/30 uppercase tracking-widest" style={{ transform: 'rotate(90deg)', transformOrigin: 'left' }}>
-            Auth_Ver_4.02 // Secure_Layer
-          </p>
-        </div>
       </div>
     </main>
   );
