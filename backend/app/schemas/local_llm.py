@@ -39,6 +39,15 @@ class DiyetPlan(BaseModel):
 
 
 class DiyetOnerisiRequest(BaseModel):
-    profil: DiyetProfil
-    plan: DiyetPlan
+    profil: Optional[DiyetProfil] = None
+    plan: Optional[DiyetPlan] = None
     kullanici_notu: Optional[str] = ""
+
+    bmi: Optional[float] = None
+    bmi_kategori: Optional[str] = None
+    hedef: Optional[str] = None
+    hedef_kalori: Optional[int] = None
+    protein_g: Optional[float] = None
+    karbonhidrat_g: Optional[float] = None
+    yag_g: Optional[float] = None
+    istek: Optional[str] = None

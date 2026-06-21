@@ -24,5 +24,32 @@ def antrenor_yorumu(istek: AntrenorYorumuRequest, kullanici=Depends(get_current_
 @router.post("/diyet-onerisi")
 def diyet_onerisi(istek: DiyetOnerisiRequest, kullanici=Depends(get_current_user)):
     _yerel_llm_kontrol()
-    yorum = local_llm.diyet_onerisi_uret(istek.profil, istek.plan, istek.kullanici_notu)
+
+    profil = istek.profil
+    plan = istek.plan
+
+    if profil is None:
+        profil = {
+            "hedef": istek.hedef,
+            "hedef_kalori": istek.hedef_kalori,
+        }
+
+    if plan is None:
+        plan = {
+            "gunluk_kalori": istek.hedef_kalori,
+            "porsiyon_bilgisi": {
+                "protein_g": istek.protein_g,
+                "karbonhidrat_g": istek.karbonhidrat_g,
+                "yag_g": istek.yag_g,
+                "bmi": istek.bmi,
+                "bmi_kategori": istek.bmi_kategori,
+            },
+        }
+
+    yorum = local_llm.diyet_onerisi_uret(
+        profil,
+        plan,
+        istek.kullanici_notu or istek.istek or "",
+    )
+
     return {"yorum": yorum}
