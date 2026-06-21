@@ -32,6 +32,8 @@ function Diet() {
   const sonucRef = useRef(null);
   const [aiOneri, setAiOneri] = useState('');
   const [aiYukleniyor, setAiYukleniyor] = useState(false);
+  const [seciliPlanIndex, setSeciliPlanIndex] = useState(null);
+  const [aiHata, setAiHata] = useState('');
   const [boyHata, setBoyHata] = useState('');
   const [kiloHata, setKiloHata] = useState('');
   const [yasHata, setYasHata] = useState('');
@@ -70,31 +72,127 @@ function Diet() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setDiet(response.data);
+      setSeciliPlanIndex(null);
+      setAiOneri('');
+      setAiHata('');
       setTimeout(() => sonucRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     } catch (err) {
       setError(err.response?.data?.detail || 'Hesaplama sırasında hata oluştu.');
       setDiet(null);
+      setSeciliPlanIndex(null);
+      setAiOneri('');
+      setAiHata('');
     } finally {
       setLoading(false);
     }
   };
 
+  const yorumMetniHazirla = (yorum) => {
+    if (!yorum) return '';
+
+    if (typeof yorum !== 'string') {
+      return yorum.yorum || JSON.stringify(yorum);
+    }
+
+    try {
+      const parsed = JSON.parse(yorum);
+      return parsed.yorum || yorum;
+    } catch {
+      return yorum;
+    }
+  };
+
+  const planOgunleriniAyir = (seciliPlan) => {
+    const ogunler = seciliPlan?.ornek_ogunler || [];
+
+    const kahvalti = ogunler.filter((x) => {
+      const t = x.toLowerCase();
+      return t.includes('kahvalt');
+    });
+
+    const ogle = ogunler.filter((x) => {
+      const t = x.toLowerCase();
+      return t.includes('öğle') || t.includes('ogle');
+    });
+
+    const aksam = ogunler.filter((x) => {
+      const t = x.toLowerCase();
+      return t.includes('akşam') || t.includes('aksam');
+    });
+
+    const ara_ogun = ogunler.filter((x) => {
+      const t = x.toLowerCase();
+      return t.includes('ara');
+    });
+
+    const eslesenler = new Set([...kahvalti, ...ogle, ...aksam, ...ara_ogun]);
+    const diger_ogunler = ogunler.filter((x) => !eslesenler.has(x));
+
+    return {
+      kahvalti: kahvalti.length ? kahvalti : diger_ogunler,
+      ogle,
+      aksam,
+      ara_ogun,
+    };
+  };
+
   const aiOneriAl = async () => {
     if (!diet) return;
+
+    if (seciliPlanIndex === null) {
+      setAiHata('Lütfen bir diyet planı seçin.');
+      setAiOneri('');
+      return;
+    }
+
+    const seciliPlan = diet.planlar?.[seciliPlanIndex];
+
+    if (!seciliPlan) {
+      setAiHata('Seçilen diyet planı bulunamadı.');
+      setAiOneri('');
+      return;
+    }
+
+    const ogunler = planOgunleriniAyir(seciliPlan);
+
     setAiYukleniyor(true);
     setAiOneri('');
+    setAiHata('');
+
     try {
       const res = await axios.post(
         `${import.meta.env.VITE_API_URL}/api/yerel-ai/diyet-onerisi`,
         {
-          bmi: diet.bmi, bmi_kategori: diet.bmi_kategori, hedef, hedef_kalori: diet.hedef_kalori,
-          protein_g: diet.planlar?.[0]?.protein_g ?? 0, karbonhidrat_g: diet.planlar?.[0]?.karbonhidrat_g ?? 0, yag_g: diet.planlar?.[0]?.yag_g ?? 0,
-          istek: istek || 'genel öneri',
+          profil: {
+            yas: Number(yas),
+            cinsiyet,
+            boy_cm: Number(boy),
+            kilo_kg: Number(kilo),
+            aktivite_duzeyi: aktiflik,
+            hedef,
+            hedef_kalori: diet.hedef_kalori,
+          },
+          plan: {
+            plan_adi: seciliPlan.baslik || `Plan ${seciliPlanIndex + 1}`,
+            kahvalti: ogunler.kahvalti,
+            ogle: ogunler.ogle,
+            aksam: ogunler.aksam,
+            ara_ogun: ogunler.ara_ogun,
+            gunluk_kalori: seciliPlan.kalori,
+            porsiyon_bilgisi: {
+              protein_g: seciliPlan.protein_g,
+              karbonhidrat_g: seciliPlan.karbonhidrat_g,
+              yag_g: seciliPlan.yag_g,
+            },
+          },
+          kullanici_notu: istek || '',
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setAiOneri(res.data.yorum);
-    } catch {
+
+      setAiOneri(yorumMetniHazirla(res.data.yorum));
+    } catch (err) {
+      console.error(err);
       setAiOneri('AI önerisi alınamadı, lütfen tekrar deneyin.');
     } finally {
       setAiYukleniyor(false);
@@ -263,6 +361,10 @@ function Diet() {
                     ) : (
                       <p className="font-headline-md text-[16px] text-on-surface leading-tight italic">"{aiOneri}"</p>
                     )}
+                    {aiHata && <p className="font-body-sm text-body-sm text-brand-red mt-2">{aiHata}</p>}
+                    {seciliPlanIndex !== null && !aiOneri && !aiHata && (
+                      <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">Seçilen plan: {diet.planlar?.[seciliPlanIndex]?.baslik || `Plan ${seciliPlanIndex + 1}`}</p>
+                    )}
                   </div>
                 </div>
 
@@ -270,10 +372,22 @@ function Diet() {
                   {diet.planlar.map((plan, index) => {
                     const planRenkler = ['text-blue-400', 'text-purple-400', 'text-amber-400'];
                     const planRenk = planRenkler[index % planRenkler.length];
+                    const secili = seciliPlanIndex === index;
                     return (
-                    <div key={index} className="bg-surface-container rounded-2xl border border-outline-variant overflow-hidden flex flex-col">
+                    <div
+                      key={index}
+                      onClick={() => {
+                        setSeciliPlanIndex(index);
+                        setAiOneri('');
+                        setAiHata('');
+                      }}
+                      className={`bg-surface-container rounded-2xl border overflow-hidden flex flex-col cursor-pointer transition-all ${secili ? 'border-primary ring-2 ring-primary/60 shadow-[0_0_24px_rgba(232,49,63,0.25)] scale-[1.01]' : 'border-outline-variant hover:border-primary/70'}`}
+                    >
                       <div className="h-12 relative flex items-end p-4 bg-surface-container-low">
                         <span className={`font-label-mono text-label-mono uppercase ${planRenk}`}>{plan.baslik}</span>
+                        {secili && (
+                          <span className="absolute top-3 right-3 px-2 py-1 rounded-full bg-primary text-on-primary text-[10px] font-label-mono uppercase">Seçildi</span>
+                        )}
                       </div>
                       <div className="p-6 pt-2">
                         <ul className="text-on-surface font-body-md space-y-2 mb-4">
@@ -285,6 +399,18 @@ function Diet() {
                           <span className="px-2.5 py-1 bg-purple-500/15 border border-purple-500/30 rounded text-[10px] font-label-mono text-purple-300 font-bold">Y: {plan.yag_g}g</span>
                         </div>
                         <p className="font-label-mono text-label-mono text-on-surface-variant mt-3">{plan.kalori} kcal</p>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSeciliPlanIndex(index);
+                            setAiOneri('');
+                            setAiHata('');
+                          }}
+                          className={`mt-4 w-full py-2 rounded-lg border font-label-mono text-label-mono uppercase transition-all ${secili ? 'border-primary bg-primary text-on-primary' : 'border-outline-variant text-on-surface-variant hover:border-primary hover:text-primary'}`}
+                        >
+                          {secili ? 'Seçilen Plan' : 'Bu Planı Seç'}
+                        </button>
                       </div>
                     </div>
                     );
