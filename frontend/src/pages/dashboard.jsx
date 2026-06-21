@@ -227,6 +227,7 @@ function Dashboard() {
   const [aiYorum, setAiYorum] = useState('');
   const [aiYukleniyor, setAiYukleniyor] = useState(false);
   const [aiHata, setAiHata] = useState('');
+  const [kategoriAcik, setKategoriAcik] = useState(false);
   const [onKamera, setOnKamera] = useState(true);
   const [activeTab, setActiveTab] = useState('canli');
   const [elapsedSec, setElapsedSec] = useState(0);
@@ -363,9 +364,15 @@ function Dashboard() {
     setAiHata('');
     setAiYorum('');
     try {
-      const skorlar = {};
-      Object.keys(KATEGORI_LABELS).forEach((key) => { skorlar[key] = result[key].skor; });
-      const res = await axios.post(`${apiUrl}/api/yerel-ai/antrenor-yorumu`, { skorlar }, { headers: { Authorization: `Bearer ${token}` } });
+      const kategoriSkorlari = {};
+      Object.entries(KATEGORI_LABELS).forEach(([key, label]) => {
+        if (result[key]) kategoriSkorlari[label] = result[key].skor;
+      });
+      const res = await axios.post(
+        `${apiUrl}/api/yerel-ai/antrenor-yorumu`,
+        { hareket: 'squat', genel_skor: result.genel_skor, kategori_skorlari: kategoriSkorlari },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       setAiYorum(res.data.yorum);
     } catch {
       setAiHata('AI yorumu alınamadı, lütfen tekrar deneyin.');
@@ -491,71 +498,82 @@ function Dashboard() {
                       <p className="font-label-mono text-label-mono text-on-surface-variant uppercase">Veri setleri başarıyla işlendi ve optimize edildi</p>
                     </header>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-bento-gap">
-                      <div className="bento-card p-6 border-l-[3px] border-primary-container">
-                        <p className="font-label-mono text-label-mono text-on-surface-variant uppercase mb-4">GENEL SKOR</p>
-                        <div className="flex items-baseline gap-2">
-                          <span className="font-stat-lg text-stat-lg text-primary">{result.genel_skor}</span>
-                          <span className="font-label-mono text-label-mono text-primary">%</span>
-                        </div>
-                      </div>
-                      <div className="bento-card p-6">
-                        <p className="font-label-mono text-label-mono text-on-surface-variant uppercase mb-4">SQUAT KARELERİ</p>
-                        <span className="font-stat-lg text-stat-lg text-on-surface">{result.squat_kare}</span>
-                      </div>
-                      <div className="bento-card p-6">
-                        <p className="font-label-mono text-label-mono text-on-surface-variant uppercase mb-4">TOPLAM KARE</p>
-                        <span className="font-stat-lg text-stat-lg text-on-surface">{framesRef.current.length || result.squat_kare}</span>
+                    <div className="bento-card p-8 border-l-[3px] border-primary-container text-center">
+                      <p className="font-label-mono text-label-mono text-on-surface-variant uppercase mb-3">ANALİZ SONUCU</p>
+                      <div className="flex items-baseline justify-center gap-2">
+                        <span className="font-stat-lg text-6xl text-primary">{result.genel_skor}</span>
+                        <span className="font-label-mono text-xl text-primary">%</span>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-bento-gap">
-                      <div className="bg-error-container/20 border border-error-container/30 rounded-2xl p-6 flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-full bg-error-container flex items-center justify-center text-error flex-shrink-0">
-                          <span className="material-symbols-outlined">warning</span>
-                        </div>
-                        <div>
-                          <h4 className="font-headline-md text-on-surface text-base">Gelişim Alanı</h4>
-                          <p className="text-body-sm text-on-surface-variant">{result.gelistirilecek_mesaj}</p>
-                        </div>
-                      </div>
                       <div className="bg-tertiary-container/10 border border-tertiary-container/30 rounded-2xl p-6 flex items-center gap-4">
                         <div className="w-12 h-12 rounded-full bg-tertiary-container flex items-center justify-center text-on-tertiary flex-shrink-0">
                           <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
                         </div>
                         <div>
-                          <h4 className="font-headline-md text-on-surface text-base">Güçlü Yön</h4>
-                          <p className="text-body-sm text-on-surface-variant">{result.olumlu_mesaj}</p>
+                          <h4 className="font-headline-md text-on-surface text-base">En Güçlü Alan</h4>
+                          <p className="text-body-sm text-on-surface-variant">
+                            {Object.entries(KATEGORI_LABELS).reduce((en, [key, label]) => {
+                              const skor = result[key]?.skor ?? -1;
+                              return skor > (en.skor ?? -1) ? { label, skor } : en;
+                            }, {}).label}
+                          </p>
                         </div>
                       </div>
+                      <div className="bg-error-container/20 border border-error-container/30 rounded-2xl p-6 flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-full bg-error-container flex items-center justify-center text-error flex-shrink-0">
+                          <span className="material-symbols-outlined">warning</span>
+                        </div>
+                        <div>
+                          <h4 className="font-headline-md text-on-surface text-base">Geliştirilmesi Gereken Alan</h4>
+                          <p className="text-body-sm text-on-surface-variant">
+                            {Object.entries(KATEGORI_LABELS).reduce((en, [key, label]) => {
+                              const skor = result[key]?.skor ?? 101;
+                              return skor < (en.skor ?? 101) ? { label, skor } : en;
+                            }, {}).label}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bento-card p-0 overflow-hidden">
+                      <button
+                        onClick={() => setKategoriAcik((v) => !v)}
+                        className="w-full p-5 flex items-center justify-between text-left hover:bg-surface-container-high transition-colors"
+                      >
+                        <span className="font-label-mono text-label-mono uppercase text-on-surface-variant">Kategori Skorlarını Göster</span>
+                        <span className={`material-symbols-outlined text-primary transition-transform ${kategoriAcik ? 'rotate-180' : ''}`}>expand_more</span>
+                      </button>
+                      {kategoriAcik && (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-bento-gap p-5 pt-0">
+                          {Object.entries(KATEGORI_LABELS).map(([key, label]) => {
+                            const kat = result[key];
+                            if (!kat) return null;
+                            return (
+                              <div className="bg-surface-container-high rounded-xl p-4" key={key}>
+                                <p className="font-label-mono text-label-mono text-on-surface-variant uppercase mb-2">{label}</p>
+                                <span className="font-stat-lg text-2xl" style={{ color: kat.skor >= 75 ? '#41a447' : kat.skor >= 50 ? '#E8313F' : '#ffb4ab' }}>%{kat.skor}</span>
+                                <p className="text-body-sm text-on-surface-variant mt-2">{kat.mesaj}</p>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
 
                     <div className="bento-card p-6">
                       <div className="flex items-center gap-2 mb-4">
                         <span className="material-symbols-outlined text-purple-400">smart_toy</span>
-                        <h3 className="font-headline-md text-headline-md">AI Antrenör Yorumu</h3>
+                        <h3 className="font-headline-md text-headline-md">AI Koç Analizi</h3>
                       </div>
                       {!aiYorum && !aiHata && (
                         <button className="w-full py-3 bg-surface-container-high border border-outline-variant rounded-lg font-label-mono uppercase disabled:opacity-50" onClick={aiYorumuAl} disabled={aiYukleniyor}>
-                          {aiYukleniyor ? 'Yorum Hazırlanıyor...' : 'AI Yorumu Al'}
+                          {aiYukleniyor ? 'Analiz Hazırlanıyor...' : 'DETAYLI AI YORUMU AL'}
                         </button>
                       )}
                       {aiYorum && <p className="text-body-sm text-on-surface leading-relaxed">{aiYorum}</p>}
                       {aiHata && <p className="text-body-sm text-on-surface-variant">{aiHata}</p>}
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-bento-gap">
-                      {Object.entries(KATEGORI_LABELS).map(([key, label]) => {
-                        const kat = result[key];
-                        if (!kat) return null;
-                        return (
-                          <div className="bento-card p-5" key={key}>
-                            <p className="font-label-mono text-label-mono text-on-surface-variant uppercase mb-2">{label}</p>
-                            <span className="font-stat-lg text-stat-lg" style={{ color: kat.skor >= 75 ? '#41a447' : kat.skor >= 50 ? '#E8313F' : '#ffb4ab' }}>%{kat.skor}</span>
-                            <p className="text-body-sm text-on-surface-variant mt-2">{kat.mesaj}</p>
-                          </div>
-                        );
-                      })}
                     </div>
 
                     <div className="flex flex-col md:flex-row gap-4 pt-4">

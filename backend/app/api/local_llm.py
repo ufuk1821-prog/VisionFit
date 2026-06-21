@@ -18,17 +18,14 @@ def _yerel_llm_kontrol():
 @router.post("/antrenor-yorumu")
 def antrenor_yorumu(istek: AntrenorYorumuRequest, kullanici=Depends(get_current_user)):
     _yerel_llm_kontrol()
-    yorum = local_llm.antrenor_geri_bildirimi_uret(istek.skorlar)
+    yorum = local_llm.antrenor_geri_bildirimi_uret(istek.hareket, istek.genel_skor, istek.kategori_skorlari)
     return {"yorum": yorum}
 
 
 @router.post("/diyet-onerisi")
 def diyet_onerisi(istek: DiyetOnerisiRequest, kullanici=Depends(get_current_user)):
     _yerel_llm_kontrol()
-    yorum = local_llm.diyet_onerisi_uret(
-        istek.bmi, istek.bmi_kategori, istek.hedef, istek.hedef_kalori,
-        istek.protein_g, istek.karbonhidrat_g, istek.yag_g, istek.istek,
-    )
+    yorum = local_llm.diyet_onerisi_uret(istek.profil, istek.plan, istek.kullanici_notu)
     return {"yorum": yorum}
 
 
