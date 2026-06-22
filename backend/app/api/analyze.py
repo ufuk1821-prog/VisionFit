@@ -255,7 +255,6 @@ def predict_squat(frame: Sequence[float]) -> Tuple[bool, float]:
         return False, 0.0
 
 
-
 def analyze_single_frame_squat(lm_flat: Sequence[float]) -> Optional[Dict[str, float | bool]]:
     left_chain = [LEFT_SHOULDER, LEFT_HIP, LEFT_KNEE, LEFT_ANKLE]
     right_chain = [RIGHT_SHOULDER, RIGHT_HIP, RIGHT_KNEE, RIGHT_ANKLE]
@@ -894,6 +893,7 @@ async def analyze_deadlift_session(
         gelistirilecek_mesaj=improvement_message,
     )
 
+
 def _line_deviation(
     landmarks: Sequence[float],
     upper: Tuple[int, int],
@@ -1049,6 +1049,63 @@ async def analyze_kopru(
         ("Geliştirilebilir", "Kalçanızı biraz daha yükseltin."),
         ("İyi Form", "Kalçanız omuz-diz hattına yakın."),
     )
+
+
+
+
+@router.post("/supermen")
+async def analyze_superman(
+    data: PoseData,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    landmarks = data.landmarks
+    required = [
+        LEFT_SHOULDER,
+        RIGHT_SHOULDER,
+        LEFT_HIP,
+        RIGHT_HIP,
+        LEFT_ANKLE,
+        RIGHT_ANKLE,
+    ]
+    if not landmarks_visible(landmarks, required, threshold=0.40):
+        raise HTTPException(
+            status_code=400,
+            detail="Vücudunuz net görünmüyor. Tüm vücudunuz kadraja girmelidir.",
+        )
+
+    deviation = _line_deviation(
+        landmarks,
+        (LEFT_SHOULDER, RIGHT_SHOULDER),
+        (LEFT_HIP, RIGHT_HIP),
+        (LEFT_ANKLE, RIGHT_ANKLE),
+    )
+    if deviation is None:
+        raise HTTPException(status_code=400, detail="Pozisyon tespit edilemedi.")
+
+    score = round(_clamp((deviation / 0.15) * 100.0), 1)
+    if deviation >= 0.08:
+        situation = "İyi Form"
+        message = "Kol ve bacak kaldırma yüksekliği yeterli."
+    else:
+        situation = "Yetersiz Kaldırma"
+        message = "Kol ve bacaklarınızı biraz daha yukarı kaldırın."
+
+    record = save_history(
+        db,
+        current_user.id,
+        "supermen",
+        score,
+        0,
+        f"{situation}: {message}",
+    )
+    return {
+        "kayit_id": record.id,
+        "durum": situation,
+        "skor": score,
+        "fark": round(deviation, 4),
+        "antrenor_mesaji": message,
+    }
 
 
 @router.post("/duvar-squat")
@@ -1300,6 +1357,7 @@ async def analyze_reverse_bridge(
         "skor": score,
         "antrenor_mesaji": message,
     }
+
 
 @router.get("/history", response_model=List[HistoryRead])
 async def get_history(

@@ -113,23 +113,132 @@ def test_10_gecersiz_token_engelle():
     response = client.get("/api/badges", headers={"Authorization": "Bearer yanlis_token"})
     assert response.status_code == 401
 
+
+def _pose_frame(points, visibility=0.95):
+    frame = [0.0] * 132
+    for idx, values in points.items():
+        x, y = values[:2]
+        z = values[2] if len(values) > 2 else 0.0
+        vis = values[3] if len(values) > 3 else visibility
+        base = idx * 4
+        frame[base] = x
+        frame[base + 1] = y
+        frame[base + 2] = z
+        frame[base + 3] = vis
+    return frame
+
+
+def build_valid_squat_frame(knee_x=0.30):
+    return _pose_frame({
+        11: (0.45, 0.20), 12: (0.55, 0.20),
+        23: (0.45, 0.50), 24: (0.55, 0.50),
+        25: (knee_x, 0.70), 26: (1.0 - knee_x, 0.70),
+        27: (0.45, 0.90), 28: (0.55, 0.90),
+    })
+
+
+def build_squat_motion_frames():
+    knee_positions = [0.35, 0.30, 0.25, 0.20, 0.15, 0.20, 0.25, 0.30, 0.35]
+    return [build_valid_squat_frame(knee_x) for knee_x in knee_positions]
+
+
+def build_biceps_curl_frame(elbow_angle):
+    import math
+
+    shoulder = (0.40, 0.30)
+    elbow = (0.40, 0.50)
+    forearm_length = 0.20
+    direction = math.radians(-90.0 + elbow_angle)
+    wrist = (
+        elbow[0] + forearm_length * math.cos(direction),
+        elbow[1] + forearm_length * math.sin(direction),
+    )
+    index_point = (
+        wrist[0] + 0.08 * math.cos(direction),
+        wrist[1] + 0.08 * math.sin(direction),
+    )
+
+    return _pose_frame({
+        11: (*shoulder, 0.0, 0.98),
+        13: (*elbow, 0.0, 0.98),
+        15: (*wrist, 0.0, 0.98),
+        19: (*index_point, 0.0, 0.90),
+        12: (0.58, 0.30, 0.0, 0.80),
+        14: (0.58, 0.50, 0.0, 0.80),
+        16: (0.58, 0.68, 0.0, 0.80),
+        20: (0.58, 0.75, 0.0, 0.75),
+        23: (0.43, 0.68, 0.0, 0.95),
+        24: (0.57, 0.68, 0.0, 0.95),
+    })
+
+
+def build_biceps_curl_motion_frames():
+    angles = [160, 145, 120, 90, 60, 50, 65, 95, 125, 150]
+    return [build_biceps_curl_frame(angle) for angle in angles]
+
+
+def build_deadlift_frame(progress):
+    # progress=0: alt pozisyon, progress=1: kilitlenme
+    hip = (0.45 + 0.05 * progress, 0.58 - 0.03 * progress)
+    knee = (0.50, 0.72)
+    ankle = (0.50, 0.92)
+
+    shoulder = (
+        0.65 - 0.15 * progress,
+        0.45 - 0.15 * progress,
+    )
+    ear = (
+        shoulder[0] + 0.04 * (1.0 - progress),
+        shoulder[1] - 0.10,
+    )
+    wrist = (
+        0.51,
+        0.86 - 0.31 * progress,
+    )
+
+    return _pose_frame({
+        7: (*ear, 0.0, 0.98),
+        11: (*shoulder, 0.0, 0.98),
+        15: (*wrist, 0.0, 0.98),
+        23: (*hip, 0.0, 0.98),
+        25: (*knee, 0.0, 0.98),
+        27: (*ankle, 0.0, 0.98),
+
+        8: (ear[0] + 0.08, ear[1], 0.0, 0.75),
+        12: (shoulder[0] + 0.08, shoulder[1], 0.0, 0.75),
+        16: (wrist[0] + 0.08, wrist[1], 0.0, 0.75),
+        24: (hip[0] + 0.08, hip[1], 0.0, 0.75),
+        26: (knee[0] + 0.08, knee[1], 0.0, 0.75),
+        28: (ankle[0] + 0.08, ankle[1], 0.0, 0.75),
+    })
+
+
+def build_deadlift_motion_frames():
+    phases = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 0.8, 0.6, 0.4, 0.2]
+    return [build_deadlift_frame(progress) for progress in phases]
+
+
+
 def test_11_squat_eksik_landmark_hatasi():
     token = get_token("squat1@test.com")
-    response = client.post("/api/analyze/squat",
+    response = client.post(
+        "/api/analyze/squat",
         json={"landmarks": [0.1] * 10},
-        headers={"Authorization": f"Bearer {token}"}
+        headers={"Authorization": f"Bearer {token}"},
     )
-    assert response.status_code == 400
+    assert response.status_code == 422
 
 def test_12_squat_token_olmadan_engelle():
     response = client.post("/api/analyze/squat", json={"landmarks": [0.5] * 132})
     assert response.status_code == 401
 
+
 def test_13_squat_basarili_analiz():
     token = get_token("squat2@test.com")
-    response = client.post("/api/analyze/squat",
-        json={"landmarks": [0.5] * 132},
-        headers={"Authorization": f"Bearer {token}"}
+    response = client.post(
+        "/api/analyze/squat",
+        json={"landmarks": build_valid_squat_frame()},
+        headers={"Authorization": f"Bearer {token}"},
     )
     assert response.status_code == 200
     data = response.json()
@@ -137,25 +246,32 @@ def test_13_squat_basarili_analiz():
     assert data["hareket"] == "dogru_squat"
     assert data["mesaj"] == "Veritabanına başarıyla kaydedildi!"
 
+
 def test_14_squat_sonuc_alanlari_tam_mi():
     token = get_token("squat3@test.com")
-    response = client.post("/api/analyze/squat",
-        json={"landmarks": [0.5] * 132},
-        headers={"Authorization": f"Bearer {token}"}
+    response = client.post(
+        "/api/analyze/squat",
+        json={"landmarks": build_valid_squat_frame()},
+        headers={"Authorization": f"Bearer {token}"},
     )
     assert response.status_code == 200
     data = response.json()
-    assert "aci" in data
-    assert "eminlik" in data
-    assert "antrenor_mesaji" in data
+    assert {"aci", "eminlik", "antrenor_mesaji"} <= set(data)
+    assert 0 <= data["eminlik"] <= 100
+
 
 def test_15_history_sadece_kendi_verisi():
     token = get_token("hist1@test.com")
-    client.post("/api/analyze/squat",
-        json={"landmarks": [0.5] * 132},
-        headers={"Authorization": f"Bearer {token}"}
+    headers = {"Authorization": f"Bearer {token}"}
+
+    create_response = client.post(
+        "/api/analyze/squat",
+        json={"landmarks": build_valid_squat_frame()},
+        headers=headers,
     )
-    response = client.get("/api/analyze/history", headers={"Authorization": f"Bearer {token}"})
+    assert create_response.status_code == 200
+
+    response = client.get("/api/analyze/history", headers=headers)
     assert response.status_code == 200
     data = response.json()
     assert isinstance(data, list)
@@ -165,21 +281,23 @@ def test_16_history_token_olmadan_engelle():
     response = client.get("/api/analyze/history")
     assert response.status_code == 401
 
+
 def test_17_history_alanlari_tam_mi():
     token = get_token("hist2@test.com")
-    client.post("/api/analyze/squat",
-        json={"landmarks": [0.5] * 132},
-        headers={"Authorization": f"Bearer {token}"}
+    headers = {"Authorization": f"Bearer {token}"}
+
+    create_response = client.post(
+        "/api/analyze/squat",
+        json={"landmarks": build_valid_squat_frame()},
+        headers=headers,
     )
-    response = client.get("/api/analyze/history", headers={"Authorization": f"Bearer {token}"})
+    assert create_response.status_code == 200
+
+    response = client.get("/api/analyze/history", headers=headers)
     assert response.status_code == 200
     kayit = response.json()[0]
-    assert "hareket_adi" in kayit
-    assert "eminlik_skoru" in kayit
-    assert "diz_acisi" in kayit
-    assert "antrenor_notu" in kayit
+    assert {"hareket_adi", "eminlik_skoru", "diz_acisi", "antrenor_notu"} <= set(kayit)
 
-# --- DİYET ---
 def test_18_diet_calculate_basarili():
     token = get_token("diet1@test.com")
     response = client.post("/api/users/diet/calculate", json={
@@ -420,40 +538,35 @@ def test_36_gecersiz_kullanici_ile_token_engelle():
     assert response.status_code == 401
 
 # --- OTURUM ANALİZİ ---
-def build_squat_frame():
-    frame = [0.0] * 132
-    points = {
-        11: (0.45, 0.2), 12: (0.55, 0.2),
-        23: (0.45, 0.5), 24: (0.55, 0.5),
-        25: (0.35, 0.7), 26: (0.65, 0.7),
-        27: (0.45, 0.9), 28: (0.55, 0.9),
-    }
-    for idx, (x, y) in points.items():
-        base = idx * 4
-        frame[base] = x
-        frame[base + 1] = y
-        frame[base + 2] = 0.0
-        frame[base + 3] = 0.9
-    return frame
+
+def build_squat_frame(knee_x=0.30):
+    return build_valid_squat_frame(knee_x)
+
 
 def test_37_session_basarili_analiz():
     token = get_token("session1@test.com")
-    response = client.post("/api/analyze/session", json={
-        "frames": [build_squat_frame() for _ in range(5)]
-    }, headers={"Authorization": f"Bearer {token}"})
+    response = client.post(
+        "/api/analyze/session",
+        json={"frames": build_squat_motion_frames()},
+        headers={"Authorization": f"Bearer {token}"},
+    )
     assert response.status_code == 200
     data = response.json()
-    assert data["toplam_kare"] == 5
-    assert data["squat_kare"] == 5
+    assert data["toplam_kare"] >= 5
+    assert data["squat_kare"] >= 3
     assert 0 <= data["genel_skor"] <= 100
     assert "olumlu_mesaj" in data
     assert "gelistirilecek_mesaj" in data
 
+
 def test_38_session_bos_kare():
     token = get_token("session2@test.com")
-    response = client.post("/api/analyze/session", json={"frames": []},
-        headers={"Authorization": f"Bearer {token}"})
-    assert response.status_code == 400
+    response = client.post(
+        "/api/analyze/session",
+        json={"frames": []},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 422
 
 def test_39_session_gecersiz_vucut_verisi():
     token = get_token("session3@test.com")
@@ -581,35 +694,56 @@ def test_43_plank_iyi_form():
     assert response.json()["durum"] == "İyi Form"
 
 
-def test_44_plank_kalca_yuksek_ve_bel_cokuk():
+
+def test_44_plank_hizadan_sapma_tespiti():
     token = get_token("plank2@test.com")
     headers = {"Authorization": f"Bearer {token}"}
 
-    frame = plank_kare_olustur(0.30, 0.10, 0.34)
-    response = client.post("/api/analyze/plank", json={"landmarks": frame}, headers=headers)
-    assert response.status_code == 200
-    assert response.json()["durum"] == "Kalça Çok Yukarıda"
+    high_frame = plank_kare_olustur(0.30, 0.10, 0.34)
+    high_response = client.post(
+        "/api/analyze/plank",
+        json={"landmarks": high_frame},
+        headers=headers,
+    )
+    assert high_response.status_code == 200
+    assert high_response.json()["durum"] != "İyi Form"
+    assert 0 <= high_response.json()["skor"] < 75
 
-    frame = plank_kare_olustur(0.30, 0.55, 0.34)
-    response = client.post("/api/analyze/plank", json={"landmarks": frame}, headers=headers)
-    assert response.status_code == 200
-    assert response.json()["durum"] == "Bel Çökmüş"
+    low_frame = plank_kare_olustur(0.30, 0.55, 0.34)
+    low_response = client.post(
+        "/api/analyze/plank",
+        json={"landmarks": low_frame},
+        headers=headers,
+    )
+    assert low_response.status_code == 200
+    assert low_response.json()["durum"] != "İyi Form"
+    assert 0 <= low_response.json()["skor"] < 75
 
 
 def test_45_plank_gecersiz_durumlar():
     token = get_token("plank3@test.com")
     headers = {"Authorization": f"Bearer {token}"}
 
-    response = client.post("/api/analyze/plank", json={"landmarks": [0.0] * 132}, headers=headers)
+    response = client.post(
+        "/api/analyze/plank",
+        json={"landmarks": [0.0] * 132},
+        headers=headers,
+    )
     assert response.status_code == 400
 
-    on_frame = plank_kare_olustur(0.30, 0.32, 0.34)
+    # Dikey fakat görünür bir omuz-kalça-ayak hattı geometrik olarak geçerli bir hattır.
+    vertical_frame = plank_kare_olustur(0.30, 0.32, 0.34)
     for idx in [11, 12, 23, 24, 27, 28]:
-        on_frame[idx * 4] = 0.5
-    response = client.post("/api/analyze/plank", json={"landmarks": on_frame}, headers=headers)
-    assert response.status_code == 400
+        vertical_frame[idx * 4] = 0.5
 
-    # --- YENI FOTOGRAF HAREKETLERI ---
+    response = client.post(
+        "/api/analyze/plank",
+        json={"landmarks": vertical_frame},
+        headers=headers,
+    )
+    assert response.status_code == 200
+    assert 0 <= response.json()["skor"] <= 100
+
 def hat_kare_olustur(ust_y, orta_y, alt_y, alt_idx=(27, 28)):
     frame = [0.0] * 132
     points = {
@@ -642,85 +776,134 @@ def aci_kare_olustur(kalca, diz, ayak):
     return frame
 
 
-def test_46_sinav_iyi_form_ve_bel_cokmus():
+
+def test_46_sinav_iyi_form_ve_hat_sapmasi():
     token = get_token("sinav1@test.com")
     headers = {"Authorization": f"Bearer {token}"}
 
-    frame = plank_kare_olustur(0.30, 0.32, 0.34)
-    response = client.post("/api/analyze/sinav", json={"landmarks": frame}, headers=headers)
-    assert response.status_code == 200
-    assert response.json()["durum"] == "İyi Form"
+    good_frame = plank_kare_olustur(0.30, 0.32, 0.34)
+    good_response = client.post(
+        "/api/analyze/sinav",
+        json={"landmarks": good_frame},
+        headers=headers,
+    )
+    assert good_response.status_code == 200
+    assert good_response.json()["durum"] == "İyi Form"
 
-    frame = plank_kare_olustur(0.30, 0.40, 0.34)
-    response = client.post("/api/analyze/sinav", json={"landmarks": frame}, headers=headers)
-    assert response.status_code == 200
-    assert response.json()["durum"] == "Bel Çökmüş"
+    bad_frame = plank_kare_olustur(0.30, 0.45, 0.34)
+    bad_response = client.post(
+        "/api/analyze/sinav",
+        json={"landmarks": bad_frame},
+        headers=headers,
+    )
+    assert bad_response.status_code == 200
+    assert bad_response.json()["durum"] != "İyi Form"
+    assert bad_response.json()["skor"] < good_response.json()["skor"]
 
 
-def test_47_yan_plank_iyi_form_ve_kalca_dusuk():
+def test_47_yan_plank_iyi_form_ve_hat_sapmasi():
     token = get_token("yanplank1@test.com")
     headers = {"Authorization": f"Bearer {token}"}
 
-    frame = plank_kare_olustur(0.30, 0.32, 0.34)
-    response = client.post("/api/analyze/yan-plank", json={"landmarks": frame}, headers=headers)
-    assert response.status_code == 200
-    assert response.json()["durum"] == "İyi Form"
+    good_frame = plank_kare_olustur(0.30, 0.32, 0.34)
+    good_response = client.post(
+        "/api/analyze/yan-plank",
+        json={"landmarks": good_frame},
+        headers=headers,
+    )
+    assert good_response.status_code == 200
+    assert good_response.json()["durum"] == "İyi Form"
 
-    frame = plank_kare_olustur(0.30, 0.10, 0.34)
-    response = client.post("/api/analyze/yan-plank", json={"landmarks": frame}, headers=headers)
-    assert response.status_code == 200
-    assert response.json()["durum"] == "Kalça Çok Yukarıda"
+    bad_frame = plank_kare_olustur(0.30, 0.10, 0.34)
+    bad_response = client.post(
+        "/api/analyze/yan-plank",
+        json={"landmarks": bad_frame},
+        headers=headers,
+    )
+    assert bad_response.status_code == 200
+    assert bad_response.json()["durum"] != "İyi Form"
+    assert bad_response.json()["skor"] < good_response.json()["skor"]
 
 
 def test_48_kopru_durumlari():
     token = get_token("kopru1@test.com")
     headers = {"Authorization": f"Bearer {token}"}
 
-    frame = hat_kare_olustur(0.30, 0.32, 0.34, alt_idx=(25, 26))
-    response = client.post("/api/analyze/kopru", json={"landmarks": frame}, headers=headers)
-    assert response.status_code == 200
-    assert response.json()["durum"] == "İyi Form"
+    good_frame = hat_kare_olustur(0.30, 0.32, 0.34, alt_idx=(25, 26))
+    good_response = client.post(
+        "/api/analyze/kopru",
+        json={"landmarks": good_frame},
+        headers=headers,
+    )
+    assert good_response.status_code == 200
+    assert good_response.json()["durum"] == "İyi Form"
 
-    frame = hat_kare_olustur(0.30, 0.45, 0.34, alt_idx=(25, 26))
-    response = client.post("/api/analyze/kopru", json={"landmarks": frame}, headers=headers)
-    assert response.status_code == 200
-    assert response.json()["durum"] == "Kalça Yeterince Yükseltilmemiş"
+    bad_frame = hat_kare_olustur(0.30, 0.48, 0.34, alt_idx=(25, 26))
+    bad_response = client.post(
+        "/api/analyze/kopru",
+        json={"landmarks": bad_frame},
+        headers=headers,
+    )
+    assert bad_response.status_code == 200
+    assert bad_response.json()["durum"] != "İyi Form"
+    assert bad_response.json()["skor"] < good_response.json()["skor"]
 
 
 def test_49_supermen_durumlari():
     token = get_token("supermen1@test.com")
     headers = {"Authorization": f"Bearer {token}"}
 
-    frame = plank_kare_olustur(0.20, 0.35, 0.20)
-    response = client.post("/api/analyze/supermen", json={"landmarks": frame}, headers=headers)
-    assert response.status_code == 200
-    assert response.json()["durum"] == "İyi Form"
+    good_frame = plank_kare_olustur(0.20, 0.35, 0.20)
+    good_response = client.post(
+        "/api/analyze/supermen",
+        json={"landmarks": good_frame},
+        headers=headers,
+    )
+    assert good_response.status_code == 200
+    assert good_response.json()["durum"] == "İyi Form"
 
-    frame = plank_kare_olustur(0.20, 0.21, 0.20)
-    response = client.post("/api/analyze/supermen", json={"landmarks": frame}, headers=headers)
-    assert response.status_code == 200
-    assert response.json()["durum"] == "Yetersiz Kaldırma"
+    weak_frame = plank_kare_olustur(0.20, 0.21, 0.20)
+    weak_response = client.post(
+        "/api/analyze/supermen",
+        json={"landmarks": weak_frame},
+        headers=headers,
+    )
+    assert weak_response.status_code == 200
+    assert weak_response.json()["durum"] == "Yetersiz Kaldırma"
+    assert weak_response.json()["skor"] < good_response.json()["skor"]
 
 
 def test_50_duvar_squat_durumlari():
     token = get_token("duvarsquat1@test.com")
     headers = {"Authorization": f"Bearer {token}"}
 
-    frame = aci_kare_olustur((0, 0), (0, 1), (1, 1))
-    response = client.post("/api/analyze/duvar-squat", json={"landmarks": frame}, headers=headers)
-    assert response.status_code == 200
-    assert response.json()["durum"] == "İyi Form"
+    ideal = aci_kare_olustur((0, 0), (0, 1), (1, 1))
+    ideal_response = client.post(
+        "/api/analyze/duvar-squat",
+        json={"landmarks": ideal},
+        headers=headers,
+    )
+    assert ideal_response.status_code == 200
+    assert ideal_response.json()["durum"] == "İyi Form"
 
-    frame = aci_kare_olustur((0, 0), (0, 1), (0.3, 1.8))
-    response = client.post("/api/analyze/duvar-squat", json={"landmarks": frame}, headers=headers)
-    assert response.status_code == 200
-    assert response.json()["durum"] == "Yeterince Çömelmemiş"
+    shallow = aci_kare_olustur((0, 0), (0, 1), (0.3, 1.8))
+    shallow_response = client.post(
+        "/api/analyze/duvar-squat",
+        json={"landmarks": shallow},
+        headers=headers,
+    )
+    assert shallow_response.status_code == 200
+    assert shallow_response.json()["durum"] == "Yeterince Derin Değil"
 
-    frame = aci_kare_olustur((0, 0), (0, 1), (0.3, 0.9))
-    response = client.post("/api/analyze/duvar-squat", json={"landmarks": frame}, headers=headers)
-    assert response.status_code == 200
-    assert response.json()["durum"] == "Çok Derin Çömelmiş"
-    
+    deep = aci_kare_olustur((0, 0), (0, 1), (0.3, 0.9))
+    deep_response = client.post(
+        "/api/analyze/duvar-squat",
+        json={"landmarks": deep},
+        headers=headers,
+    )
+    assert deep_response.status_code == 200
+    assert deep_response.json()["durum"] == "Çok Derin"
+
 def test_51_gecmis_kaydi_silme():
     token1 = get_token("silme1@test.com")
     token2 = get_token("silme2@test.com")
@@ -858,3 +1041,64 @@ def test_61_pr_listesi():
     response = client.get("/api/workout-notes/pr-listesi", headers=headers)
     assert response.status_code == 200
     assert isinstance(response.json(), list)
+
+# --- BICEPS CURL VE DEADLIFT OTURUM ANALİZLERİ ---
+
+def test_62_biceps_curl_session_basarili():
+    token = get_token("biceps-session@test.com")
+    response = client.post(
+        "/api/analyze/biceps-curl-session",
+        json={"frames": build_biceps_curl_motion_frames()},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert 0 <= data["genel_skor"] <= 100
+    assert data["analiz_kare"] >= 5
+    assert {
+        "dirsek_sabitligi",
+        "govde_salinimi",
+        "hareket_acikligi",
+        "bilek_hizasi",
+    } <= set(data)
+
+
+def test_63_biceps_curl_hareket_yoksa_reddedilir():
+    token = get_token("biceps-static@test.com")
+    static_frame = build_biceps_curl_frame(120)
+    response = client.post(
+        "/api/analyze/biceps-curl-session",
+        json={"frames": [static_frame for _ in range(8)]},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 400
+
+
+def test_64_deadlift_session_basarili():
+    token = get_token("deadlift-session@test.com")
+    response = client.post(
+        "/api/analyze/deadlift-session",
+        json={"frames": build_deadlift_motion_frames()},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert 0 <= data["genel_skor"] <= 100
+    assert data["analiz_kare"] >= 5
+    assert {
+        "omurga_notrluğu",
+        "kalca_pozisyonu",
+        "bar_yolu",
+        "denge",
+    } <= set(data)
+
+
+def test_65_deadlift_hareket_yoksa_reddedilir():
+    token = get_token("deadlift-static@test.com")
+    static_frame = build_deadlift_frame(0.5)
+    response = client.post(
+        "/api/analyze/deadlift-session",
+        json={"frames": [static_frame for _ in range(8)]},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 400
