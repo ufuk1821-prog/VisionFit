@@ -1,18 +1,57 @@
+import math
 import os
 import pickle
-import math
+from typing import Dict, List, Optional, Sequence, Tuple
+
 import numpy as np
 import pandas as pd
-from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from app.schemas.analyze import PoseData, SessionData, SessionResult, KategoriSonuc
-from app.schemas.history import HistoryRead
-from app.models.history import WorkoutHistory
+
 from app.core.database import SessionLocal
 from app.core.security import get_current_user
+from app.models.history import WorkoutHistory
+from app.schemas.analyze import (
+    BicepsCurlSessionResult,
+    DeadliftSessionResult,
+    KategoriSonuc,
+    PoseData,
+    SessionData,
+    SessionResult,
+)
+from app.schemas.history import HistoryRead
+
 
 router = APIRouter()
+
+LANDMARK_COUNT = 33
+VALUES_PER_LANDMARK = 4
+MIN_FRAME_LENGTH = LANDMARK_COUNT * VALUES_PER_LANDMARK
+VISIBILITY_THRESHOLD = 0.55
+EPSILON = 1e-8
+
+NOSE = 0
+LEFT_EAR = 7
+RIGHT_EAR = 8
+LEFT_SHOULDER = 11
+RIGHT_SHOULDER = 12
+LEFT_ELBOW = 13
+RIGHT_ELBOW = 14
+LEFT_WRIST = 15
+RIGHT_WRIST = 16
+LEFT_INDEX = 19
+RIGHT_INDEX = 20
+LEFT_HIP = 23
+RIGHT_HIP = 24
+LEFT_KNEE = 25
+RIGHT_KNEE = 26
+LEFT_ANKLE = 27
+RIGHT_ANKLE = 28
+LEFT_HEEL = 29
+RIGHT_HEEL = 30
+LEFT_FOOT_INDEX = 31
+RIGHT_FOOT_INDEX = 32
+
 
 def get_db():
     db = SessionLocal()
@@ -21,127 +60,254 @@ def get_db():
     finally:
         db.close()
 
+
 IS_TESTING = os.getenv("TESTING") == "True"
 model = None
 
 if not IS_TESTING:
-    CURRENT_FILE_PATH = os.path.abspath(__file__)
-    API_DIR = os.path.dirname(CURRENT_FILE_PATH)
-    APP_DIR = os.path.dirname(API_DIR)
-    BACKEND_DIR = os.path.dirname(APP_DIR)
+    current_file_path = os.path.abspath(__file__)
+    api_dir = os.path.dirname(current_file_path)
+    app_dir = os.path.dirname(api_dir)
+    backend_dir = os.path.dirname(app_dir)
 
-    POSSIBLE_PATHS = [
+    possible_paths = [
         "/app/services/squat_model.pkl",
-        os.path.join(BACKEND_DIR, "services", "squat_model.pkl"),
-        os.path.join(APP_DIR, "services", "squat_model.pkl"),
-        "/app/app/services/squat_model.pkl"
+        os.path.join(backend_dir, "services", "squat_model.pkl"),
+        os.path.join(app_dir, "services", "squat_model.pkl"),
+        "/app/app/services/squat_model.pkl",
     ]
 
-    MODEL_PATH = None
-    for path in POSSIBLE_PATHS:
-        if os.path.exists(path):
-            MODEL_PATH = path
-            break
+    model_path = next((path for path in possible_paths if os.path.exists(path)), None)
+    if model_path is None:
+        raise RuntimeError(
+            f"Model pkl dosyası bulunamadı. Kontrol edilen yollar: {possible_paths}"
+        )
 
-    if not MODEL_PATH:
-        raise RuntimeError(f"Model pkl dosyasi bulunamadi. Kontrol edilen yollar: {POSSIBLE_PATHS}")
-
-    with open(MODEL_PATH, "rb") as f:
-        model = pickle.load(f)
+    with open(model_path, "rb") as model_file:
+        model = pickle.load(model_file)
 
 
-def calculate_angle(a, b, c):
-    a_np = np.array(a)
-    b_np = np.array(b)
-    c_np = np.array(c)
-    radians = math.atan2(c_np[1] - b_np[1], c_np[0] - b_np[0]) - \
-              math.atan2(a_np[1] - b_np[1], a_np[0] - b_np[0])
-    angle = np.abs(radians * 180.0 / math.pi)
-    if angle > 180.0:
-        angle = 360 - angle
-    return float(angle)
+Point = Tuple[float, float]
 
 
-def extract_landmark(lm_flat, idx):
-    base = idx * 4
-    return lm_flat[base], lm_flat[base + 1], lm_flat[base + 2], lm_flat[base + 3]
+def _clamp(value: float, minimum: float = 0.0, maximum: float = 100.0) -> float:
+    return float(max(minimum, min(maximum, value)))
 
 
-def landmarks_visible(lm_flat, indices, threshold=0.4):
-    for idx in indices:
-        _, _, _, vis = extract_landmark(lm_flat, idx)
-        if vis < threshold:
-            return False
-    return True
+def _safe_percentile(values: Sequence[float], percentile: float) -> float:
+    if not values:
+        return 0.0
+    return float(np.percentile(np.asarray(values, dtype=float), percentile))
 
 
-def analyze_single_frame(lm_flat):
-    KEY_INDICES = [11, 12, 23, 24, 25, 26, 27, 28]
+def calculate_angle(a: Point, b: Point, c: Point) -> float:
+    """B noktası merkez olacak biçimde 0-180 derece arası açı döndürür."""
+    a_np = np.asarray(a, dtype=float)
+    b_np = np.asarray(b, dtype=float)
+    c_np = np.asarray(c, dtype=float)
 
-    if not landmarks_visible(lm_flat, KEY_INDICES):
+    ba = a_np - b_np
+    bc = c_np - b_np
+
+    ba_norm = float(np.linalg.norm(ba))
+    bc_norm = float(np.linalg.norm(bc))
+    if ba_norm < EPSILON or bc_norm < EPSILON:
+        return 0.0
+
+    cosine = float(np.dot(ba, bc) / (ba_norm * bc_norm))
+    cosine = max(-1.0, min(1.0, cosine))
+    return float(math.degrees(math.acos(cosine)))
+
+
+def calculate_line_angle(a: Point, b: Point) -> float:
+    """A-B doğrusunun yatay eksene göre açısını derece olarak döndürür."""
+    return float(math.degrees(math.atan2(b[1] - a[1], b[0] - a[0])))
+
+
+def point_distance(a: Point, b: Point) -> float:
+    return float(math.dist(a, b))
+
+
+def extract_landmark(lm_flat: Sequence[float], idx: int) -> Tuple[float, float, float, float]:
+    base = idx * VALUES_PER_LANDMARK
+    return (
+        float(lm_flat[base]),
+        float(lm_flat[base + 1]),
+        float(lm_flat[base + 2]),
+        float(lm_flat[base + 3]),
+    )
+
+
+def point(lm_flat: Sequence[float], idx: int) -> Point:
+    x, y, _, _ = extract_landmark(lm_flat, idx)
+    return x, y
+
+
+def visibility(lm_flat: Sequence[float], idx: int) -> float:
+    return extract_landmark(lm_flat, idx)[3]
+
+
+def midpoint(a: Point, b: Point) -> Point:
+    return ((a[0] + b[0]) / 2.0, (a[1] + b[1]) / 2.0)
+
+
+def landmarks_visible(
+    lm_flat: Sequence[float],
+    indices: Sequence[int],
+    threshold: float = VISIBILITY_THRESHOLD,
+) -> bool:
+    if len(lm_flat) < MIN_FRAME_LENGTH:
+        return False
+    return all(visibility(lm_flat, idx) >= threshold for idx in indices)
+
+
+def choose_visible_side(
+    lm_flat: Sequence[float],
+    left_indices: Sequence[int],
+    right_indices: Sequence[int],
+) -> str:
+    left_score = min(visibility(lm_flat, idx) for idx in left_indices)
+    right_score = min(visibility(lm_flat, idx) for idx in right_indices)
+    return "left" if left_score >= right_score else "right"
+
+
+def normalized_distance(distance: float, body_scale: float) -> float:
+    if body_scale < EPSILON:
+        return 999.0
+    return float(distance / body_scale)
+
+
+def score_from_error(error: float, full_penalty_at: float) -> float:
+    if full_penalty_at <= 0:
+        return 0.0
+    return round(_clamp(100.0 * (1.0 - error / full_penalty_at)), 1)
+
+
+def category(score: float, good_message: str, bad_message: str) -> KategoriSonuc:
+    return KategoriSonuc(
+        skor=round(_clamp(score), 1),
+        mesaj=good_message if score >= 75 else bad_message,
+    )
+
+
+def build_summary(
+    categories: Sequence[Tuple[str, float]],
+) -> Tuple[List[str], List[str], str, str]:
+    positive = [name for name, score in categories if score >= 75]
+    problems = [name for name, score in categories if score < 75]
+
+    positive_message = (
+        "Tebrikler! "
+        + ", ".join(positive).capitalize()
+        + " kategorilerinde başarılıydınız."
+        if positive
+        else "Antrenman tamamlandı."
+    )
+    improvement_message = (
+        "Geliştirilecek alanlar: " + ", ".join(problems) + "."
+        if problems
+        else "Harika antrenman! Tüm kategorilerde formunuz iyiydi."
+    )
+    return positive, problems, positive_message, improvement_message
+
+
+def save_history(
+    db: Session,
+    user_id: int,
+    movement_name: str,
+    score: float,
+    angle: int,
+    note: str,
+) -> WorkoutHistory:
+    record = WorkoutHistory(
+        user_id=user_id,
+        hareket_adi=movement_name,
+        eminlik_skoru=round(_clamp(score), 1),
+        diz_acisi=angle,
+        antrenor_notu=note,
+    )
+    db.add(record)
+    db.commit()
+    db.refresh(record)
+    return record
+
+
+def predict_squat(frame: Sequence[float]) -> Tuple[bool, float]:
+    """
+    Model hatasında artık 'doğru + %90' varsayımı yapılmaz.
+    Tahmin üretilemiyorsa False, 0 döner.
+    """
+    if IS_TESTING:
+        return True, 99.9
+
+    if model is None:
+        return False, 0.0
+
+    try:
+        features = list(frame[:MIN_FRAME_LENGTH])
+        prediction_frame = pd.DataFrame([features])
+        prediction = model.predict(prediction_frame)[0]
+        probabilities = model.predict_proba(prediction_frame)[0]
+        confidence = float(np.max(probabilities) * 100.0)
+        return str(prediction) == "dogru_squat", round(confidence, 2)
+    except Exception as exc:
+        print(f"Squat model tahmin hatası: {exc}")
+        return False, 0.0
+
+
+
+def analyze_single_frame_squat(lm_flat: Sequence[float]) -> Optional[Dict[str, float | bool]]:
+    left_chain = [LEFT_SHOULDER, LEFT_HIP, LEFT_KNEE, LEFT_ANKLE]
+    right_chain = [RIGHT_SHOULDER, RIGHT_HIP, RIGHT_KNEE, RIGHT_ANKLE]
+
+    side = choose_visible_side(lm_flat, left_chain, right_chain)
+    selected = left_chain if side == "left" else right_chain
+
+    if not landmarks_visible(lm_flat, selected):
         return None
 
-    l_shoulder_x, l_shoulder_y, _, _ = extract_landmark(lm_flat, 11)
-    r_shoulder_x, r_shoulder_y, _, _ = extract_landmark(lm_flat, 12)
-    l_hip_x, l_hip_y, _, _           = extract_landmark(lm_flat, 23)
-    r_hip_x, r_hip_y, _, _           = extract_landmark(lm_flat, 24)
-    l_knee_x, l_knee_y, _, _         = extract_landmark(lm_flat, 25)
-    r_knee_x, r_knee_y, _, _         = extract_landmark(lm_flat, 26)
-    l_ankle_x, l_ankle_y, _, _       = extract_landmark(lm_flat, 27)
-    r_ankle_x, r_ankle_y, _, _       = extract_landmark(lm_flat, 28)
+    shoulder = point(lm_flat, selected[0])
+    hip = point(lm_flat, selected[1])
+    knee = point(lm_flat, selected[2])
+    ankle = point(lm_flat, selected[3])
 
-    knee_angle = calculate_angle(
-        [r_hip_x, r_hip_y], [r_knee_x, r_knee_y], [r_ankle_x, r_ankle_y]
-    )
-    knee_angle_left = calculate_angle(
-        [l_hip_x, l_hip_y], [l_knee_x, l_knee_y], [l_ankle_x, l_ankle_y]
-    )
-    avg_knee_angle = (knee_angle + knee_angle_left) / 2
-    in_squat = 55 <= avg_knee_angle <= 135
+    torso_length = point_distance(shoulder, hip)
+    shin_length = point_distance(knee, ankle)
+    if torso_length < EPSILON or shin_length < EPSILON:
+        return None
 
-    ml_correct = True
-    ml_confidence = 90.0
-    if model is not None:
-        try:
-            features = lm_flat[:132]
-            X = pd.DataFrame([features])
-            pred = model.predict(X)[0]
-            probs = model.predict_proba(X)[0]
-            ml_confidence = float(round(max(probs) * 100, 2))
-            ml_correct = (str(pred) == "dogru_squat")
-        except Exception:
-            pass
+    knee_angle = calculate_angle(hip, knee, ankle)
+    hip_angle = calculate_angle(shoulder, hip, knee)
+    torso_from_vertical = abs(abs(calculate_line_angle(hip, shoulder)) - 90.0)
 
-    shoulder_mid_x = (l_shoulder_x + r_shoulder_x) / 2
-    hip_mid_x = (l_hip_x + r_hip_x) / 2
-    forward_lean = abs(shoulder_mid_x - hip_mid_x)
-    spine_ok = forward_lean < 0.10
+    ml_correct, ml_confidence = predict_squat(lm_flat)
 
-    hip_mid_y = (l_hip_y + r_hip_y) / 2
-    knee_mid_y = (l_knee_y + r_knee_y) / 2
-    depth_ok = avg_knee_angle <= 105
+    in_squat = 50.0 <= knee_angle <= 145.0
 
-    r_knee_over = abs(r_knee_x - r_ankle_x)
-    l_knee_over = abs(l_knee_x - l_ankle_x)
-    knee_alignment_ok = r_knee_over < 0.08 and l_knee_over < 0.08
+    spine_score = score_from_error(max(0.0, torso_from_vertical - 10.0), 55.0)
+    depth_score = score_from_error(abs(knee_angle - 90.0), 65.0)
 
-    r_valgus = r_knee_x > r_ankle_x + 0.045
-    l_valgus = l_knee_x < l_ankle_x - 0.045
-    no_valgus = not (r_valgus or l_valgus)
+    knee_over_toe = normalized_distance(abs(knee[0] - ankle[0]), shin_length)
+    knee_alignment_score = score_from_error(max(0.0, knee_over_toe - 0.10), 0.85)
 
-    ankle_mid_x = (l_ankle_x + r_ankle_x) / 2
-    weight_center_ok = abs(hip_mid_x - ankle_mid_x) < 0.08
+    body_center_x = shoulder[0] * 0.25 + hip[0] * 0.50 + knee[0] * 0.25
+    balance_error = normalized_distance(abs(body_center_x - ankle[0]), torso_length)
+    balance_score = score_from_error(max(0.0, balance_error - 0.05), 0.70)
+
+    valgus_score = 75.0
+
+    ml_score = ml_confidence if ml_correct else max(0.0, 100.0 - ml_confidence)
 
     return {
         "in_squat": in_squat,
-        "knee_angle": avg_knee_angle,
-        "ml_correct": ml_correct,
-        "ml_confidence": ml_confidence,
-        "spine_ok": spine_ok,
-        "depth_ok": depth_ok,
-        "knee_alignment_ok": knee_alignment_ok,
-        "no_valgus": no_valgus,
-        "weight_center_ok": weight_center_ok,
+        "knee_angle": knee_angle,
+        "hip_angle": hip_angle,
+        "ml_score": ml_score,
+        "spine_score": spine_score,
+        "depth_score": depth_score,
+        "knee_alignment_score": knee_alignment_score,
+        "valgus_score": valgus_score,
+        "balance_score": balance_score,
     }
 
 
@@ -149,511 +315,1044 @@ def analyze_single_frame(lm_flat):
 async def analyze_squat(
     data: PoseData,
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
 ):
-    if len(data.landmarks) < 132:
+    frame = data.landmarks
+    result = analyze_single_frame_squat(frame)
+    if result is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Eksik landmark verisi gönderildi."
+            detail="Vücut noktaları yeterince net algılanamadı.",
         )
 
-    if IS_TESTING:
-        hareket_sinifi = "dogru_squat"
-        confidence = 99.9
+    movement_class = "dogru_squat" if result["ml_score"] >= 50 else "yanlis_squat"
+    confidence = float(result["ml_score"])
+    angle = int(round(float(result["knee_angle"])))
+
+    if angle > 160:
+        situation = "Ayakta Bekliyor"
+    elif angle <= 105 and confidence >= 60:
+        situation = "İyi Form"
+    elif angle > 105:
+        situation = "Yarım Squat"
     else:
-        try:
-            features = data.landmarks[:132]
-            X = pd.DataFrame([features])
-            prediction = model.predict(X)[0]
-            probabilities = model.predict_proba(X)[0]
-            confidence = float(round(max(probabilities).item() * 100, 2))
-            hareket_sinifi = str(prediction)
-        except Exception as e:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Model hatası: {str(e)}"
-            )
+        situation = "Formu Kontrol Edin"
 
-    hip_x, hip_y = data.landmarks[24 * 4], data.landmarks[24 * 4 + 1]
-    knee_x, knee_y = data.landmarks[26 * 4], data.landmarks[26 * 4 + 1]
-    ankle_x, ankle_y = data.landmarks[28 * 4], data.landmarks[28 * 4 + 1]
-    angle = int(calculate_angle([hip_x, hip_y], [knee_x, knee_y], [ankle_x, ankle_y]))
-
-    if hareket_sinifi == "dogru_squat":
-        if angle > 160:
-            durum = "Ayakta Bekliyor"
-        elif angle < 100:
-            durum = "Harika Form"
-        else:
-            durum = "Yarım Squat"
-    else:
-        if angle < 90:
-            durum = "Uyarı: Dizlerini Kontrol Et"
-        else:
-            durum = "Uyarı: Belini Büküyorsun"
-
-    yeni_kayit = WorkoutHistory(
-        user_id=current_user.id,
-        hareket_adi=hareket_sinifi,
-        eminlik_skoru=confidence,
-        diz_acisi=angle,
-        antrenor_notu=durum
+    record = save_history(
+        db,
+        current_user.id,
+        movement_class,
+        confidence,
+        angle,
+        situation,
     )
-    db.add(yeni_kayit)
-    db.commit()
-    db.refresh(yeni_kayit)
 
     return {
-        "kayit_id": yeni_kayit.id,
-        "hareket": hareket_sinifi,
+        "kayit_id": record.id,
+        "hareket": movement_class,
         "eminlik": confidence,
         "aci": angle,
-        "antrenor_mesaji": durum,
-        "mesaj": "Veritabanına başarıyla kaydedildi!"
+        "antrenor_mesaji": situation,
+        "mesaj": "Veritabanına başarıyla kaydedildi!",
     }
 
-def _hat_sapmasi(landmarks, ust, orta, alt):
-    ux = (landmarks[ust[0] * 4] + landmarks[ust[1] * 4]) / 2
-    uy = (landmarks[ust[0] * 4 + 1] + landmarks[ust[1] * 4 + 1]) / 2
-    ox = (landmarks[orta[0] * 4] + landmarks[orta[1] * 4]) / 2
-    oy = (landmarks[orta[0] * 4 + 1] + landmarks[orta[1] * 4 + 1]) / 2
-    ax = (landmarks[alt[0] * 4] + landmarks[alt[1] * 4]) / 2
-    ay = (landmarks[alt[0] * 4 + 1] + landmarks[alt[1] * 4 + 1]) / 2
-
-    if abs(ax - ux) < 0.05:
-        return None
-
-    oran = (ox - ux) / (ax - ux)
-    beklenen_oy = uy + oran * (ay - uy)
-    return oy - beklenen_oy
-
-
-def _hat_analizi_kaydet(db, current_user, data, gerekli_noktalar, ust, orta, alt, hareket_adi, ust_mesaj, alt_mesaj, iyi_mesaj, esik=0.05, ideal_fark=0.0):
-    if len(data.landmarks) < 132:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Eksik landmark verisi gönderildi."
-        )
-
-    if not landmarks_visible(data.landmarks, gerekli_noktalar):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Vücudunuz net görünmüyor. Lütfen yandan, tüm vücudunuz kadraja girecek şekilde durun."
-        )
-
-    fark = _hat_sapmasi(data.landmarks, ust, orta, alt)
-    if fark is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Pozisyonunuz tespit edilemedi. Lütfen kameraya yandan durun."
-        )
-
-    if fark < -esik:
-        durum, antrenor_mesaji = ust_mesaj
-    elif fark > esik:
-        durum, antrenor_mesaji = alt_mesaj
-    else:
-        durum, antrenor_mesaji = iyi_mesaj
-
-    form_skoru = max(0.0, round(100 - abs(fark - ideal_fark) * 1000, 1))
-
-    yeni_kayit = WorkoutHistory(
-        user_id=current_user.id,
-        hareket_adi=hareket_adi,
-        eminlik_skoru=form_skoru,
-        diz_acisi=0,
-        antrenor_notu=f"{durum}: {antrenor_mesaji}"
-    )
-    db.add(yeni_kayit)
-    db.commit()
-    db.refresh(yeni_kayit)
-
-    return {
-        "kayit_id": yeni_kayit.id,
-        "durum": durum,
-        "skor": form_skoru,
-        "fark": round(float(fark), 4),
-        "antrenor_mesaji": antrenor_mesaji
-    }
-
-
-@router.post("/plank")
-async def analyze_plank(data: PoseData, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
-    return _hat_analizi_kaydet(
-        db, current_user, data,
-        gerekli_noktalar=[11, 12, 23, 24, 27, 28],
-        ust=(11, 12), orta=(23, 24), alt=(27, 28),
-        hareket_adi="plank",
-        ust_mesaj=("Kalça Çok Yukarıda", "Kalçanız omuz-ayak çizgisinin üzerinde, vücudunuzu düz bir hat haline getirin."),
-        alt_mesaj=("Bel Çökmüş", "Belinizde çökme var, karın kaslarınızı sıkarak belinizi düzleştirin."),
-        iyi_mesaj=("İyi Form", "Vücudunuz düz bir hat halinde, harika bir plank formu!"),
-    )
-
-
-@router.post("/sinav")
-async def analyze_sinav(data: PoseData, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
-    return _hat_analizi_kaydet(
-        db, current_user, data,
-        gerekli_noktalar=[11, 12, 23, 24, 27, 28],
-        ust=(11, 12), orta=(23, 24), alt=(27, 28),
-        hareket_adi="sinav",
-        ust_mesaj=("Kalça Çok Yukarıda", "Kalçanız yukarıda kalmış, vücudunuzu omuzdan ayak bileğine düz bir hat haline getirin."),
-        alt_mesaj=("Bel Çökmüş", "Beliniz çökmüş, karın ve kalça kaslarınızı sıkarak belinizi düzleştirin."),
-        iyi_mesaj=("İyi Form", "Sırtınız düz bir hat halinde, harika bir şınav formu!"),
-    )
-
-
-@router.post("/yan-plank")
-async def analyze_yan_plank(data: PoseData, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
-    return _hat_analizi_kaydet(
-        db, current_user, data,
-        gerekli_noktalar=[11, 12, 23, 24, 27, 28],
-        ust=(11, 12), orta=(23, 24), alt=(27, 28),
-        hareket_adi="yan_plank",
-        ust_mesaj=("Kalça Çok Yukarıda", "Kalçanız omuz-ayak hattının üzerinde, vücudunuzu düz bir çizgi haline getirin."),
-        alt_mesaj=("Kalça Düşük", "Kalçanız düşmüş, kalçanızı kaldırarak vücudunuzu düz bir çizgi haline getirin."),
-        iyi_mesaj=("İyi Form", "Vücudunuz düz bir hat halinde, harika bir yan plank formu!"),
-    )
-
-
-@router.post("/kopru")
-async def analyze_kopru(data: PoseData, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
-    return _hat_analizi_kaydet(
-        db, current_user, data,
-        gerekli_noktalar=[11, 12, 23, 24, 25, 26],
-        ust=(11, 12), orta=(23, 24), alt=(25, 26),
-        hareket_adi="kopru",
-        ust_mesaj=("Kalça Aşırı Yükselmiş", "Kalçanızı aşırı yükseltmişsiniz, belinizi esnetmemek için biraz indirin."),
-        alt_mesaj=("Kalça Yeterince Yükseltilmemiş", "Kalçanızı omuz-diz hattına gelecek şekilde daha yukarı kaldırın."),
-        iyi_mesaj=("İyi Form", "Kalçanız omuz-diz hattıyla aynı seviyede, harika bir köprü formu!"),
-    )
-
-
-@router.post("/supermen")
-async def analyze_supermen(data: PoseData, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
-    return _hat_analizi_kaydet(
-        db, current_user, data,
-        gerekli_noktalar=[11, 12, 23, 24, 27, 28],
-        ust=(11, 12), orta=(23, 24), alt=(27, 28),
-        esik=0.03, ideal_fark=0.05,
-        hareket_adi="supermen",
-        ust_mesaj=("Yetersiz Kaldırma", "Kol ve bacaklarınızı kalçanızdan daha yukarıya kaldırmaya çalışın."),
-        alt_mesaj=("İyi Form", "Kol ve bacaklarınız güzelce yukarı kaldırılmış, harika bir süpermen formu!"),
-        iyi_mesaj=("Yetersiz Kaldırma", "Kol ve bacaklarınızı biraz daha yukarı kaldırarak gövdenizi gerin."),
-    )
-
-
-@router.post("/duvar-squat")
-async def analyze_duvar_squat(data: PoseData, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
-    if len(data.landmarks) < 132:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Eksik landmark verisi gönderildi."
-        )
-
-    gerekli_noktalar = [23, 24, 25, 26, 27, 28]
-    if not landmarks_visible(data.landmarks, gerekli_noktalar):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Vücudunuz net görünmüyor. Lütfen yandan, tüm vücudunuz kadraja girecek şekilde durun."
-        )
-
-    kalca = ((data.landmarks[23 * 4] + data.landmarks[24 * 4]) / 2, (data.landmarks[23 * 4 + 1] + data.landmarks[24 * 4 + 1]) / 2)
-    diz = ((data.landmarks[25 * 4] + data.landmarks[26 * 4]) / 2, (data.landmarks[25 * 4 + 1] + data.landmarks[26 * 4 + 1]) / 2)
-    ayak = ((data.landmarks[27 * 4] + data.landmarks[28 * 4]) / 2, (data.landmarks[27 * 4 + 1] + data.landmarks[28 * 4 + 1]) / 2)
-
-    aci = calculate_angle(kalca, diz, ayak)
-
-    if aci < 80:
-        durum = "Çok Derin Çömelmiş"
-        antrenor_mesaji = "Diz açınız çok dar, biraz yukarı kalkarak dizinizi yaklaşık 90 dereceye getirin."
-    elif aci > 100:
-        durum = "Yeterince Çömelmemiş"
-        antrenor_mesaji = "Diz açınız çok geniş, biraz daha aşağı inerek dizinizi yaklaşık 90 dereceye getirin."
-    else:
-        durum = "İyi Form"
-        antrenor_mesaji = "Diz açınız yaklaşık 90 derece, harika bir duvar squat formu!"
-
-    form_skoru = max(0.0, round(100 - abs(aci - 90) * 2, 1))
-
-    yeni_kayit = WorkoutHistory(
-        user_id=current_user.id,
-        hareket_adi="duvar_squat",
-        eminlik_skoru=form_skoru,
-        diz_acisi=int(round(aci)),
-        antrenor_notu=f"{durum}: {antrenor_mesaji}"
-    )
-    db.add(yeni_kayit)
-    db.commit()
-    db.refresh(yeni_kayit)
-
-    return {
-        "kayit_id": yeni_kayit.id,
-        "durum": durum,
-        "skor": form_skoru,
-        "aci": round(aci, 1),
-        "antrenor_mesaji": antrenor_mesaji
-    }
 
 @router.post("/session", response_model=SessionResult)
 async def analyze_session(
     data: SessionData,
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
 ):
-    if not data.frames:
-        raise HTTPException(status_code=400, detail="Kare verisi boş.")
-
-    results = []
-    for frame in data.frames:
-        if len(frame) < 132:
-            continue
-        r = analyze_single_frame(frame)
-        if r is not None:
-            results.append(r)
+    results = [
+        result
+        for frame in data.frames
+        if len(frame) >= MIN_FRAME_LENGTH
+        for result in [analyze_single_frame_squat(frame)]
+        if result is not None
+    ]
 
     if not results:
-        raise HTTPException(status_code=400, detail="Analiz edilecek yeterli vücut verisi bulunamadı.")
+        raise HTTPException(
+            status_code=400,
+            detail="Analiz edilecek yeterli vücut verisi bulunamadı.",
+        )
 
-    squat_frames = [r for r in results if r["in_squat"]]
+    movement_frames = [result for result in results if bool(result["in_squat"])]
+    if len(movement_frames) < 3:
+        raise HTTPException(
+            status_code=400,
+            detail="Squat hareketi tespit edilemedi. Tam iniş ve kalkışın görünmesini sağlayın.",
+        )
 
-    if not squat_frames:
-        raise HTTPException(status_code=400, detail="Squat hareketi tespit edilemedi. Lütfen tüm vücudunuzun göründüğünden emin olun.")
+    sorted_frames = sorted(movement_frames, key=lambda item: float(item["knee_angle"]))
+    dip_count = max(3, min(len(sorted_frames), max(3, len(sorted_frames) // 3)))
+    dip_frames = sorted_frames[:dip_count]
 
-    total = len(squat_frames)
+    knee_angles = [float(item["knee_angle"]) for item in movement_frames]
+    movement_range = _safe_percentile(knee_angles, 90) - _safe_percentile(knee_angles, 10)
+    if movement_range < 20:
+        raise HTTPException(
+            status_code=400,
+            detail="Yeterli squat hareket açıklığı tespit edilemedi.",
+        )
 
-    def pct(key):
-        ok = sum(1 for r in squat_frames if r[key])
-        return round(ok / total * 100, 1)
+    def average_score(key: str, source: Sequence[Dict[str, float | bool]]) -> float:
+        return round(float(np.mean([float(item[key]) for item in source])), 1)
 
-    genel_skor_pct    = pct("ml_correct")
-    spine_pct         = pct("spine_ok")
-    depth_pct         = pct("depth_ok")
-    knee_align_pct    = pct("knee_alignment_ok")
-    no_valgus_pct     = pct("no_valgus")
-    weight_center_pct = pct("weight_center_ok")
+    ml_score = average_score("ml_score", movement_frames)
+    spine_score = average_score("spine_score", dip_frames)
+    depth_score = average_score("depth_score", dip_frames)
+    knee_score = average_score("knee_alignment_score", dip_frames)
+    valgus_score = average_score("valgus_score", dip_frames)
+    balance_score = average_score("balance_score", dip_frames)
 
-    avg_knee_angle = round(sum(r["knee_angle"] for r in squat_frames) / total, 0)
+    weighted_score = (
+        ml_score * 0.25
+        + spine_score * 0.20
+        + depth_score * 0.25
+        + knee_score * 0.15
+        + balance_score * 0.10
+        + valgus_score * 0.05
+    )
+    general_score = round(_clamp(weighted_score), 1)
 
-    def kategori(skor, iyi_mesaj, kotu_mesaj):
-        if skor >= 75:
-            return KategoriSonuc(skor=skor, mesaj=iyi_mesaj)
-        return KategoriSonuc(skor=skor, mesaj=kotu_mesaj)
-
-    sorunlar = []
-    olumlu = []
-
-    genel = kategori(genel_skor_pct,
-        "Genel form iyi, squat hareketini doğru yapıyorsunuz.",
-        "Squat formunda genel hatalar tespit edildi.")
-    (olumlu if genel_skor_pct >= 75 else sorunlar).append("genel form")
-
-    omurga = kategori(spine_pct,
-        "Omurga nötrlüğü korunuyor, sırtınız düz.",
-        "Öne aşırı eğilme var. Göğsünüzü dik tutun ve omurgayı nötr konumda tutun.")
-    (olumlu if spine_pct >= 75 else sorunlar).append("omurga nötrlüğü")
-
-    kalca = kategori(depth_pct,
-        "Kalça derinliği yeterli, diz seviyesine iniliyor.",
-        "Squat derinliği yetersiz. Kalçanızı diz seviyesine veya altına indirin.")
-    (olumlu if depth_pct >= 75 else sorunlar).append("kalça derinliği")
-
-    diz_hiza = kategori(knee_align_pct,
-        "Diz hizası iyi, dizler ayak uçlarıyla hizalı.",
-        "Dizler ayak ucunun önüne geçiyor. Ağırlığı topuklara alın.")
-    (olumlu if knee_align_pct >= 75 else sorunlar).append("diz hizası")
-
-    valgus = kategori(no_valgus_pct,
-        "Diz çöküşü yok, dizler stabil.",
-        "Diz içe çöküşü (valgus) var. Dizleri dışa doğru itin.")
-    (olumlu if no_valgus_pct >= 75 else sorunlar).append("diz çöküşü")
-
-    agirlik = kategori(weight_center_pct,
-        "Ağırlık merkezi dengeli, topuklar yerde.",
-        "Ağırlık merkezi öne kayıyor. Topuklarınızı yere basın.")
-    (olumlu if weight_center_pct >= 75 else sorunlar).append("ağırlık merkezi")
-
-    genel_skor = round(
-        (genel_skor_pct + spine_pct + depth_pct + knee_align_pct + no_valgus_pct + weight_center_pct) / 6, 1
+    general = category(
+        ml_score,
+        "Genel hareket örüntüsü squat ile uyumlu ve form tutarlı.",
+        "Genel squat örüntüsünde form hataları tespit edildi.",
+    )
+    spine = category(
+        spine_score,
+        "Gövde kontrolü ve omurga hizası genel olarak korunuyor.",
+        "Gövde kontrolünde bozulma var. Göğsünüzü kontrollü tutun.",
+    )
+    depth = category(
+        depth_score,
+        "Squat derinliği yeterli.",
+        "Squat derinliği yetersiz veya aşırı. Kontrollü biçimde yaklaşık 90° diz açısına inin.",
+    )
+    knee_alignment = category(
+        knee_score,
+        "Diz ve ayak bileği hizası yandan görünümde dengeli.",
+        "Diz-ayak bileği hizasında belirgin sapma var.",
+    )
+    valgus = KategoriSonuc(
+        skor=valgus_score,
+        mesaj=(
+            "Diz içe çöküşü yandan çekimde kesin ölçülemez. "
+            "Bu kategori için önden çekim gerekir."
+        ),
+    )
+    balance = category(
+        balance_score,
+        "Ağırlık merkezi ayak tabanı üzerinde dengeli.",
+        "Ağırlık merkezi öne veya arkaya kayıyor.",
     )
 
-    olumlu_mesaj = ("Tebrikler! " + ", ".join(olumlu).capitalize() + " kategorilerinde başarılıydınız.") if olumlu else "Antrenman tamamlandı."
-    gelistir_mesaj = ("Geliştirilecek alanlar: " + ", ".join(sorunlar) + ".") if sorunlar else "Harika antrenman! Tüm kategorilerde formunuz iyiydi."
-
-    antrenor_notu = f"Skor: %{genel_skor} | " + (", ".join(sorunlar) if sorunlar else "Tüm kategoriler iyi")
-
-    yeni_kayit = WorkoutHistory(
-        user_id=current_user.id,
-        hareket_adi="squat_session",
-        eminlik_skoru=genel_skor,
-        diz_acisi=int(avg_knee_angle),
-        antrenor_notu=antrenor_notu
+    _, problems, positive_message, improvement_message = build_summary(
+        [
+            ("genel form", ml_score),
+            ("omurga nötrlüğü", spine_score),
+            ("kalça derinliği", depth_score),
+            ("diz hizası", knee_score),
+            ("ağırlık merkezi", balance_score),
+        ]
     )
-    db.add(yeni_kayit)
-    db.commit()
+
+    average_knee_angle = int(
+        round(float(np.mean([float(item["knee_angle"]) for item in dip_frames])))
+    )
+    note = f"Skor: %{general_score} | " + (
+        ", ".join(problems) if problems else "Tüm kategoriler iyi"
+    )
+    save_history(
+        db,
+        current_user.id,
+        "squat_session",
+        general_score,
+        average_knee_angle,
+        note,
+    )
 
     return SessionResult(
         toplam_kare=len(results),
-        squat_kare=total,
-        genel_skor=genel_skor,
-        genel_form=genel,
-        omurga_notrluğu=omurga,
-        kalca_derinligi=kalca,
-        diz_hizasi=diz_hiza,
+        squat_kare=len(movement_frames),
+        genel_skor=general_score,
+        genel_form=general,
+        omurga_notrluğu=spine,
+        kalca_derinligi=depth,
+        diz_hizasi=knee_alignment,
         diz_cokusu=valgus,
-        agirlik_merkezi=agirlik,
-        olumlu_mesaj=olumlu_mesaj,
-        gelistirilecek_mesaj=gelistir_mesaj,
+        agirlik_merkezi=balance,
+        olumlu_mesaj=positive_message,
+        gelistirilecek_mesaj=improvement_message,
     )
-@router.post("/lunge")
-async def analyze_lunge(data: PoseData, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
-    if len(data.landmarks) < 132:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Eksik landmark verisi.")
-    lm = data.landmarks
-    sol_kalca = (lm[23*4], lm[23*4+1])
-    sol_diz = (lm[25*4], lm[25*4+1])
-    sol_ayak = (lm[27*4], lm[27*4+1])
-    sag_kalca = (lm[24*4], lm[24*4+1])
-    sag_diz = (lm[26*4], lm[26*4+1])
-    sag_ayak = (lm[28*4], lm[28*4+1])
-    sol_diz_aci = calculate_angle(sol_kalca, sol_diz, sol_ayak)
-    sag_diz_aci = calculate_angle(sag_kalca, sag_diz, sag_ayak)
-    on_diz = min(sol_diz_aci, sag_diz_aci)
-    omuz_mx = (lm[11*4] + lm[12*4]) / 2
-    kalca_mx = (lm[23*4] + lm[24*4]) / 2
-    govde_egimi = abs(omuz_mx - kalca_mx)
-    if 80 <= on_diz <= 105 and govde_egimi < 0.08:
-        durum, skor, mesaj = "İyi Form", 90, "Ön diz açısı ideal, gövde dik. Harika lunge pozisyonu!"
-    elif govde_egimi >= 0.08:
-        durum, skor, mesaj = "Gövde Öne Eğik", 60, "Gövdenizi dik tutun, öne eğilmeyin."
-    elif on_diz < 80:
-        durum, skor, mesaj = "Çok Derin", 65, f"Ön diz açısı çok küçük ({int(on_diz)}°). Biraz daha yukarı gelin."
+
+
+def analyze_single_frame_biceps_curl(
+    lm_flat: Sequence[float],
+) -> Optional[Dict[str, float | str]]:
+    left_chain = [LEFT_SHOULDER, LEFT_ELBOW, LEFT_WRIST]
+    right_chain = [RIGHT_SHOULDER, RIGHT_ELBOW, RIGHT_WRIST]
+    side = choose_visible_side(lm_flat, left_chain, right_chain)
+    chain = left_chain if side == "left" else right_chain
+
+    torso_indices = [LEFT_SHOULDER, RIGHT_SHOULDER, LEFT_HIP, RIGHT_HIP]
+    if not landmarks_visible(lm_flat, chain):
+        return None
+    if not landmarks_visible(lm_flat, torso_indices, threshold=0.40):
+        return None
+
+    shoulder = point(lm_flat, chain[0])
+    elbow = point(lm_flat, chain[1])
+    wrist = point(lm_flat, chain[2])
+
+    shoulder_mid = midpoint(
+        point(lm_flat, LEFT_SHOULDER),
+        point(lm_flat, RIGHT_SHOULDER),
+    )
+    hip_mid = midpoint(point(lm_flat, LEFT_HIP), point(lm_flat, RIGHT_HIP))
+
+    torso_length = point_distance(shoulder_mid, hip_mid)
+    upper_arm_length = point_distance(shoulder, elbow)
+    if torso_length < EPSILON or upper_arm_length < EPSILON:
+        return None
+
+    elbow_angle = calculate_angle(shoulder, elbow, wrist)
+    elbow_drift = normalized_distance(abs(elbow[0] - shoulder[0]), upper_arm_length)
+    torso_angle = calculate_line_angle(hip_mid, shoulder_mid)
+
+    index_idx = LEFT_INDEX if side == "left" else RIGHT_INDEX
+    wrist_score: Optional[float] = None
+    if visibility(lm_flat, index_idx) >= 0.45:
+        index_point = point(lm_flat, index_idx)
+        wrist_angle = calculate_angle(elbow, wrist, index_point)
+        wrist_score = score_from_error(abs(wrist_angle - 170.0), 70.0)
+
+    return {
+        "side": side,
+        "elbow_angle": elbow_angle,
+        "elbow_drift": elbow_drift,
+        "torso_angle": torso_angle,
+        "wrist_score": wrist_score if wrist_score is not None else -1.0,
+    }
+
+
+@router.post("/biceps-curl-session", response_model=BicepsCurlSessionResult)
+async def analyze_biceps_curl_session(
+    data: SessionData,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    results = [
+        result
+        for frame in data.frames
+        if len(frame) >= MIN_FRAME_LENGTH
+        for result in [analyze_single_frame_biceps_curl(frame)]
+        if result is not None
+    ]
+
+    if len(results) < 5:
+        raise HTTPException(
+            status_code=400,
+            detail="Biceps curl analizi için yeterli sayıda net kare bulunamadı.",
+        )
+
+    elbow_angles = [float(item["elbow_angle"]) for item in results]
+    min_angle = _safe_percentile(elbow_angles, 10)
+    max_angle = _safe_percentile(elbow_angles, 90)
+    movement_range = max_angle - min_angle
+
+    if movement_range < 25:
+        raise HTTPException(
+            status_code=400,
+            detail="Biceps curl hareketi tespit edilemedi. Kolunuzu açıp kontrollü biçimde bükün.",
+        )
+
+    extension_score = score_from_error(max(0.0, 145.0 - max_angle), 65.0)
+    flexion_score = score_from_error(max(0.0, min_angle - 65.0), 75.0)
+    rom_score = round((extension_score + flexion_score) / 2.0, 1)
+
+    drift_values = [float(item["elbow_drift"]) for item in results]
+    drift_90 = _safe_percentile(drift_values, 90)
+    elbow_stability_score = score_from_error(max(0.0, drift_90 - 0.10), 0.70)
+
+    torso_angles = [float(item["torso_angle"]) for item in results]
+    torso_variation = _safe_percentile(torso_angles, 90) - _safe_percentile(
+        torso_angles, 10
+    )
+    torso_stability_score = score_from_error(max(0.0, torso_variation - 3.0), 25.0)
+
+    wrist_values = [
+        float(item["wrist_score"])
+        for item in results
+        if float(item["wrist_score"]) >= 0
+    ]
+    wrist_reliable = len(wrist_values) >= max(3, len(results) // 3)
+    wrist_score = (
+        round(float(np.mean(wrist_values)), 1)
+        if wrist_reliable
+        else 0.0
+    )
+
+    elbow_category = category(
+        elbow_stability_score,
+        "Dirsek gövde yanında genel olarak sabit kaldı.",
+        "Dirsek öne veya yana kayıyor. Üst kolunuzu gövdenize yakın tutun.",
+    )
+    torso_category = category(
+        torso_stability_score,
+        "Gövde salınımı düşük; momentum kullanımı sınırlı.",
+        "Gövde salınımı tespit edildi. Ağırlığı azaltıp kontrollü tekrar yapın.",
+    )
+    rom_category = category(
+        rom_score,
+        "Hareket açıklığı yeterli; açma ve bükme evreleri tamamlandı.",
+        "Hareket açıklığı sınırlı. Dirseği kontrollü açıp daha fazla bükün.",
+    )
+    wrist_category = (
+        category(
+            wrist_score,
+            "Bilek hizası genel olarak nötr.",
+            "Bilekte belirgin bükülme var. Bileği ön kolla aynı hizada tutun.",
+        )
+        if wrist_reliable
+        else KategoriSonuc(
+            skor=0,
+            mesaj="Bilek hizası bu çekimde güvenilir biçimde değerlendirilemedi.",
+        )
+    )
+
+    score_parts = [
+        (elbow_stability_score, 0.35),
+        (torso_stability_score, 0.30),
+        (rom_score, 0.35),
+    ]
+    if wrist_reliable:
+        score_parts = [
+            (elbow_stability_score, 0.30),
+            (torso_stability_score, 0.25),
+            (rom_score, 0.30),
+            (wrist_score, 0.15),
+        ]
+
+    general_score = round(
+        _clamp(sum(score * weight for score, weight in score_parts)),
+        1,
+    )
+
+    summary_categories = [
+        ("dirsek sabitliği", elbow_stability_score),
+        ("gövde salınımı kontrolü", torso_stability_score),
+        ("hareket açıklığı", rom_score),
+    ]
+    if wrist_reliable:
+        summary_categories.append(("bilek hizası", wrist_score))
+
+    _, problems, positive_message, improvement_message = build_summary(
+        summary_categories
+    )
+
+    note = f"Skor: %{general_score} | " + (
+        ", ".join(problems) if problems else "Tüm kategoriler iyi"
+    )
+    save_history(
+        db,
+        current_user.id,
+        "biceps_curl_session",
+        general_score,
+        int(round((min_angle + max_angle) / 2.0)),
+        note,
+    )
+
+    return BicepsCurlSessionResult(
+        toplam_kare=len(results),
+        analiz_kare=len(results),
+        genel_skor=general_score,
+        dirsek_sabitligi=elbow_category,
+        govde_salinimi=torso_category,
+        hareket_acikligi=rom_category,
+        bilek_hizasi=wrist_category,
+        olumlu_mesaj=positive_message,
+        gelistirilecek_mesaj=improvement_message,
+    )
+
+def analyze_single_frame_deadlift(
+    lm_flat: Sequence[float],
+) -> Optional[Dict[str, float | str]]:
+    left_chain = [
+        LEFT_EAR,
+        LEFT_SHOULDER,
+        LEFT_WRIST,
+        LEFT_HIP,
+        LEFT_KNEE,
+        LEFT_ANKLE,
+    ]
+    right_chain = [
+        RIGHT_EAR,
+        RIGHT_SHOULDER,
+        RIGHT_WRIST,
+        RIGHT_HIP,
+        RIGHT_KNEE,
+        RIGHT_ANKLE,
+    ]
+
+    side = choose_visible_side(lm_flat, left_chain, right_chain)
+    chain = left_chain if side == "left" else right_chain
+    if not landmarks_visible(lm_flat, chain, threshold=0.45):
+        return None
+
+    ear = point(lm_flat, chain[0])
+    shoulder = point(lm_flat, chain[1])
+    wrist = point(lm_flat, chain[2])
+    hip = point(lm_flat, chain[3])
+    knee = point(lm_flat, chain[4])
+    ankle = point(lm_flat, chain[5])
+
+    torso_length = point_distance(shoulder, hip)
+    shin_length = point_distance(knee, ankle)
+    if torso_length < EPSILON or shin_length < EPSILON:
+        return None
+
+    hip_angle = calculate_angle(shoulder, hip, knee)
+    knee_angle = calculate_angle(hip, knee, ankle)
+
+    head_shoulder_hip_angle = calculate_angle(ear, shoulder, hip)
+    spine_error = abs(head_shoulder_hip_angle - 165.0)
+    spine_score = score_from_error(max(0.0, spine_error - 8.0), 70.0)
+
+    wrist_to_shin = normalized_distance(
+        abs(wrist[0] - ((knee[0] + ankle[0]) / 2.0)),
+        shin_length,
+    )
+
+    body_center_x = shoulder[0] * 0.25 + hip[0] * 0.50 + knee[0] * 0.25
+    balance_error = normalized_distance(abs(body_center_x - ankle[0]), torso_length)
+
+    return {
+        "side": side,
+        "hip_angle": hip_angle,
+        "knee_angle": knee_angle,
+        "spine_score": spine_score,
+        "wrist_x": wrist[0],
+        "wrist_y": wrist[1],
+        "wrist_to_shin": wrist_to_shin,
+        "balance_error": balance_error,
+    }
+
+
+@router.post("/deadlift-session", response_model=DeadliftSessionResult)
+async def analyze_deadlift_session(
+    data: SessionData,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    results = [
+        result
+        for frame in data.frames
+        if len(frame) >= MIN_FRAME_LENGTH
+        for result in [analyze_single_frame_deadlift(frame)]
+        if result is not None
+    ]
+
+    if len(results) < 5:
+        raise HTTPException(
+            status_code=400,
+            detail="Deadlift analizi için yeterli sayıda net kare bulunamadı.",
+        )
+
+    hip_angles = [float(item["hip_angle"]) for item in results]
+    wrist_y_values = [float(item["wrist_y"]) for item in results]
+
+    hip_range = _safe_percentile(hip_angles, 90) - _safe_percentile(hip_angles, 10)
+    wrist_vertical_range = _safe_percentile(
+        wrist_y_values, 90
+    ) - _safe_percentile(wrist_y_values, 10)
+
+    if hip_range < 25 or wrist_vertical_range < 0.10:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Tam deadlift hareketi tespit edilemedi. "
+                "Başlangıç ve kilitlenme pozisyonlarının tamamı görünmelidir."
+            ),
+        )
+
+    spine_score = round(
+        float(np.mean([float(item["spine_score"]) for item in results])),
+        1,
+    )
+
+    bottom_count = max(3, len(results) // 4)
+    bottom_frames = sorted(
+        results,
+        key=lambda item: float(item["wrist_y"]),
+        reverse=True,
+    )[:bottom_count]
+    top_frames = sorted(
+        results,
+        key=lambda item: float(item["wrist_y"]),
+    )[:bottom_count]
+
+    bottom_hip_angle = float(
+        np.mean([float(item["hip_angle"]) for item in bottom_frames])
+    )
+    top_hip_angle = float(
+        np.mean([float(item["hip_angle"]) for item in top_frames])
+    )
+
+    bottom_score = score_from_error(abs(bottom_hip_angle - 75.0), 70.0)
+    lockout_score = score_from_error(abs(top_hip_angle - 170.0), 55.0)
+    hip_position_score = round((bottom_score + lockout_score) / 2.0, 1)
+
+    wrist_x_values = [float(item["wrist_x"]) for item in results]
+    bar_path_variation = _safe_percentile(
+        wrist_x_values, 90
+    ) - _safe_percentile(wrist_x_values, 10)
+    average_shin_distance = float(
+        np.mean([float(item["wrist_to_shin"]) for item in bottom_frames])
+    )
+
+    vertical_path_score = score_from_error(
+        max(0.0, bar_path_variation - 0.015),
+        0.18,
+    )
+    shin_proximity_score = score_from_error(
+        max(0.0, average_shin_distance - 0.10),
+        0.90,
+    )
+    bar_path_score = round(
+        (vertical_path_score * 0.55 + shin_proximity_score * 0.45),
+        1,
+    )
+
+    balance_errors = [float(item["balance_error"]) for item in results]
+    balance_error_90 = _safe_percentile(balance_errors, 90)
+    balance_score = score_from_error(max(0.0, balance_error_90 - 0.08), 0.75)
+
+    spine_category = category(
+        spine_score,
+        "Baş-omuz-kalça hizası genel olarak korunuyor.",
+        "Baş-omuz-kalça hizasında bozulma var. Omurgayı nötr tutmaya çalışın.",
+    )
+    hip_category = category(
+        hip_position_score,
+        "Başlangıç ve kilitlenme evrelerinde kalça menteşesi uyumlu.",
+        "Kalça menteşesi yetersiz. Hareketi kalçadan başlatıp üstte tam kilitlenin.",
+    )
+    bar_category = category(
+        bar_path_score,
+        "Bileklerin temsil ettiği yaklaşık bar yolu vücuda yakın ve dikey.",
+        "Yaklaşık bar yolu vücuttan uzaklaşıyor veya yatay sapma gösteriyor.",
+    )
+    balance_category = category(
+        balance_score,
+        "Ağırlık merkezi ayak tabanı üzerinde dengeli.",
+        "Ağırlık merkezi öne veya arkaya kayıyor.",
+    )
+
+    general_score = round(
+        _clamp(
+            spine_score * 0.30
+            + hip_position_score * 0.30
+            + bar_path_score * 0.25
+            + balance_score * 0.15
+        ),
+        1,
+    )
+
+    _, problems, positive_message, improvement_message = build_summary(
+        [
+            ("omurga hizası", spine_score),
+            ("kalça pozisyonu", hip_position_score),
+            ("bar yolu", bar_path_score),
+            ("denge", balance_score),
+        ]
+    )
+
+    note = f"Skor: %{general_score} | " + (
+        ", ".join(problems) if problems else "Tüm kategoriler iyi"
+    )
+    save_history(
+        db,
+        current_user.id,
+        "deadlift_session",
+        general_score,
+        int(round(bottom_hip_angle)),
+        note,
+    )
+
+    return DeadliftSessionResult(
+        toplam_kare=len(results),
+        analiz_kare=len(results),
+        genel_skor=general_score,
+        omurga_notrluğu=spine_category,
+        kalca_pozisyonu=hip_category,
+        bar_yolu=bar_category,
+        denge=balance_category,
+        olumlu_mesaj=positive_message,
+        gelistirilecek_mesaj=improvement_message,
+    )
+
+def _line_deviation(
+    landmarks: Sequence[float],
+    upper: Tuple[int, int],
+    middle: Tuple[int, int],
+    lower: Tuple[int, int],
+) -> Optional[float]:
+    upper_point = midpoint(point(landmarks, upper[0]), point(landmarks, upper[1]))
+    middle_point = midpoint(point(landmarks, middle[0]), point(landmarks, middle[1]))
+    lower_point = midpoint(point(landmarks, lower[0]), point(landmarks, lower[1]))
+
+    line_length = point_distance(upper_point, lower_point)
+    if line_length < EPSILON:
+        return None
+
+    numerator = abs(
+        (lower_point[1] - upper_point[1]) * middle_point[0]
+        - (lower_point[0] - upper_point[0]) * middle_point[1]
+        + lower_point[0] * upper_point[1]
+        - lower_point[1] * upper_point[0]
+    )
+    return float(numerator / line_length)
+
+
+def _line_analysis_and_save(
+    db: Session,
+    current_user,
+    data: PoseData,
+    required_points: Sequence[int],
+    upper: Tuple[int, int],
+    middle: Tuple[int, int],
+    lower: Tuple[int, int],
+    movement_name: str,
+    high_message: Tuple[str, str],
+    low_message: Tuple[str, str],
+    good_message: Tuple[str, str],
+    threshold: float = 0.05,
+):
+    landmarks = data.landmarks
+    if not landmarks_visible(landmarks, required_points, threshold=0.40):
+        raise HTTPException(
+            status_code=400,
+            detail="Vücudunuz net görünmüyor. Tüm vücudunuz kadraja girmelidir.",
+        )
+
+    deviation = _line_deviation(landmarks, upper, middle, lower)
+    if deviation is None:
+        raise HTTPException(status_code=400, detail="Pozisyon tespit edilemedi.")
+
+    if deviation <= threshold:
+        situation, message = good_message
+    elif deviation <= threshold * 2:
+        situation, message = low_message
     else:
-        durum, skor, mesaj = "Yeterince Derin Değil", 60, f"Ön diz açısı geniş ({int(on_diz)}°). Daha aşağı çömelin."
-    kayit = WorkoutHistory(user_id=current_user.id, hareket_adi="lunge", eminlik_skoru=skor, diz_acisi=int(round(on_diz)), antrenor_notu=f"{durum}: {mesaj}")
-    db.add(kayit); db.commit(); db.refresh(kayit)
-    return {"kayit_id": kayit.id, "durum": durum, "skor": skor, "antrenor_mesaji": mesaj}
+        situation, message = high_message
+
+    score = score_from_error(deviation, threshold * 4)
+    record = save_history(
+        db,
+        current_user.id,
+        movement_name,
+        score,
+        0,
+        f"{situation}: {message}",
+    )
+    return {
+        "kayit_id": record.id,
+        "durum": situation,
+        "skor": score,
+        "fark": round(deviation, 4),
+        "antrenor_mesaji": message,
+    }
+
+
+@router.post("/plank")
+async def analyze_plank(
+    data: PoseData,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    return _line_analysis_and_save(
+        db,
+        current_user,
+        data,
+        [LEFT_SHOULDER, RIGHT_SHOULDER, LEFT_HIP, RIGHT_HIP, LEFT_ANKLE, RIGHT_ANKLE],
+        (LEFT_SHOULDER, RIGHT_SHOULDER),
+        (LEFT_HIP, RIGHT_HIP),
+        (LEFT_ANKLE, RIGHT_ANKLE),
+        "plank",
+        ("Belirgin Hat Bozukluğu", "Kalçanızı omuz-ayak hattına yaklaştırın."),
+        ("Geliştirilebilir", "Vücudunuzu biraz daha düz tutun."),
+        ("İyi Form", "Vücudunuz omuzdan ayak bileğine düz bir hat oluşturuyor."),
+    )
+
+
+@router.post("/sinav")
+async def analyze_sinav(
+    data: PoseData,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    return _line_analysis_and_save(
+        db,
+        current_user,
+        data,
+        [LEFT_SHOULDER, RIGHT_SHOULDER, LEFT_HIP, RIGHT_HIP, LEFT_ANKLE, RIGHT_ANKLE],
+        (LEFT_SHOULDER, RIGHT_SHOULDER),
+        (LEFT_HIP, RIGHT_HIP),
+        (LEFT_ANKLE, RIGHT_ANKLE),
+        "sinav",
+        ("Belirgin Hat Bozukluğu", "Bel ve kalçanızı omuz-ayak hattına getirin."),
+        ("Geliştirilebilir", "Gövde hattınızı biraz daha düz tutun."),
+        ("İyi Form", "Gövdeniz şınav boyunca düz bir hat oluşturuyor."),
+    )
+
+
+@router.post("/yan-plank")
+async def analyze_yan_plank(
+    data: PoseData,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    return _line_analysis_and_save(
+        db,
+        current_user,
+        data,
+        [LEFT_SHOULDER, RIGHT_SHOULDER, LEFT_HIP, RIGHT_HIP, LEFT_ANKLE, RIGHT_ANKLE],
+        (LEFT_SHOULDER, RIGHT_SHOULDER),
+        (LEFT_HIP, RIGHT_HIP),
+        (LEFT_ANKLE, RIGHT_ANKLE),
+        "yan_plank",
+        ("Kalça Hattı Bozuk", "Kalçanızı omuz-ayak hattına getirin."),
+        ("Geliştirilebilir", "Kalçanızı biraz daha sabit tutun."),
+        ("İyi Form", "Vücudunuz yan plankta düz bir hat oluşturuyor."),
+    )
+
+
+@router.post("/kopru")
+async def analyze_kopru(
+    data: PoseData,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    return _line_analysis_and_save(
+        db,
+        current_user,
+        data,
+        [LEFT_SHOULDER, RIGHT_SHOULDER, LEFT_HIP, RIGHT_HIP, LEFT_KNEE, RIGHT_KNEE],
+        (LEFT_SHOULDER, RIGHT_SHOULDER),
+        (LEFT_HIP, RIGHT_HIP),
+        (LEFT_KNEE, RIGHT_KNEE),
+        "kopru",
+        ("Kalça Hattı Bozuk", "Kalçanızı omuz-diz hattına getirin."),
+        ("Geliştirilebilir", "Kalçanızı biraz daha yükseltin."),
+        ("İyi Form", "Kalçanız omuz-diz hattına yakın."),
+    )
+
+
+@router.post("/duvar-squat")
+async def analyze_wall_squat(
+    data: PoseData,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    landmarks = data.landmarks
+    side = choose_visible_side(
+        landmarks,
+        [LEFT_HIP, LEFT_KNEE, LEFT_ANKLE],
+        [RIGHT_HIP, RIGHT_KNEE, RIGHT_ANKLE],
+    )
+    indices = (
+        [LEFT_HIP, LEFT_KNEE, LEFT_ANKLE]
+        if side == "left"
+        else [RIGHT_HIP, RIGHT_KNEE, RIGHT_ANKLE]
+    )
+    if not landmarks_visible(landmarks, indices):
+        raise HTTPException(status_code=400, detail="Bacak noktaları net görünmüyor.")
+
+    angle = calculate_angle(
+        point(landmarks, indices[0]),
+        point(landmarks, indices[1]),
+        point(landmarks, indices[2]),
+    )
+    score = score_from_error(abs(angle - 90.0), 50.0)
+
+    if 80 <= angle <= 100:
+        situation = "İyi Form"
+        message = "Diz açınız yaklaşık 90 derece."
+    elif angle < 80:
+        situation = "Çok Derin"
+        message = "Biraz yukarı kalkın."
+    else:
+        situation = "Yeterince Derin Değil"
+        message = "Biraz daha aşağı inin."
+
+    record = save_history(
+        db,
+        current_user.id,
+        "duvar_squat",
+        score,
+        int(round(angle)),
+        f"{situation}: {message}",
+    )
+    return {
+        "kayit_id": record.id,
+        "durum": situation,
+        "skor": score,
+        "aci": round(angle, 1),
+        "antrenor_mesaji": message,
+    }
+
+
+@router.post("/lunge")
+async def analyze_lunge(
+    data: PoseData,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    landmarks = data.landmarks
+    side = choose_visible_side(
+        landmarks,
+        [LEFT_SHOULDER, LEFT_HIP, LEFT_KNEE, LEFT_ANKLE],
+        [RIGHT_SHOULDER, RIGHT_HIP, RIGHT_KNEE, RIGHT_ANKLE],
+    )
+    indices = (
+        [LEFT_SHOULDER, LEFT_HIP, LEFT_KNEE, LEFT_ANKLE]
+        if side == "left"
+        else [RIGHT_SHOULDER, RIGHT_HIP, RIGHT_KNEE, RIGHT_ANKLE]
+    )
+    if not landmarks_visible(landmarks, indices):
+        raise HTTPException(status_code=400, detail="Lunge noktaları net görünmüyor.")
+
+    shoulder, hip, knee, ankle = [point(landmarks, idx) for idx in indices]
+    knee_angle = calculate_angle(hip, knee, ankle)
+    torso_from_vertical = abs(abs(calculate_line_angle(hip, shoulder)) - 90.0)
+
+    knee_score = score_from_error(abs(knee_angle - 90.0), 60.0)
+    torso_score = score_from_error(max(0.0, torso_from_vertical - 5.0), 40.0)
+    score = round((knee_score * 0.65 + torso_score * 0.35), 1)
+
+    if score >= 75:
+        situation, message = "İyi Form", "Ön diz açısı ve gövde kontrolü iyi."
+    elif torso_score < knee_score:
+        situation, message = "Gövde Kontrolü Zayıf", "Gövdenizi daha dik tutun."
+    else:
+        situation, message = "Diz Açısı Uygun Değil", "Ön dizi yaklaşık 90 dereceye getirin."
+
+    record = save_history(
+        db,
+        current_user.id,
+        "lunge",
+        score,
+        int(round(knee_angle)),
+        f"{situation}: {message}",
+    )
+    return {
+        "kayit_id": record.id,
+        "durum": situation,
+        "skor": score,
+        "antrenor_mesaji": message,
+    }
 
 
 @router.post("/omuz-acikligi")
-async def analyze_omuz_acikligi(data: PoseData, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
-    if len(data.landmarks) < 132:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Eksik landmark verisi.")
-    lm = data.landmarks
-    sol_bilek_y = lm[15*4+1]
-    sag_bilek_y = lm[16*4+1]
-    sol_omuz_y = lm[11*4+1]
-    sag_omuz_y = lm[12*4+1]
-    sol_fark = abs(sol_bilek_y - sol_omuz_y)
-    sag_fark = abs(sag_bilek_y - sag_omuz_y)
-    ort_fark = (sol_fark + sag_fark) / 2
-    sol_kol_aci = calculate_angle((lm[15*4], lm[15*4+1]), (lm[11*4], lm[11*4+1]), (lm[12*4], lm[12*4+1]))
-    sag_kol_aci = calculate_angle((lm[16*4], lm[16*4+1]), (lm[12*4], lm[12*4+1]), (lm[11*4], lm[11*4+1]))
-    if ort_fark < 0.06 and 70 <= sol_kol_aci <= 110 and 70 <= sag_kol_aci <= 110:
-        durum, skor, mesaj = "İyi Form", 90, "Kollar omuz hizasında dengeli açılmış."
-    elif ort_fark < 0.13:
-        durum, skor, mesaj = "Geliştirilebilir", 70, "Kolları biraz daha omuz hizasına getirin."
-    else:
-        durum, skor, mesaj = "Kollar Omuz Hizasında Değil", 50, "Kollarınızı tam olarak yanlara, omuz hizasına açın."
-    kayit = WorkoutHistory(user_id=current_user.id, hareket_adi="omuz_acikligi", eminlik_skoru=skor, diz_acisi=0, antrenor_notu=f"{durum}: {mesaj}")
-    db.add(kayit); db.commit(); db.refresh(kayit)
-    return {"kayit_id": kayit.id, "durum": durum, "skor": skor, "antrenor_mesaji": mesaj}
+async def analyze_shoulder_openness(
+    data: PoseData,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    landmarks = data.landmarks
+    required = [LEFT_SHOULDER, RIGHT_SHOULDER, LEFT_WRIST, RIGHT_WRIST]
+    if not landmarks_visible(landmarks, required, threshold=0.40):
+        raise HTTPException(status_code=400, detail="Omuz ve bilek noktaları net görünmüyor.")
+
+    left_difference = abs(point(landmarks, LEFT_WRIST)[1] - point(landmarks, LEFT_SHOULDER)[1])
+    right_difference = abs(point(landmarks, RIGHT_WRIST)[1] - point(landmarks, RIGHT_SHOULDER)[1])
+    average_difference = (left_difference + right_difference) / 2.0
+    score = score_from_error(average_difference, 0.20)
+
+    situation = "İyi Form" if score >= 75 else "Kollar Omuz Hizasında Değil"
+    message = (
+        "Kollar omuz hizasında dengeli."
+        if score >= 75
+        else "Kollarınızı omuz hizasına getirin."
+    )
+    record = save_history(
+        db,
+        current_user.id,
+        "omuz_acikligi",
+        score,
+        0,
+        f"{situation}: {message}",
+    )
+    return {
+        "kayit_id": record.id,
+        "durum": situation,
+        "skor": score,
+        "antrenor_mesaji": message,
+    }
 
 
 @router.post("/one-egilme")
-async def analyze_one_egilme(data: PoseData, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
-    if len(data.landmarks) < 132:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Eksik landmark verisi.")
-    lm = data.landmarks
-    sol_omuz = (lm[11*4], lm[11*4+1])
-    sol_kalca = (lm[23*4], lm[23*4+1])
-    sol_diz = (lm[25*4], lm[25*4+1])
-    sag_omuz = (lm[12*4], lm[12*4+1])
-    sag_kalca = (lm[24*4], lm[24*4+1])
-    sag_diz = (lm[26*4], lm[26*4+1])
-    sol_kalca_aci = calculate_angle(sol_omuz, sol_kalca, sol_diz)
-    sag_kalca_aci = calculate_angle(sag_omuz, sag_kalca, sag_diz)
-    ort_kalca_aci = (sol_kalca_aci + sag_kalca_aci) / 2
-    bilek_y = (lm[15*4+1] + lm[16*4+1]) / 2
-    ayak_y = (lm[27*4+1] + lm[28*4+1]) / 2
-    el_mesafe = abs(bilek_y - ayak_y)
-    if ort_kalca_aci < 70 and el_mesafe < 0.15:
-        durum, skor, mesaj = "Mükemmel Esneklik", 95, "Harika! Eller zemine çok yakın, esnekliğiniz mükemmel."
-    elif ort_kalca_aci < 90:
-        durum, skor, mesaj = "İyi Form", 80, "İyi esneklik. Dizleri düz tutarak biraz daha aşağı inin."
-    elif ort_kalca_aci < 120:
-        durum, skor, mesaj = "Orta Esneklik", 60, "Hamstring kaslarınızı düzenli gererek esnekliği artırın."
-    else:
-        durum, skor, mesaj = "Geliştirme Gerekli", 40, "Düzenli germe egzersizleriyle esnekliğinizi artırabilirsiniz."
-    kayit = WorkoutHistory(user_id=current_user.id, hareket_adi="one_egilme", eminlik_skoru=skor, diz_acisi=int(round(ort_kalca_aci)), antrenor_notu=f"{durum}: {mesaj}")
-    db.add(kayit); db.commit(); db.refresh(kayit)
-    return {"kayit_id": kayit.id, "durum": durum, "skor": skor, "antrenor_mesaji": mesaj}
+async def analyze_forward_fold(
+    data: PoseData,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    landmarks = data.landmarks
+    side = choose_visible_side(
+        landmarks,
+        [LEFT_SHOULDER, LEFT_HIP, LEFT_KNEE, LEFT_ANKLE, LEFT_WRIST],
+        [RIGHT_SHOULDER, RIGHT_HIP, RIGHT_KNEE, RIGHT_ANKLE, RIGHT_WRIST],
+    )
+    indices = (
+        [LEFT_SHOULDER, LEFT_HIP, LEFT_KNEE, LEFT_ANKLE, LEFT_WRIST]
+        if side == "left"
+        else [RIGHT_SHOULDER, RIGHT_HIP, RIGHT_KNEE, RIGHT_ANKLE, RIGHT_WRIST]
+    )
+    if not landmarks_visible(landmarks, indices, threshold=0.40):
+        raise HTTPException(status_code=400, detail="Gerekli vücut noktaları görünmüyor.")
+
+    shoulder, hip, knee, ankle, wrist = [point(landmarks, idx) for idx in indices]
+    hip_angle = calculate_angle(shoulder, hip, knee)
+    leg_length = point_distance(hip, ankle)
+    hand_to_ankle = normalized_distance(point_distance(wrist, ankle), leg_length)
+
+    hip_score = score_from_error(max(0.0, hip_angle - 70.0), 100.0)
+    reach_score = score_from_error(hand_to_ankle, 1.0)
+    score = round((hip_score * 0.55 + reach_score * 0.45), 1)
+
+    situation = "İyi Esneklik" if score >= 75 else "Geliştirme Gerekli"
+    message = (
+        "Kalça açısı ve el-ayak mesafesi iyi."
+        if score >= 75
+        else "Dizleri kontrollü tutup hamstring esnekliğini geliştirin."
+    )
+    record = save_history(
+        db,
+        current_user.id,
+        "one_egilme",
+        score,
+        int(round(hip_angle)),
+        f"{situation}: {message}",
+    )
+    return {
+        "kayit_id": record.id,
+        "durum": situation,
+        "skor": score,
+        "antrenor_mesaji": message,
+    }
 
 
 @router.post("/ters-kopru")
-async def analyze_ters_kopru(data: PoseData, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
-    if len(data.landmarks) < 132:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Eksik landmark verisi.")
-    lm = data.landmarks
-    sol_kalca = (lm[23*4], lm[23*4+1])
-    sol_diz = (lm[25*4], lm[25*4+1])
-    sol_ayak = (lm[27*4], lm[27*4+1])
-    sag_kalca = (lm[24*4], lm[24*4+1])
-    sag_diz = (lm[26*4], lm[26*4+1])
-    sag_ayak = (lm[28*4], lm[28*4+1])
-    sol_diz_aci = calculate_angle(sol_kalca, sol_diz, sol_ayak)
-    sag_diz_aci = calculate_angle(sag_kalca, sag_diz, sag_ayak)
-    ort_diz = (sol_diz_aci + sag_diz_aci) / 2
-    omuz_y = (lm[11*4+1] + lm[12*4+1]) / 2
-    kalca_y = (lm[23*4+1] + lm[24*4+1]) / 2
-    diz_y = (lm[25*4+1] + lm[26*4+1]) / 2
-    kalca_yukari = kalca_y < diz_y and kalca_y < omuz_y + 0.1
-    if 80 <= ort_diz <= 110 and kalca_yukari:
-        durum, skor, mesaj = "İyi Form", 90, "Kalça yeterince yüksekte, diz açısı ideal. Harika pozisyon!"
-    elif not kalca_yukari:
-        durum, skor, mesaj = "Kalça Yeterince Yukarıda Değil", 55, "Kalçanızı daha yüksek kaldırın, düz bir hat oluşturun."
-    else:
-        durum, skor, mesaj = "Diz Açısı Hatalı", 65, f"Diz açısı {int(ort_diz)}°. Hedef 90° olmalı, ayakları ayarlayın."
-    kayit = WorkoutHistory(user_id=current_user.id, hareket_adi="ters_kopru", eminlik_skoru=skor, diz_acisi=int(round(ort_diz)), antrenor_notu=f"{durum}: {mesaj}")
-    db.add(kayit); db.commit(); db.refresh(kayit)
-    return {"kayit_id": kayit.id, "durum": durum, "skor": skor, "antrenor_mesaji": mesaj}
+async def analyze_reverse_bridge(
+    data: PoseData,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    landmarks = data.landmarks
+    side = choose_visible_side(
+        landmarks,
+        [LEFT_SHOULDER, LEFT_HIP, LEFT_KNEE, LEFT_ANKLE],
+        [RIGHT_SHOULDER, RIGHT_HIP, RIGHT_KNEE, RIGHT_ANKLE],
+    )
+    indices = (
+        [LEFT_SHOULDER, LEFT_HIP, LEFT_KNEE, LEFT_ANKLE]
+        if side == "left"
+        else [RIGHT_SHOULDER, RIGHT_HIP, RIGHT_KNEE, RIGHT_ANKLE]
+    )
+    if not landmarks_visible(landmarks, indices):
+        raise HTTPException(status_code=400, detail="Gerekli vücut noktaları görünmüyor.")
 
+    shoulder, hip, knee, ankle = [point(landmarks, idx) for idx in indices]
+    knee_angle = calculate_angle(hip, knee, ankle)
+    hip_line_deviation = _line_deviation(
+        landmarks,
+        (LEFT_SHOULDER, RIGHT_SHOULDER),
+        (LEFT_HIP, RIGHT_HIP),
+        (LEFT_KNEE, RIGHT_KNEE),
+    )
+    if hip_line_deviation is None:
+        raise HTTPException(status_code=400, detail="Kalça hattı ölçülemedi.")
+
+    knee_score = score_from_error(abs(knee_angle - 90.0), 65.0)
+    hip_score = score_from_error(hip_line_deviation, 0.20)
+    score = round((knee_score * 0.45 + hip_score * 0.55), 1)
+
+    situation = "İyi Form" if score >= 75 else "Kalça veya Diz Pozisyonu Hatalı"
+    message = (
+        "Kalça yüksekliği ve diz açısı uygun."
+        if score >= 75
+        else "Kalçanızı yükseltip diz açınızı ayarlayın."
+    )
+    record = save_history(
+        db,
+        current_user.id,
+        "ters_kopru",
+        score,
+        int(round(knee_angle)),
+        f"{situation}: {message}",
+    )
+    return {
+        "kayit_id": record.id,
+        "durum": situation,
+        "skor": score,
+        "antrenor_mesaji": message,
+    }
 
 @router.get("/history", response_model=List[HistoryRead])
 async def get_history(
     sayfa: int = 1,
     sayfa_boyutu: int = 20,
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
 ):
-    sorgu = db.query(WorkoutHistory).filter(
-        WorkoutHistory.user_id == current_user.id
-    ).order_by(WorkoutHistory.tarih.desc())
-    return sorgu.offset((sayfa - 1) * sayfa_boyutu).limit(sayfa_boyutu).all()
+    page = max(1, sayfa)
+    page_size = min(100, max(1, sayfa_boyutu))
+
+    query = (
+        db.query(WorkoutHistory)
+        .filter(WorkoutHistory.user_id == current_user.id)
+        .order_by(WorkoutHistory.tarih.desc())
+    )
+    return query.offset((page - 1) * page_size).limit(page_size).all()
 
 
 @router.get("/history/sayim")
-async def get_history_sayim(
+async def get_history_count(
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
 ):
-    toplam = db.query(WorkoutHistory).filter(WorkoutHistory.user_id == current_user.id).count()
-    return {"toplam": toplam}
+    total = (
+        db.query(WorkoutHistory)
+        .filter(WorkoutHistory.user_id == current_user.id)
+        .count()
+    )
+    return {"toplam": total}
+
 
 @router.delete("/history/{kayit_id}")
 async def delete_history(
     kayit_id: int,
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user=Depends(get_current_user),
 ):
-    kayit = db.query(WorkoutHistory).filter(
-        WorkoutHistory.id == kayit_id,
-        WorkoutHistory.user_id == current_user.id
-    ).first()
+    record = (
+        db.query(WorkoutHistory)
+        .filter(
+            WorkoutHistory.id == kayit_id,
+            WorkoutHistory.user_id == current_user.id,
+        )
+        .first()
+    )
 
-    if not kayit:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Kayıt bulunamadı.")
+    if record is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Kayıt bulunamadı.",
+        )
 
-    db.delete(kayit)
+    db.delete(record)
     db.commit()
     return {"mesaj": "Kayıt silindi."}

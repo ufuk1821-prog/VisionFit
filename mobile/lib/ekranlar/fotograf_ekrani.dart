@@ -33,14 +33,10 @@ const List<LandmarkType> mediapipeSirasi = [
 ];
 
 Future<List<double>> pozuFlatListeCevir(Pose pose, Uint8List goruntuBaytlari) async {
-  final codec = await ui.instantiateImageCodec(goruntuBaytlari);
-  final frame = await codec.getNextFrame();
-  final genislik = frame.image.width.toDouble();
-  final yukseklik = frame.image.height.toDouble();
   final liste = <double>[];
   for (final tip in mediapipeSirasi) {
     final lm = pose.getLandmark(tip);
-    liste.addAll([lm.x / genislik, lm.y / yukseklik, lm.z / genislik, lm.visibility]);
+    liste.addAll([lm.x, lm.y, lm.z, lm.visibility]);
   }
   return liste;
 }

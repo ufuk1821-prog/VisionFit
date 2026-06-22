@@ -25,7 +25,7 @@ List<double> pozuFlatListeCevirSenkron(Pose pose, double genislik, double yuksek
   final liste = <double>[];
   for (final tip in mediapipeSirasi) {
     final lm = pose.getLandmark(tip);
-    liste.addAll([lm.x / genislik, lm.y / yukseklik, lm.z / genislik, lm.visibility]);
+    liste.addAll([lm.x, lm.y, lm.z, lm.visibility]);
   }
   return liste;
 }
@@ -39,9 +39,18 @@ class KameraEkrani extends StatefulWidget {
 
 class _KameraEkraniState extends State<KameraEkrani> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final GlobalKey<_CanliAnalizSekmeState> _canliKey = GlobalKey<_CanliAnalizSekmeState>();
 
   @override
-  void initState() { super.initState(); _tabController = TabController(length: 2, vsync: this); }
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      if (_tabController.index == 1) {
+        _canliKey.currentState?.detectorKapat();
+      }
+    });
+  }
 
   @override
   void dispose() { _tabController.dispose(); super.dispose(); }
@@ -63,17 +72,22 @@ class _KameraEkraniState extends State<KameraEkrani> with SingleTickerProviderSt
           tabs: const [Tab(text: 'CANLI ANALİZ'), Tab(text: 'VİDEO ANALİZİ')],
         ),
       ),
-      body: TabBarView(controller: _tabController, children: const [_CanliAnalizSekme(), _VideoAnalizSekme()]),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _CanliAnalizSekme(key: _canliKey),
+          const _VideoAnalizSekme(),
+        ],
+      ),
     );
   }
 }
 
 class _CanliAnalizSekme extends StatefulWidget {
-  const _CanliAnalizSekme();
+  const _CanliAnalizSekme({super.key});
   @override
   State<_CanliAnalizSekme> createState() => _CanliAnalizSekmeState();
 }
-
 class _CanliAnalizSekmeState extends State<_CanliAnalizSekme> {
   CameraController? _controller;
   List<CameraDescription> _cameras = [];
@@ -156,6 +170,13 @@ class _CanliAnalizSekmeState extends State<_CanliAnalizSekme> {
         final frame = await codec.getNextFrame();
         final genislik = frame.image.width.toDouble();
         final yukseklik = frame.image.height.toDouble();
+
+        final solOmuz = sonuc.firstPose!.getLandmark(LandmarkType.leftShoulder);
+        if (_toplananKare == 0) {
+          debugPrint('HAM OMUZ KOORDINATI: x=${solOmuz.x}, y=${solOmuz.y}, z=${solOmuz.z}, visibility=${solOmuz.visibility}');
+          debugPrint('GORUNTU BOYUTU: genislik=$genislik, yukseklik=$yukseklik');
+        }
+
         final lms = pozuFlatListeCevirSenkron(sonuc.firstPose!, genislik, yukseklik);
         if (mounted) setState(() { _kareler.add(lms); _toplananKare++; });
       }
@@ -165,6 +186,11 @@ class _CanliAnalizSekmeState extends State<_CanliAnalizSekme> {
 
   Future<void> _sonucGonder() async {
     setState(() { _analizYukleniyor = true; _baslatildi = false; });
+    if (_kareler.isNotEmpty) {
+      debugPrint('TOPLAM KARE SAYISI: ${_kareler.length}');
+      debugPrint('ILK KARE UZUNLUGU: ${_kareler.first.length}');
+      debugPrint('ILK KARE ILK 8 DEGER: ${_kareler.first.take(8).toList()}');
+    }
     try {
       final yanit = await ApiServisi.postJson('/api/analyze/session', {'frames': _kareler});
       setState(() { _sonuc = Map<String, dynamic>.from(yanit); _analizYukleniyor = false; });
@@ -199,6 +225,11 @@ class _CanliAnalizSekmeState extends State<_CanliAnalizSekme> {
     } finally {
       setState(() { _aiYukleniyor = false; });
     }
+  }
+
+  void detectorKapat() {
+    _detector?.dispose();
+    _detector = null;
   }
 
   @override

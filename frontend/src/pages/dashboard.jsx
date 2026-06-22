@@ -3,16 +3,76 @@ import { PoseLandmarker, FilesetResolver, DrawingUtils } from '@mediapipe/tasks-
 import axios from 'axios';
 import Sidebar from '../components/sidebar';
 
-const KATEGORI_LABELS = {
-  genel_form: 'Genel Form',
-  omurga_notrluğu: 'Omurga Nötrlüğü',
-  kalca_derinligi: 'Kalça Derinliği',
-  diz_hizasi: 'Diz Hizası',
-  diz_cokusu: 'Diz Çöküşü',
-  agirlik_merkezi: 'Ağırlık Merkezi',
+const HAREKETLER = {
+  squat: {
+    label: 'Squat',
+    endpoint: '/api/analyze/session',
+    aiHareket: 'squat',
+    aciklama: 'Yandan çekilmiş, tüm vücudunuzun göründüğü bir squat videosu yükleyin.',
+    canliTalimat: "Squat yapın. Başlat\'a basın, 3\'ten geriye sayacak ve analiz başlayacak.",
+    kategoriLabels: {
+      genel_form: 'Genel Form',
+      omurga_notrluğu: 'Omurga Nötrlüğü',
+      kalca_derinligi: 'Kalça Derinliği',
+      diz_hizasi: 'Diz Hizası',
+      diz_cokusu: 'Diz Çöküşü',
+      agirlik_merkezi: 'Ağırlık Merkezi',
+    },
+    videoIpuclari: [
+      'Kamerayı yere sabit, tam yandan konumlandırın.',
+      'Tüm vücudunuz baştan ayağa kadraja sığsın.',
+      'En az 3-5 tekrar yapılan bir kayıt yükleyin.',
+      'Aydınlık bir ortamda çekim yapın.',
+    ],
+  },
+  deadlift: {
+    label: 'Deadlift',
+    endpoint: '/api/analyze/deadlift-session',
+    aiHareket: 'deadlift',
+    aciklama: 'Yandan çekilmiş, başlangıç ve kilitlenme pozisyonlarının göründüğü bir deadlift videosu yükleyin.',
+    canliTalimat: "Deadlift yapın. Başlat'a basın; başlangıç ve kilitlenme pozisyonlarını tam gösterin.",
+    kategoriLabels: {
+      omurga_notrluğu: 'Omurga Hizası',
+      kalca_pozisyonu: 'Kalça Pozisyonu',
+      bar_yolu: 'Bar Yolu',
+      denge: 'Denge',
+    },
+    videoIpuclari: [
+      'Kamerayı tam yandan ve sabit konumlandırın.',
+      'Baş, ayaklar ve barın tamamı kadrajda olsun.',
+      'Başlangıç ve üst kilitlenme pozisyonlarını net gösterin.',
+      'Bar görünmüyorsa sistem bilek yolunu yaklaşık bar yolu olarak kullanır.',
+    ],
+  },
+  biceps_curl: {
+    label: 'Biceps Curl',
+    endpoint: '/api/analyze/biceps-curl-session',
+    aiHareket: 'biceps curl',
+    aciklama: 'Yandan çekilmiş, dirsek ve bileğin net göründüğü bir biceps curl videosu yükleyin.',
+    canliTalimat: "Biceps curl yapın. Kolunuzu kontrollü biçimde tam açıp bükün.",
+    kategoriLabels: {
+      dirsek_sabitligi: 'Dirsek Sabitliği',
+      govde_salinimi: 'Gövde Salınımı',
+      hareket_acikligi: 'Hareket Açıklığı',
+      bilek_hizasi: 'Bilek Hizası',
+    },
+    videoIpuclari: [
+      'Kamerayı çalışan kolu görecek şekilde yandan konumlandırın.',
+      'Omuz, dirsek, bilek ve kalça kadrajda olsun.',
+      'Kolu tam açıp kontrollü biçimde bükün.',
+      'Gövdeyi sallamadan en az 3-5 tekrar yapın.',
+    ],
+  },
 };
 
-function VideoAnalizBolumu({ apiUrl, token }) {
+function skorRengi(skor) {
+  if (skor >= 75) return '#41a447';
+  if (skor >= 50) return '#E8A431';
+  return '#ff6b6b';
+}
+
+
+function VideoAnalizBolumu({ apiUrl, token, hareket, hareketConfig }) {
   const [videoSonuc, setVideoSonuc] = useState(null);
   const [videoYukleniyor, setVideoYukleniyor] = useState(false);
   const [videoHata, setVideoHata] = useState('');
@@ -23,6 +83,14 @@ function VideoAnalizBolumu({ apiUrl, token }) {
   const [videoKategoriAcik, setVideoKategoriAcik] = useState(false);
   const videoRef2 = useRef(null);
 
+  useEffect(() => {
+    setVideoSonuc(null);
+    setVideoHata('');
+    setVideoAiYorum('');
+    setVideoAiHata('');
+    setVideoKategoriAcik(false);
+  }, [hareket]);
+
   const videoAiYorumuAl = async () => {
     if (!videoSonuc) return;
     setVideoAiYukleniyor(true);
@@ -30,12 +98,12 @@ function VideoAnalizBolumu({ apiUrl, token }) {
     setVideoAiYorum('');
     try {
       const kategoriSkorlari = {};
-      Object.entries(KATEGORI_LABELS).forEach(([key, label]) => {
+      Object.entries(hareketConfig.kategoriLabels).forEach(([key, label]) => {
         if (videoSonuc[key]) kategoriSkorlari[label] = videoSonuc[key].skor;
       });
       const res = await axios.post(
         `${apiUrl}/api/yerel-ai/antrenor-yorumu`,
-        { hareket: 'squat', genel_skor: videoSonuc.genel_skor, kategori_skorlari: kategoriSkorlari },
+        { hareket: hareketConfig.aiHareket, genel_skor: videoSonuc.genel_skor, kategori_skorlari: kategoriSkorlari },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setVideoAiYorum(res.data.yorum);
@@ -114,7 +182,7 @@ function VideoAnalizBolumu({ apiUrl, token }) {
         return;
       }
 
-      const res = await axios.post(`${apiUrl}/api/analyze/session`, { frames }, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await axios.post(`${apiUrl}${hareketConfig.endpoint}`, { frames }, { headers: { Authorization: `Bearer ${token}` } });
       setVideoSonuc(res.data);
     } catch (err) {
       setVideoHata(err.response?.data?.detail || 'Video analizi sırasında hata oluştu.');
@@ -126,8 +194,8 @@ function VideoAnalizBolumu({ apiUrl, token }) {
   return (
     <div className="flex-1 flex items-center justify-center p-6">
       <div className="w-full max-w-6xl bento-card p-10">
-        <h2 className="font-headline-md text-headline-md mb-2">Video Analizi</h2>
-        <p className="text-on-surface-variant font-body-sm mb-6">Yandan çekilmiş, tüm vücudunuzun göründüğü bir squat videosu yükleyin.</p>
+        <h2 className="font-headline-md text-headline-md mb-2">{hareketConfig.label} Video Analizi</h2>
+        <p className="text-on-surface-variant font-body-sm mb-6">{hareketConfig.aciklama}</p>
 
         <div className="grid md:grid-cols-3 gap-bento-gap">
           <div className="md:col-span-2">
@@ -168,13 +236,13 @@ function VideoAnalizBolumu({ apiUrl, token }) {
                 </button>
                 {videoKategoriAcik && (
                   <div className="grid grid-cols-2 gap-2 mt-3">
-                    {Object.entries(KATEGORI_LABELS).map(([key, label]) => {
+                    {Object.entries(hareketConfig.kategoriLabels).map(([key, label]) => {
                       const kat = videoSonuc[key];
                       if (!kat) return null;
                       return (
                         <div key={key} className="bg-surface-container-high rounded-lg p-3">
                           <p className="font-label-mono text-[10px] text-on-surface-variant uppercase mb-1">{label}</p>
-                          <span className="font-stat-lg text-lg" style={{ color: kat.skor >= 75 ? '#41a447' : kat.skor >= 50 ? '#E8313F' : '#ffb4ab' }}>%{kat.skor}</span>
+                          <span className="font-stat-lg text-lg" style={{ color: skorRengi(kat.skor) }}>%{kat.skor}</span>
                         </div>
                       );
                     })}
@@ -204,22 +272,12 @@ function VideoAnalizBolumu({ apiUrl, token }) {
                   <h4 className="font-label-mono text-label-mono text-on-surface uppercase">İyi Bir Video İçin</h4>
                 </div>
                 <ul className="space-y-3">
-                  <li className="flex gap-2">
-                    <span className="material-symbols-outlined text-blue-400 text-base">check</span>
-                    <p className="font-body-sm text-on-surface-variant">Kamerayı yere sabit, tam yandan konumlandırın.</p>
-                  </li>
-                  <li className="flex gap-2">
-                    <span className="material-symbols-outlined text-blue-400 text-base">check</span>
-                    <p className="font-body-sm text-on-surface-variant">Tüm vücudunuz baştan ayağa kadraja sığsın.</p>
-                  </li>
-                  <li className="flex gap-2">
-                    <span className="material-symbols-outlined text-blue-400 text-base">check</span>
-                    <p className="font-body-sm text-on-surface-variant">En az 3-5 tekrar yapılan bir kayıt yükleyin.</p>
-                  </li>
-                  <li className="flex gap-2">
-                    <span className="material-symbols-outlined text-blue-400 text-base">check</span>
-                    <p className="font-body-sm text-on-surface-variant">Aydınlık bir ortamda, dar kıyafetle çekim yapın.</p>
-                  </li>
+                  {hareketConfig.videoIpuclari.map((ipucu) => (
+                    <li className="flex gap-2" key={ipucu}>
+                      <span className="material-symbols-outlined text-blue-400 text-base">check</span>
+                      <p className="font-body-sm text-on-surface-variant">{ipucu}</p>
+                    </li>
+                  ))}
                 </ul>
               </div>
             )}
@@ -239,6 +297,7 @@ function Dashboard() {
   const phaseRef = useRef('idle');
   const streamRef = useRef(null);
   const detectStartedRef = useRef(false);
+  const lastCapturedAtRef = useRef(0);
 
   const [modelReady, setModelReady] = useState(false);
   const [phase, setPhase] = useState('idle');
@@ -252,9 +311,11 @@ function Dashboard() {
   const [onKamera, setOnKamera] = useState(true);
   const [activeTab, setActiveTab] = useState('canli');
   const [elapsedSec, setElapsedSec] = useState(0);
+  const [hareket, setHareket] = useState('squat');
 
   const token = localStorage.getItem('token');
   const apiUrl = import.meta.env.VITE_API_URL;
+  const hareketConfig = HAREKETLER[hareket];
 
   const kamerayiAc = async (onMu) => {
     if (streamRef.current) streamRef.current.getTracks().forEach((t) => t.stop());
@@ -304,7 +365,8 @@ function Dashboard() {
         if (results.landmarks && results.landmarks.length > 0) {
           drawingUtils.drawConnectors(results.landmarks[0], PoseLandmarker.POSE_CONNECTIONS, { color: '#e8313f', lineWidth: 3 });
           drawingUtils.drawLandmarks(results.landmarks[0], { color: '#f5f5f5', lineWidth: 1, radius: 3 });
-          if (phaseRef.current === 'recording') {
+          if (phaseRef.current === 'recording' && now - lastCapturedAtRef.current >= 100) {
+            lastCapturedAtRef.current = now;
             const flat = [];
             results.landmarks[0].forEach((lm) => flat.push(lm.x, lm.y, lm.z, lm.visibility ?? 0));
             framesRef.current.push(flat);
@@ -341,6 +403,7 @@ function Dashboard() {
     setResult(null);
     setError('');
     framesRef.current = [];
+    lastCapturedAtRef.current = 0;
     setPhaseSync('countdown');
     let count = 3;
     setCountdown(count);
@@ -363,7 +426,7 @@ function Dashboard() {
     }
 
     try {
-      const res = await axios.post(`${apiUrl}/api/analyze/session`, { frames }, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await axios.post(`${apiUrl}${hareketConfig.endpoint}`, { frames }, { headers: { Authorization: `Bearer ${token}` } });
       setResult(res.data);
       setPhaseSync('result');
     } catch (err) {
@@ -380,18 +443,30 @@ function Dashboard() {
     setAiHata('');
   };
 
+  const hareketDegistir = (yeniHareket) => {
+    if (phase === 'recording' || phase === 'countdown' || phase === 'analyzing') return;
+    setHareket(yeniHareket);
+    setResult(null);
+    setError('');
+    setAiYorum('');
+    setAiHata('');
+    setKategoriAcik(false);
+    framesRef.current = [];
+    setPhaseSync('idle');
+  };
+
   const aiYorumuAl = async () => {
     setAiYukleniyor(true);
     setAiHata('');
     setAiYorum('');
     try {
       const kategoriSkorlari = {};
-      Object.entries(KATEGORI_LABELS).forEach(([key, label]) => {
+      Object.entries(hareketConfig.kategoriLabels).forEach(([key, label]) => {
         if (result[key]) kategoriSkorlari[label] = result[key].skor;
       });
       const res = await axios.post(
         `${apiUrl}/api/yerel-ai/antrenor-yorumu`,
-        { hareket: 'squat', genel_skor: result.genel_skor, kategori_skorlari: kategoriSkorlari },
+        { hareket: hareketConfig.aiHareket, genel_skor: result.genel_skor, kategori_skorlari: kategoriSkorlari },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setAiYorum(res.data.yorum);
@@ -406,23 +481,42 @@ function Dashboard() {
     <div>
       <Sidebar />
       <main className="md:ml-64 min-h-screen pt-16 md:pt-0 relative overflow-hidden flex flex-col">
-        <div className="absolute top-20 md:top-6 left-1/2 -translate-x-1/2 z-30 flex bg-surface-container rounded-full p-1 border border-outline-variant shadow-xl">
-          <button
-            className={`px-8 py-2 rounded-full font-label-mono uppercase transition-all ${activeTab === 'canli' ? 'bg-primary-container text-on-primary-container font-bold' : 'text-on-surface-variant font-medium hover:text-on-surface'}`}
-            onClick={() => setActiveTab('canli')}
-          >
-            CANLI
-          </button>
-          <button
-            className={`px-8 py-2 rounded-full font-label-mono uppercase transition-all ${activeTab === 'video' ? 'bg-primary-container text-on-primary-container font-bold' : 'text-on-surface-variant font-medium hover:text-on-surface'}`}
-            onClick={() => setActiveTab('video')}
-          >
-            VİDEO
-          </button>
+        <div className="absolute top-20 md:top-6 left-1/2 -translate-x-1/2 z-30 flex flex-col md:flex-row items-center gap-2">
+          <div className="flex bg-surface-container rounded-full p-1 border border-outline-variant shadow-xl">
+            <button
+              className={`px-6 py-2 rounded-full font-label-mono uppercase transition-all ${activeTab === 'canli' ? 'bg-primary-container text-on-primary-container font-bold' : 'text-on-surface-variant font-medium hover:text-on-surface'}`}
+              onClick={() => setActiveTab('canli')}
+            >
+              CANLI
+            </button>
+            <button
+              className={`px-6 py-2 rounded-full font-label-mono uppercase transition-all ${activeTab === 'video' ? 'bg-primary-container text-on-primary-container font-bold' : 'text-on-surface-variant font-medium hover:text-on-surface'}`}
+              onClick={() => setActiveTab('video')}
+            >
+              VİDEO
+            </button>
+          </div>
+
+          <div className="flex bg-surface-container rounded-full p-1 border border-outline-variant shadow-xl">
+            {Object.entries(HAREKETLER).map(([key, config]) => (
+              <button
+                key={key}
+                disabled={phase === 'recording' || phase === 'countdown' || phase === 'analyzing'}
+                onClick={() => hareketDegistir(key)}
+                className={`px-4 py-2 rounded-full font-label-mono text-xs uppercase transition-all disabled:opacity-40 ${
+                  hareket === key
+                    ? 'bg-primary text-on-primary font-bold'
+                    : 'text-on-surface-variant hover:text-on-surface'
+                }`}
+              >
+                {config.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {activeTab === 'video' ? (
-          <VideoAnalizBolumu apiUrl={apiUrl} token={token} />
+          <VideoAnalizBolumu apiUrl={apiUrl} token={token} hareket={hareket} hareketConfig={hareketConfig} />
         ) : (
           <div className="flex-1 relative bg-surface-lowest overflow-hidden">
             <div className="absolute inset-0 pointer-events-none">
@@ -434,13 +528,13 @@ function Dashboard() {
 
             <div className="relative w-full h-full flex items-center justify-center">
               <video ref={videoRef} autoPlay playsInline muted className="hidden" />
-              <canvas ref={canvasRef} width="640" height="480" className="max-w-full max-h-full" style={{ transform: 'scaleX(-1)' }} />
+              <canvas ref={canvasRef} width="640" height="480" className="max-w-full max-h-full" style={{ transform: onKamera ? 'scaleX(-1)' : 'none' }} />
             </div>
 
             <div className="absolute top-36 md:top-24 left-1/2 -translate-x-1/2 w-[90%] md:w-auto px-6 py-3 bg-surface-container-high/80 backdrop-blur-md rounded-xl border border-outline-variant flex items-center justify-between gap-8 z-20">
               <div className="flex items-center gap-3">
                 <span className="material-symbols-outlined text-primary-container">info</span>
-                <p className="font-body-md text-on-surface font-medium">Vücudunuzun tamamını çerçevede tutun</p>
+                <p className="font-body-md text-on-surface font-medium">{hareketConfig.label}: vücudunuzun gerekli bölümlerini çerçevede tutun</p>
               </div>
               <button className="p-2 hover:bg-surface-container-highest rounded-lg transition-colors" onClick={kameraDegistir} disabled={phase === 'recording' || phase === 'countdown' || phase === 'analyzing'}>
                 <span className="material-symbols-outlined text-on-surface">flip_camera_ios</span>
@@ -469,7 +563,7 @@ function Dashboard() {
             {phase === 'idle' && modelReady && !error && (
               <div className="absolute bottom-0 left-0 w-full bg-surface-container-high border-t border-outline-variant p-6 z-30 shadow-[0_-20px_50px_rgba(0,0,0,0.5)] rounded-t-[32px]">
                 <div className="max-w-4xl mx-auto flex flex-col items-center gap-6">
-                  <p className="text-on-surface-variant text-center text-sm">Squat yapın. Başlat'a basın, 3'ten geriye sayacak ve analiz başlayacak.</p>
+                  <p className="text-on-surface-variant text-center text-sm">{hareketConfig.canliTalimat}</p>
                   <button
                     className="w-full md:w-64 py-4 bg-primary text-on-primary font-bold rounded-xl flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform active:scale-95 shadow-lg shadow-primary/20 uppercase tracking-tight"
                     onClick={handleStart}
@@ -515,7 +609,7 @@ function Dashboard() {
                   <div className="w-16 h-1.5 bg-outline-variant rounded-full mx-auto mb-8"></div>
                   <div className="flex flex-col gap-10">
                     <header className="text-center">
-                      <h2 className="font-display-lg text-display-lg-mobile md:text-display-lg text-on-surface mb-2">ANALİZ TAMAMLANDI</h2>
+                      <h2 className="font-display-lg text-display-lg-mobile md:text-display-lg text-on-surface mb-2">{hareketConfig.label.toUpperCase()} ANALİZİ TAMAMLANDI</h2>
                       <p className="font-label-mono text-label-mono text-on-surface-variant uppercase">Veri setleri başarıyla işlendi ve optimize edildi</p>
                     </header>
 
@@ -537,13 +631,13 @@ function Dashboard() {
                       </button>
                       {kategoriAcik && (
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-bento-gap p-5 pt-0">
-                          {Object.entries(KATEGORI_LABELS).map(([key, label]) => {
+                          {Object.entries(hareketConfig.kategoriLabels).map(([key, label]) => {
                             const kat = result[key];
                             if (!kat) return null;
                             return (
                               <div className="bg-surface-container-high rounded-xl p-4" key={key}>
                                 <p className="font-label-mono text-label-mono text-on-surface-variant uppercase mb-2">{label}</p>
-                                <span className="font-stat-lg text-2xl" style={{ color: kat.skor >= 75 ? '#41a447' : kat.skor >= 50 ? '#E8313F' : '#ffb4ab' }}>%{kat.skor}</span>
+                                <span className="font-stat-lg text-2xl" style={{ color: skorRengi(kat.skor) }}>%{kat.skor}</span>
                               </div>
                             );
                           })}
