@@ -25,9 +25,6 @@ class _GecmisEkraniState extends State<GecmisEkrani> {
   bool _yukleniyor = true;
   String _filtre = 'tumu';
   int? _acikKart;
-  int _analizSayi = 10;
-  String _analizSonuc = '';
-  bool _analizYukleniyor = false;
 
   @override
   void initState() { super.initState(); _yukle(); }
@@ -44,17 +41,6 @@ class _GecmisEkraniState extends State<GecmisEkrani> {
     setState(() { _kayitlar.removeWhere((k) => k['id'] == id); });
   }
 
-  Future<void> _analizEt() async {
-    setState(() { _analizYukleniyor = true; _analizSonuc = ''; });
-    try {
-      final yanit = await ApiServisi.postJson('/api/yerel-ai/gecmis-analizi?sayi=$_analizSayi', {});
-      setState(() { _analizSonuc = yanit['yorum'] ?? ''; });
-    } catch (_) {
-      setState(() { _analizSonuc = 'Analiz alınamadı, lütfen tekrar deneyin.'; });
-    } finally {
-      setState(() { _analizYukleniyor = false; });
-    }
-  }
 
   Color _skorRengi(int skor) {
     if (skor >= 75) return kGreen;
@@ -93,11 +79,10 @@ class _GecmisEkraniState extends State<GecmisEkrani> {
               Text('${_kayitlar.length} KAYIT', style: kLabel(context)),
             ]),
             const SizedBox(height: 4),
-            Text('Geçmiş performansını ve AI analizlerini incele.', style: kBody(context, size: 13, color: kHint(context))),
+            Text('Geçmiş performansını ve analiz kayıtlarını incele.', style: kBody(context, size: 13, color: kHint(context))),
             const SizedBox(height: 16),
             _filtreSatiri(context),
-            const SizedBox(height: 16),
-            _analizKarti(context),
+
             const SizedBox(height: 16),
             if (liste.isEmpty) _bosEkran(context) else ...liste.map((k) => _kayitKarti(context, k)),
           ],
@@ -161,67 +146,6 @@ class _GecmisEkraniState extends State<GecmisEkrani> {
     );
   }
 
-  Widget _analizKarti(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: kSurfaceLow(context),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: kBorderAlt(context)),
-      ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          const Icon(Icons.auto_awesome, color: kPurple, size: 18),
-          const SizedBox(width: 8),
-          Text('AI ANTRENMAN ANALİZİ', style: kLabel(context, color: kText(context))),
-        ]),
-        const SizedBox(height: 4),
-        Text('Son antrenmalarını yapay zeka ile analiz et', style: kBody(context, size: 12, color: kHint(context))),
-        const SizedBox(height: 14),
-        Row(children: [
-          Text('Son ', style: kBody(context, size: 13, color: kHint(context))),
-          SizedBox(
-            width: 52,
-            child: TextFormField(
-              initialValue: '$_analizSayi',
-              keyboardType: TextInputType.number,
-              style: kBody(context, color: kText(context)),
-              textAlign: TextAlign.center,
-              decoration: InputDecoration(
-                filled: true, fillColor: kSurfaceLowest(context),
-                contentPadding: const EdgeInsets.symmetric(vertical: 6),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: kBorder(context))),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: kBorder(context))),
-                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: kRed, width: 1.5)),
-              ),
-              onChanged: (v) { final n = int.tryParse(v); if (n != null && n >= 1 && n <= 30) setState(() { _analizSayi = n; }); },
-            ),
-          ),
-          Text(' antrenmanı', style: kBody(context, size: 13, color: kHint(context))),
-          const Spacer(),
-          SizedBox(
-            height: 36,
-            child: ElevatedButton.icon(
-              onPressed: _analizYukleniyor ? null : _analizEt,
-              icon: _analizYukleniyor
-                  ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : const Icon(Icons.play_arrow, size: 16),
-              label: Text(_analizYukleniyor ? 'ANALİZ...' : 'ANALİZ ET', style: kLabel(context, size: 10, color: Colors.white)),
-              style: ElevatedButton.styleFrom(backgroundColor: kRed, padding: const EdgeInsets.symmetric(horizontal: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), elevation: 0),
-            ),
-          ),
-        ]),
-        if (_analizSonuc.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: kSurfaceLowest(context), borderRadius: BorderRadius.circular(8), border: Border.all(color: kBorder(context))),
-            child: Text(_analizSonuc, style: kBody(context, size: 13, color: kText(context))),
-          ),
-        ],
-      ]),
-    );
-  }
 
   Widget _kayitKarti(BuildContext context, Map kayit) {
     final id = kayit['id'] as int;

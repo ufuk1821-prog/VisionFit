@@ -14,8 +14,6 @@ class _DefterEkraniState extends State<DefterEkrani> {
   List<String> _kayitliTarihler = [];
   bool _kaydediliyor = false;
   String _kaydedildiMesaj = '';
-  String _aiAnaliz = '';
-  bool _aiYukleniyor = false;
   bool _tarihlerAcik = false;
   int _yuklemeSayaci = 0;
 
@@ -43,10 +41,10 @@ class _DefterEkraniState extends State<DefterEkrani> {
             'hareket': r['hareket'] ?? '', 'set_sayisi': '${r['set_sayisi'] ?? ''}',
             'tekrar_sayisi': '${r['tekrar_sayisi'] ?? ''}', 'agirlik': '${r['agirlik'] ?? ''}',
           }).toList();
-          _kaydedildiMesaj = ''; _aiAnaliz = ''; _yuklemeSayaci++;
+          _kaydedildiMesaj = ''; _yuklemeSayaci++;
         });
       } else {
-        setState(() { _satirlar = [_bosKayit()]; _kaydedildiMesaj = ''; _aiAnaliz = ''; _yuklemeSayaci++; });
+        setState(() { _satirlar = [_bosKayit()]; _kaydedildiMesaj = ''; _yuklemeSayaci++; });
       }
     } catch (_) { setState(() { _satirlar = [_bosKayit()]; _yuklemeSayaci++; }); }
   }
@@ -68,26 +66,6 @@ class _DefterEkraniState extends State<DefterEkrani> {
     }
   }
 
-  Future<void> _aiAnalizAl() async {
-    final kayitlilar = _satirlar.where((r) => (r['hareket'] as String).isNotEmpty && (r['agirlik'] as String).isNotEmpty).toList();
-    if (kayitlilar.isEmpty) return;
-    setState(() { _aiYukleniyor = true; _aiAnaliz = ''; });
-    final gruplar = <String, List<double>>{};
-    for (final r in kayitlilar) {
-      final h = r['hareket'] as String;
-      final a = double.tryParse(r['agirlik'] as String);
-      if (a != null) gruplar[h] = [...(gruplar[h] ?? []), a];
-    }
-    final hareketler = gruplar.entries.map((e) => {'hareket': e.key, 'agirliklar': e.value}).toList();
-    try {
-      final yanit = await ApiServisi.postJson('/api/yerel-ai/defter-analizi', {'hareketler': hareketler});
-      setState(() { _aiAnaliz = yanit['yorum'] ?? ''; });
-    } catch (_) {
-      setState(() { _aiAnaliz = 'AI analizi alınamadı.'; });
-    } finally {
-      setState(() { _aiYukleniyor = false; });
-    }
-  }
 
   String _tarihGoster(String tarih) {
     final t = DateTime.tryParse(tarih);
@@ -108,7 +86,7 @@ class _DefterEkraniState extends State<DefterEkrani> {
         children: [
           Text('Antrenman Defteri', style: kHeadline(context, size: 20, weight: FontWeight.w800)),
           const SizedBox(height: 4),
-          Text('Antrenmanlarını kaydet ve AI ile analiz et.', style: kBody(context, size: 13, color: kHint(context))),
+          Text('Antrenmanlarını kaydet ve geçmiş kayıtlarını incele.', style: kBody(context, size: 13, color: kHint(context))),
           const SizedBox(height: 16),
           _tarihSatiri(context),
           if (_tarihlerAcik) _kayitliTarihlerListesi(context),
@@ -146,8 +124,7 @@ class _DefterEkraniState extends State<DefterEkrani> {
               ]),
             ),
           ],
-          const SizedBox(height: 16),
-          _aiKarti(context),
+
           const SizedBox(height: 24),
         ],
       ),
@@ -298,35 +275,4 @@ class _DefterEkraniState extends State<DefterEkrani> {
     );
   }
 
-  Widget _aiKarti(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: kSurfaceLow(context), borderRadius: BorderRadius.circular(12), border: Border.all(color: kPurple.withOpacity(0.4))),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          const Icon(Icons.auto_awesome, color: kPurple, size: 18),
-          const SizedBox(width: 8),
-          Text('AI İLERLEME ANALİZİ', style: kLabel(context, color: kText(context))),
-        ]),
-        const SizedBox(height: 4),
-        Text('Ağırlık geçmişini yapay zeka ile değerlendir', style: kBody(context, size: 12, color: kHint(context))),
-        const SizedBox(height: 14),
-        if (_aiAnaliz.isEmpty)
-          SizedBox(
-            width: double.infinity, height: 44,
-            child: ElevatedButton(
-              onPressed: _aiYukleniyor ? null : _aiAnalizAl,
-              style: ElevatedButton.styleFrom(backgroundColor: kPurple, disabledBackgroundColor: kPurple.withOpacity(0.5), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), elevation: 0),
-              child: _aiYukleniyor ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : Text('AI İLE ANALİZ ET', style: kLabel(context, size: 11, color: Colors.white)),
-            ),
-          )
-        else
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: kSurfaceLowest(context), borderRadius: BorderRadius.circular(8), border: Border.all(color: kBorder(context))),
-            child: Text(_aiAnaliz, style: kBody(context, size: 13, color: kText(context))),
-          ),
-      ]),
-    );
-  }
 }

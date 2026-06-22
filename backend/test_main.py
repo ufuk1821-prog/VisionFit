@@ -1,6 +1,7 @@
 from app.services import local_llm
 import os
 os.environ["TESTING"] = "True"
+os.environ.setdefault("DATABASE_URL", "sqlite:///./test.db")
 
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine

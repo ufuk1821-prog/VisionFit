@@ -19,10 +19,18 @@ df = pd.read_csv(csv_path, header=None, names=sutunlar)
 X = df.drop('hareket_sinifi', axis=1)
 y = df['hareket_sinifi']
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=1234)
+X_train, X_test, y_train, y_test = train_test_split(
+    X,
+    y,
+    test_size=0.3,
+    random_state=1234,
+)
 
 print("2. VisionFit Yapay Zekası (Random Forest) eğitiliyor...")
-pipeline = make_pipeline(StandardScaler(), RandomForestClassifier(n_estimators=100, random_state=1234))
+pipeline = make_pipeline(
+    StandardScaler(),
+    RandomForestClassifier(n_estimators=100, random_state=1234),
+)
 model = pipeline.fit(X_train, y_train)
 
 print("3. Eğitim bitti, test aşamasına geçiliyor...")
@@ -35,5 +43,5 @@ print("-" * 30)
 
 with open(model_path, 'wb') as f:
     pickle.dump(model, f)
-    
+
 print(f"Harika! Yapay zeka beyni '{model_path}' olarak klasöre kaydedildi.")

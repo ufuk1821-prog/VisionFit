@@ -26,35 +26,57 @@ toplam_frame = 0
 
 for video_dosya, sinif in VIDEOLAR:
     video_path = os.path.join(script_dir, video_dosya)
+
     if not os.path.exists(video_path):
         print(f"UYARI: {video_dosya} bulunamadı, atlanıyor.")
         continue
 
     cap = cv2.VideoCapture(video_path)
-    frame_sayisi = 0
-    tespit_sayisi = 0
+    video_toplam = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    video_tespit = 0
 
-    with mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5) as pose:
+    with mp_pose.Pose(
+        min_detection_confidence=0.5,
+        min_tracking_confidence=0.5,
+    ) as pose:
         while cap.isOpened():
             ret, frame = cap.read()
             if not ret:
                 break
-            frame_sayisi += 1
+
             image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            image.flags.writeable = False
             results = pose.process(image)
-            if results.pose_landmarks:
-                tespit_sayisi += 1
-                row = list(np.array([
-                    [lm.x, lm.y, lm.z, lm.visibility]
-                    for lm in results.pose_landmarks.landmark
-                ]).flatten())
-                row.insert(0, sinif)
-                with open(csv_path, mode='a', newline='') as f:
-                    csv.writer(f).writerow(row)
+
+            if not results.pose_landmarks:
+                continue
+
+            row = list(
+                np.array(
+                    [
+                        [
+                            landmark.x,
+                            landmark.y,
+                            landmark.z,
+                            landmark.visibility,
+                        ]
+                        for landmark in results.pose_landmarks.landmark
+                    ]
+                ).flatten()
+            )
+
+            with open(csv_path, mode='a', newline='', encoding='utf-8') as f:
+                writer = csv.writer(f)
+                writer.writerow([sinif] + row)
+
+            video_tespit += 1
+            toplam_frame += 1
 
     cap.release()
-    toplam_frame += tespit_sayisi
-    print(f"{video_dosya}: {tespit_sayisi}/{frame_sayisi} frame tespit edildi (%{tespit_sayisi/frame_sayisi*100:.1f})")
 
-print(f"\nToplam {toplam_frame} frame kaydedildi → squat_veri.csv")
+    oran = (video_tespit / video_toplam * 100) if video_toplam else 0
+    print(
+        f"{video_dosya}: {video_tespit}/{video_toplam} "
+        f"frame tespit edildi (%{oran:.1f})"
+    )
+
+print(f"\nToplam {toplam_frame} frame kaydedildi → {csv_path}")

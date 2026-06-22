@@ -9,6 +9,80 @@ import 'package:video_thumbnail/video_thumbnail.dart' as vt;
 import '../tema.dart';
 import '../servisler/api_servisi.dart';
 
+
+class _HareketAyari {
+  final String id;
+  final String etiket;
+  final String endpoint;
+  final String aciklama;
+  final String canliTalimat;
+  final String kadrajUyarisi;
+  final Map<String, String> kategoriler;
+
+  const _HareketAyari({
+    required this.id,
+    required this.etiket,
+    required this.endpoint,
+    required this.aciklama,
+    required this.canliTalimat,
+    required this.kadrajUyarisi,
+    required this.kategoriler,
+  });
+}
+
+const List<_HareketAyari> _hareketler = [
+  _HareketAyari(
+    id: 'squat',
+    etiket: 'Squat',
+    endpoint: '/api/analyze/session',
+    aciklama:
+        'Yandan çekilmiş, tüm vücudunuzun göründüğü bir squat videosu yükleyin.',
+    canliTalimat: 'Squat yapın! 🏋️',
+    kadrajUyarisi:
+        'Kameraya yandan dönün ve tüm vücudunuzu kadrajda tutun.',
+    kategoriler: {
+      'genel_form': 'Genel Form',
+      'omurga_notrluğu': 'Omurga Nötrlüğü',
+      'kalca_derinligi': 'Kalça Derinliği',
+      'diz_hizasi': 'Diz Hizası',
+      'diz_cokusu': 'Diz Çöküşü',
+      'agirlik_merkezi': 'Ağırlık Merkezi',
+    },
+  ),
+  _HareketAyari(
+    id: 'deadlift',
+    etiket: 'Deadlift',
+    endpoint: '/api/analyze/deadlift-session',
+    aciklama:
+        'Yandan çekilmiş, başlangıç ve kilitlenme pozisyonlarının göründüğü bir deadlift videosu yükleyin.',
+    canliTalimat: 'Deadlift yapın! 🏋️',
+    kadrajUyarisi:
+        'Kameraya yandan dönün; baş, ayaklar ve bar kadrajda olsun.',
+    kategoriler: {
+      'omurga_notrluğu': 'Omurga Nötrlüğü',
+      'kalca_pozisyonu': 'Kalça Pozisyonu',
+      'bar_yolu': 'Bar Yolu',
+      'denge': 'Denge',
+    },
+  ),
+  _HareketAyari(
+    id: 'biceps_curl',
+    etiket: 'Biceps Curl',
+    endpoint: '/api/analyze/biceps-curl-session',
+    aciklama:
+        'Yandan çekilmiş, omuz-dirsek-bilek hattının net göründüğü bir biceps curl videosu yükleyin.',
+    canliTalimat: 'Biceps curl yapın! 💪',
+    kadrajUyarisi:
+        'Çalışan kol, omuz, dirsek, bilek ve kalça kadrajda olsun.',
+    kategoriler: {
+      'dirsek_sabitligi': 'Dirsek Sabitliği',
+      'govde_salinimi': 'Gövde Salınımı',
+      'hareket_acikligi': 'Hareket Açıklığı',
+      'bilek_hizasi': 'Bilek Hizası',
+    },
+  ),
+];
+
 const List<LandmarkType> mediapipeSirasi = [
   LandmarkType.nose, LandmarkType.leftEyeInner, LandmarkType.leftEye, LandmarkType.leftEyeOuter,
   LandmarkType.rightEyeInner, LandmarkType.rightEye, LandmarkType.rightEyeOuter,
@@ -40,6 +114,7 @@ class KameraEkrani extends StatefulWidget {
 class _KameraEkraniState extends State<KameraEkrani> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final GlobalKey<_CanliAnalizSekmeState> _canliKey = GlobalKey<_CanliAnalizSekmeState>();
+  _HareketAyari _secilenHareket = _hareketler.first;
 
   @override
   void initState() {
@@ -72,23 +147,96 @@ class _KameraEkraniState extends State<KameraEkrani> with SingleTickerProviderSt
           tabs: const [Tab(text: 'CANLI ANALİZ'), Tab(text: 'VİDEO ANALİZİ')],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
+      body: Column(
         children: [
-          _CanliAnalizSekme(key: _canliKey),
-          const _VideoAnalizSekme(),
+          _hareketSecici(context),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _CanliAnalizSekme(
+                  key: _canliKey,
+                  hareket: _secilenHareket,
+                ),
+                _VideoAnalizSekme(hareket: _secilenHareket),
+              ],
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _hareketSecici(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+      decoration: BoxDecoration(
+        color: kSurfaceLow(context),
+        border: Border(bottom: BorderSide(color: kBorder(context))),
+      ),
+      child: Row(
+        children: _hareketler.map((hareket) {
+          final secili = hareket.id == _secilenHareket.id;
+          return Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 3),
+              child: GestureDetector(
+                onTap: () {
+                  if (_canliKey.currentState?.analizDevamEdiyor ?? false) {
+                    return;
+                  }
+                  setState(() {
+                    _secilenHareket = hareket;
+                  });
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  padding: const EdgeInsets.symmetric(vertical: 9),
+                  decoration: BoxDecoration(
+                    color: secili ? kRed : kSurfaceContainer(context),
+                    borderRadius: BorderRadius.circular(9),
+                    border: Border.all(
+                      color: secili ? kRed : kBorder(context),
+                    ),
+                  ),
+                  child: Text(
+                    hareket.etiket.toUpperCase(),
+                    textAlign: TextAlign.center,
+                    style: kLabel(
+                      context,
+                      size: 9,
+                      color: secili ? Colors.white : kHint(context),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
       ),
     );
   }
 }
 
 class _CanliAnalizSekme extends StatefulWidget {
-  const _CanliAnalizSekme({super.key});
+  final _HareketAyari hareket;
+
+  const _CanliAnalizSekme({
+    super.key,
+    required this.hareket,
+  });
+
   @override
   State<_CanliAnalizSekme> createState() => _CanliAnalizSekmeState();
 }
 class _CanliAnalizSekmeState extends State<_CanliAnalizSekme> {
+  static const int _analizSuresiSn = 12;
+  static const Duration _hedefKareAraligi = Duration(milliseconds: 350);
+
+  bool get analizDevamEdiyor =>
+      _baslatildi || _analizYukleniyor || _geriSayim > 0;
+
   CameraController? _controller;
   List<CameraDescription> _cameras = [];
   int _secilenKamera = 0;
@@ -96,7 +244,7 @@ class _CanliAnalizSekmeState extends State<_CanliAnalizSekme> {
   bool _yukleniyor = true;
   bool _izinReddedildi = false;
   int _geriSayim = 0;
-  int _kalanSure = 30;
+  int _kalanSure = _analizSuresiSn;
   int _toplananKare = 0;
   List<List<double>> _kareler = [];
   Map<String, dynamic>? _sonuc;
@@ -110,6 +258,28 @@ class _CanliAnalizSekmeState extends State<_CanliAnalizSekme> {
 
   @override
   void initState() { super.initState(); _kamerayiBaslat(); _detectorBaslat(); }
+
+  @override
+  void didUpdateWidget(covariant _CanliAnalizSekme oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.hareket.id != widget.hareket.id) {
+      _iptalEdildi = true;
+      if (mounted) {
+        setState(() {
+          _baslatildi = false;
+          _geriSayim = 0;
+          _kalanSure = _analizSuresiSn;
+          _kareler = [];
+          _toplananKare = 0;
+          _sonuc = null;
+          _hata = '';
+          _aiYorum = '';
+          _detayAcik = false;
+        });
+      }
+    }
+  }
+
 
   Future<void> _detectorBaslat() async {
     _detector = NpuPoseDetector(config: PoseDetectorConfig.realtime());
@@ -126,7 +296,12 @@ class _CanliAnalizSekmeState extends State<_CanliAnalizSekme> {
 
   Future<void> _kontrolcuBaslat(int index) async {
     await _controller?.dispose();
-    final controller = CameraController(_cameras[index], ResolutionPreset.medium, enableAudio: false);
+    final controller = CameraController(
+      _cameras[index],
+      ResolutionPreset.medium,
+      enableAudio: false,
+      imageFormatGroup: ImageFormatGroup.jpeg,
+    );
     try {
       await controller.initialize();
       if (!mounted) return;
@@ -141,21 +316,76 @@ class _CanliAnalizSekmeState extends State<_CanliAnalizSekme> {
   }
 
   Future<void> _analiziBaslat() async {
-    setState(() { _baslatildi = true; _iptalEdildi = false; _kareler = []; _toplananKare = 0; _sonuc = null; _hata = ''; });
+    if (_controller == null ||
+        !_controller!.value.isInitialized ||
+        _detector == null) {
+      setState(() {
+        _hata = 'Kamera veya poz modeli henüz hazır değil.';
+      });
+      return;
+    }
+
+    setState(() {
+      _baslatildi = true;
+      _iptalEdildi = false;
+      _kareler = [];
+      _toplananKare = 0;
+      _sonuc = null;
+      _hata = '';
+      _aiYorum = '';
+      _detayAcik = false;
+    });
+
     for (int i = 3; i > 0; i--) {
-      if (_iptalEdildi) return;
-      setState(() { _geriSayim = i; });
+      if (_iptalEdildi || !mounted) return;
+      setState(() {
+        _geriSayim = i;
+      });
       await Future.delayed(const Duration(seconds: 1));
     }
-    setState(() { _geriSayim = 0; _kalanSure = 30; });
-    for (int i = 0; i < 30; i++) {
-      if (_iptalEdildi || !mounted) return;
+
+    if (_iptalEdildi || !mounted) return;
+
+    final kronometre = Stopwatch()..start();
+    setState(() {
+      _geriSayim = 0;
+      _kalanSure = _analizSuresiSn;
+    });
+
+    while (!_iptalEdildi &&
+        mounted &&
+        kronometre.elapsed < const Duration(seconds: _analizSuresiSn)) {
+      final kareBaslangici = DateTime.now();
+
       await _kareCek();
-      setState(() { _kalanSure = 30 - (i + 1); });
-      if (i < 29) await Future.delayed(const Duration(seconds: 1));
+
+      if (!mounted || _iptalEdildi) return;
+
+      final kalan = _analizSuresiSn - kronometre.elapsed.inSeconds;
+      setState(() {
+        _kalanSure = kalan.clamp(0, _analizSuresiSn);
+      });
+
+      final islemSuresi = DateTime.now().difference(kareBaslangici);
+      final bekleme = _hedefKareAraligi - islemSuresi;
+      if (bekleme > Duration.zero) {
+        await Future.delayed(bekleme);
+      }
     }
-    if (_iptalEdildi) return;
-    if (_kareler.isEmpty) { setState(() { _hata = 'Vücut tespit edilemedi. Yanınızdan çekim yapın.'; _baslatildi = false; }); return; }
+
+    kronometre.stop();
+
+    if (_iptalEdildi || !mounted) return;
+
+    if (_kareler.length < 5) {
+      setState(() {
+        _hata =
+            'Yeterli vücut karesi toplanamadı. ${widget.hareket.kadrajUyarisi}';
+        _baslatildi = false;
+      });
+      return;
+    }
+
     await _sonucGonder();
   }
 
@@ -177,8 +407,19 @@ class _CanliAnalizSekmeState extends State<_CanliAnalizSekme> {
           debugPrint('GORUNTU BOYUTU: genislik=$genislik, yukseklik=$yukseklik');
         }
 
-        final lms = pozuFlatListeCevirSenkron(sonuc.firstPose!, genislik, yukseklik);
-        if (mounted) setState(() { _kareler.add(lms); _toplananKare++; });
+        final lms = pozuFlatListeCevirSenkron(
+          sonuc.firstPose!,
+          genislik,
+          yukseklik,
+        );
+        frame.image.dispose();
+
+        if (mounted && !_iptalEdildi) {
+          setState(() {
+            _kareler.add(lms);
+            _toplananKare++;
+          });
+        }
       }
       try { File(foto.path).deleteSync(); } catch (_) {}
     } catch (_) {}
@@ -192,8 +433,8 @@ class _CanliAnalizSekmeState extends State<_CanliAnalizSekme> {
       debugPrint('ILK KARE ILK 8 DEGER: ${_kareler.first.take(8).toList()}');
     }
     try {
-      final yanit = await ApiServisi.postJson('/api/analyze/session', {'frames': _kareler});
-      setState(() { _sonuc = Map<String, dynamic>.from(yanit); _analizYukleniyor = false; });
+      final yanit = await ApiServisi.postJson(widget.hareket.endpoint, {'frames': _kareler});
+      setState(() { _sonuc = Map<String, dynamic>.from(yanit); _detayAcik = false; _analizYukleniyor = false; });
     } catch (e) {
       setState(() { _hata = 'Analiz başarısız: $e'; _analizYukleniyor = false; });
     }
@@ -201,21 +442,27 @@ class _CanliAnalizSekmeState extends State<_CanliAnalizSekme> {
 
   void _iptalEt() { setState(() { _iptalEdildi = true; _baslatildi = false; _geriSayim = 0; _kareler = []; _hata = ''; }); }
 
+  Map<String, dynamic> _kategoriSkorlariniHazirla() {
+    final skorlar = <String, dynamic>{};
+
+    for (final entry in widget.hareket.kategoriler.entries) {
+      final kategori = _sonuc?[entry.key];
+      if (kategori is Map && kategori['skor'] != null) {
+        skorlar[entry.value] = kategori['skor'];
+      }
+    }
+
+    return skorlar;
+  }
+
   Future<void> _aiYorumuAl() async {
     if (_sonuc == null) return;
     setState(() { _aiYukleniyor = true; _aiYorum = ''; });
     try {
-      final kategoriSkorlari = <String, dynamic>{
-        'Genel Form': _sonuc!['genel_form']?['skor'] ?? _sonuc!['genel_skor'],
-        'Omurga Nötrlüğü': _sonuc!['omurga_notrluğu']?['skor'],
-        'Kalça Derinliği': _sonuc!['kalca_derinligi']?['skor'],
-        'Diz Hizası': _sonuc!['diz_hizasi']?['skor'],
-        'Diz Çöküşü': _sonuc!['diz_cokusu']?['skor'],
-        'Ağırlık Merkezi': _sonuc!['agirlik_merkezi']?['skor'],
-      }..removeWhere((key, value) => value == null);
+      final kategoriSkorlari = _kategoriSkorlariniHazirla();
 
       final yanit = await ApiServisi.postJson('/api/yerel-ai/antrenor-yorumu', {
-        'hareket': 'squat',
+        'hareket': widget.hareket.id,
         'genel_skor': _sonuc!['genel_skor'],
         'kategori_skorlari': kategoriSkorlari,
       });
@@ -230,6 +477,17 @@ class _CanliAnalizSekmeState extends State<_CanliAnalizSekme> {
   void detectorKapat() {
     _detector?.dispose();
     _detector = null;
+  }
+
+
+  int _genelSkorOku() {
+    final ham = _sonuc?['genel_skor'];
+    if (ham is num) return ham.round().clamp(0, 100);
+    final genelForm = _sonuc?['genel_form'];
+    if (genelForm is Map && genelForm['skor'] is num) {
+      return (genelForm['skor'] as num).round().clamp(0, 100);
+    }
+    return 0;
   }
 
   @override
@@ -263,7 +521,7 @@ class _CanliAnalizSekmeState extends State<_CanliAnalizSekme> {
             child: Row(children: [
               const Icon(Icons.lightbulb_outline, color: kRed, size: 16),
               const SizedBox(width: 6),
-              Expanded(child: Text('Daha doğru analiz için kameranıza yandan bakacak şekilde durun.', style: kBody(context, size: 11, color: Colors.white))),
+              Expanded(child: Text(widget.hareket.kadrajUyarisi, style: kBody(context, size: 11, color: Colors.white))),
             ]),
           )),
           if (_cameras.length > 1) ...[
@@ -313,7 +571,7 @@ class _CanliAnalizSekmeState extends State<_CanliAnalizSekme> {
           child: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
             const CircularProgressIndicator(color: kRed),
             const SizedBox(height: 16),
-            Text('Squat analiz ediliyor...', style: kHeadline(context, size: 16, color: Colors.white)),
+            Text('${widget.hareket.etiket} analiz ediliyor...', style: kHeadline(context, size: 16, color: Colors.white)),
             const SizedBox(height: 6),
             Text('Yapay zeka hareketlerinizi değerlendiriyor', style: kBody(context, size: 13, color: kHint(context))),
           ])),
@@ -325,9 +583,9 @@ class _CanliAnalizSekmeState extends State<_CanliAnalizSekme> {
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             Container(width: 40, height: 4, decoration: BoxDecoration(color: kBorder(context), borderRadius: BorderRadius.circular(2))),
             const SizedBox(height: 16),
-            Text('Squat Analiz Sonucu', style: kHeadline(context, size: 18, weight: FontWeight.w700)),
+            Text('${widget.hareket.etiket} Analiz Sonucu', style: kHeadline(context, size: 18, weight: FontWeight.w700)),
             const SizedBox(height: 16),
-            Center(child: Text('${(_sonuc!['genel_skor'] as num?)?.round() ?? 0}%', style: kHeadline(context, size: 48, weight: FontWeight.w900, color: kRed))),
+            Center(child: Text('${_genelSkorOku()}%', style: kHeadline(context, size: 48, weight: FontWeight.w900, color: kRed))),
             const SizedBox(height: 16),
             GestureDetector(
               onTap: () => setState(() { _detayAcik = !_detayAcik; }),
@@ -335,21 +593,22 @@ class _CanliAnalizSekmeState extends State<_CanliAnalizSekme> {
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(color: kSurfaceContainer(context), borderRadius: BorderRadius.circular(10), border: Border.all(color: kBorder(context))),
                 child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                  Text('Antrenman Detayını Göster', style: kLabel(context, size: 11, color: kHint(context))),
+                  Text('Kategori Detaylarını Göster', style: kLabel(context, size: 11, color: kHint(context))),
                   Icon(_detayAcik ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, color: kRed, size: 20),
                 ]),
               ),
             ),
             if (_detayAcik) ...[
               const SizedBox(height: 10),
-              Wrap(spacing: 10, runSpacing: 10, children: [
-                _kategoriSkoru(context, 'Genel Form', _sonuc!['genel_form']?['skor']),
-                _kategoriSkoru(context, 'Omurga Nötrlüğü', _sonuc!['omurga_notrluğu']?['skor']),
-                _kategoriSkoru(context, 'Kalça Derinliği', _sonuc!['kalca_derinligi']?['skor']),
-                _kategoriSkoru(context, 'Diz Hizası', _sonuc!['diz_hizasi']?['skor']),
-                _kategoriSkoru(context, 'Diz Çöküşü', _sonuc!['diz_cokusu']?['skor']),
-                _kategoriSkoru(context, 'Ağırlık Merkezi', _sonuc!['agirlik_merkezi']?['skor']),
-              ]),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: widget.hareket.kategoriler.entries.map((entry) {
+                  final kategori = _sonuc?[entry.key];
+                  final skor = kategori is Map ? kategori['skor'] : null;
+                  return _kategoriSkoru(context, entry.value, skor);
+                }).toList(),
+              ),
             ],
             const SizedBox(height: 16),
             Container(
@@ -389,12 +648,13 @@ class _CanliAnalizSekmeState extends State<_CanliAnalizSekme> {
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             Row(children: [const Icon(Icons.check_circle_outline, color: kGreen, size: 16), const SizedBox(width: 6), Text('Hazır', style: kBody(context, size: 13, weight: FontWeight.w600, color: kGreen))]),
             const SizedBox(height: 4),
-            Text('Squat yapın. Başlat\'a basın, 3\'ten geriye sayacak ve analiz başlayacak.', style: kBody(context, size: 12, color: kHint(context)), textAlign: TextAlign.center),
+            Text('${widget.hareket.etiket} için Başlat\'a basın; 3\'ten geriye sayımdan sonra analiz başlayacak.', style: kBody(context, size: 12, color: kHint(context)), textAlign: TextAlign.center),
             if (_hata.isNotEmpty) ...[const SizedBox(height: 8), Text(_hata, style: kBody(context, size: 12, color: kRed), textAlign: TextAlign.center)],
             const SizedBox(height: 14),
             SizedBox(width: double.infinity, height: 50, child: ElevatedButton.icon(onPressed: _analiziBaslat, icon: const Icon(Icons.play_arrow, color: Colors.white, size: 24), label: Text('BAŞLAT', style: kLabel(context, size: 13, color: Colors.white)), style: ElevatedButton.styleFrom(backgroundColor: kRed, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), elevation: 0))),
             const SizedBox(height: 16),
-            Container(
+            if (widget.hareket.id == 'squat')
+              Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(color: kSurfaceLow(context).withOpacity(0.9), borderRadius: BorderRadius.circular(12), border: Border.all(color: kBorder(context))),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -439,12 +699,33 @@ class _CanliAnalizSekmeState extends State<_CanliAnalizSekme> {
 }
 
 class _VideoAnalizSekme extends StatefulWidget {
-  const _VideoAnalizSekme();
+  final _HareketAyari hareket;
+
+  const _VideoAnalizSekme({
+    required this.hareket,
+  });
+
   @override
   State<_VideoAnalizSekme> createState() => _VideoAnalizSekmeState();
 }
 
 class _VideoAnalizSekmeState extends State<_VideoAnalizSekme> {
+  @override
+  void didUpdateWidget(covariant _VideoAnalizSekme oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.hareket.id != widget.hareket.id) {
+      setState(() {
+        _sonuc = null;
+        _hata = '';
+        _aiYorum = '';
+        _detayAcik = false;
+        _ilerleme = 0;
+        _toplamKare = 0;
+      });
+    }
+  }
+
+
   File? _video;
   VideoPlayerController? _playerController;
   bool _yukleniyor = false;
@@ -490,7 +771,8 @@ class _VideoAnalizSekmeState extends State<_VideoAnalizSekme> {
 
       await Future.delayed(const Duration(milliseconds: 300));
 
-      const toplamKareSayisi = 40;
+      final toplamKareSayisi =
+          (controller.value.duration.inSeconds * 5).clamp(24, 60);
       final kareler = <List<double>>[];
 
       setState(() { _hata = 'Videodaki kareler işleniyor...'; });
@@ -542,33 +824,39 @@ class _VideoAnalizSekmeState extends State<_VideoAnalizSekme> {
       setState(() { _playerController = null; });
 
       if (kareler.isEmpty) {
-        setState(() { _hata = 'Videoda vücut tespit edilemedi. Yandan çekilmiş, tüm vücudun göründüğü net bir video yükleyin.'; _yukleniyor = false; });
+        setState(() { _hata = 'Videoda yeterli vücut tespiti yapılamadı. ${widget.hareket.kadrajUyarisi}'; _yukleniyor = false; });
         return;
       }
 
       setState(() { _hata = 'Backend\'e gönderiliyor...'; });
-      final yanit = await ApiServisi.postJson('/api/analyze/session', {'frames': kareler});
-      setState(() { _sonuc = Map<String, dynamic>.from(yanit); _yukleniyor = false; _hata = ''; });
+      final yanit = await ApiServisi.postJson(widget.hareket.endpoint, {'frames': kareler});
+      setState(() { _sonuc = Map<String, dynamic>.from(yanit); _detayAcik = false; _yukleniyor = false; _hata = ''; });
     } catch (e) {
       setState(() { _hata = 'Analiz başarısız: $e'; _yukleniyor = false; });
     }
+  }
+
+  Map<String, dynamic> _kategoriSkorlariniHazirla() {
+    final skorlar = <String, dynamic>{};
+
+    for (final entry in widget.hareket.kategoriler.entries) {
+      final kategori = _sonuc?[entry.key];
+      if (kategori is Map && kategori['skor'] != null) {
+        skorlar[entry.value] = kategori['skor'];
+      }
+    }
+
+    return skorlar;
   }
 
   Future<void> _aiYorumuAl() async {
     if (_sonuc == null) return;
     setState(() { _aiYukleniyor = true; _aiYorum = ''; });
     try {
-      final kategoriSkorlari = <String, dynamic>{
-        'Genel Form': _sonuc!['genel_form']?['skor'] ?? _sonuc!['genel_skor'],
-        'Omurga Nötrlüğü': _sonuc!['omurga_notrluğu']?['skor'],
-        'Kalça Derinliği': _sonuc!['kalca_derinligi']?['skor'],
-        'Diz Hizası': _sonuc!['diz_hizasi']?['skor'],
-        'Diz Çöküşü': _sonuc!['diz_cokusu']?['skor'],
-        'Ağırlık Merkezi': _sonuc!['agirlik_merkezi']?['skor'],
-      }..removeWhere((key, value) => value == null);
+      final kategoriSkorlari = _kategoriSkorlariniHazirla();
 
       final yanit = await ApiServisi.postJson('/api/yerel-ai/antrenor-yorumu', {
-        'hareket': 'squat',
+        'hareket': widget.hareket.id,
         'genel_skor': _sonuc!['genel_skor'],
         'kategori_skorlari': kategoriSkorlari,
       });
@@ -578,6 +866,17 @@ class _VideoAnalizSekmeState extends State<_VideoAnalizSekme> {
     } finally {
       setState(() { _aiYukleniyor = false; });
     }
+  }
+
+
+  int _genelSkorOku() {
+    final ham = _sonuc?['genel_skor'];
+    if (ham is num) return ham.round().clamp(0, 100);
+    final genelForm = _sonuc?['genel_form'];
+    if (genelForm is Map && genelForm['skor'] is num) {
+      return (genelForm['skor'] as num).round().clamp(0, 100);
+    }
+    return 0;
   }
 
   @override
@@ -598,7 +897,7 @@ class _VideoAnalizSekmeState extends State<_VideoAnalizSekme> {
           child: Row(children: [
             const Icon(Icons.lightbulb_outline, color: kRed, size: 18),
             const SizedBox(width: 8),
-            Expanded(child: Text('Yandan çekilmiş, tüm vücudunuzun göründüğü bir squat videosu yükleyin.', style: kBody(context, size: 13, color: kHint(context)))),
+            Expanded(child: Text(widget.hareket.aciklama, style: kBody(context, size: 13, color: kHint(context)))),
           ]),
         ),
         const SizedBox(height: 20),
@@ -667,7 +966,7 @@ class _VideoAnalizSekmeState extends State<_VideoAnalizSekme> {
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('Video Analiz Sonucu', style: kHeadline(context, size: 16, weight: FontWeight.w700)),
               const SizedBox(height: 14),
-              Center(child: Text('${(_sonuc!['genel_skor'] as num?)?.round() ?? 0}%', style: kHeadline(context, size: 40, weight: FontWeight.w900, color: kRed))),
+              Center(child: Text('${_genelSkorOku()}%', style: kHeadline(context, size: 40, weight: FontWeight.w900, color: kRed))),
               const SizedBox(height: 14),
               GestureDetector(
                 onTap: () => setState(() { _detayAcik = !_detayAcik; }),
@@ -675,7 +974,7 @@ class _VideoAnalizSekmeState extends State<_VideoAnalizSekme> {
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(color: kSurfaceContainer(context), borderRadius: BorderRadius.circular(10), border: Border.all(color: kBorder(context))),
                   child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    Text('Antrenman Detayını Göster', style: kLabel(context, size: 11, color: kHint(context))),
+                    Text('Kategori Detaylarını Göster', style: kLabel(context, size: 11, color: kHint(context))),
                     Icon(_detayAcik ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, color: kRed, size: 20),
                   ]),
                 ),

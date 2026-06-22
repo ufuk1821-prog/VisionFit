@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../tema.dart';
 
 class ZamanlamayiciEkrani extends StatefulWidget {
@@ -48,6 +49,7 @@ class _KronometreState extends State<_Kronometre> {
 
   void _baslat() { _timer = Timer.periodic(const Duration(milliseconds: 10), (_) => setState(() { _gecenMs += 10; })); setState(() { _calisiyor = true; }); }
   void _durdur() { _timer?.cancel(); setState(() { _calisiyor = false; }); }
+
   void _sifirla() { _timer?.cancel(); setState(() { _gecenMs = 0; _calisiyor = false; _turlar = []; }); }
   void _tur() { setState(() { _turlar.insert(0, _gecenMs); }); }
 
@@ -155,14 +157,32 @@ class _ZamanlayiciState extends State<_Zamanlayici> {
     _kalanSn = _toplamSn;
     _bitti = false;
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (_kalanSn <= 0) { _timer?.cancel(); setState(() { _bitti = true; _calisiyor = false; }); return; }
-      setState(() { _kalanSn--; });
+      if (!mounted) return;
+      setState(() {
+        _kalanSn--;
+        if (_kalanSn <= 0) {
+          _kalanSn = 0;
+          _bitti = true;
+          _calisiyor = false;
+          _timer?.cancel();
+          SystemSound.play(SystemSoundType.alert);
+          HapticFeedback.vibrate();
+        }
+      });
     });
     setState(() { _calisiyor = true; });
   }
 
   void _durdur() { _timer?.cancel(); setState(() { _calisiyor = false; }); }
   void _sifirla() { _timer?.cancel(); setState(() { _kalanSn = 0; _toplamSn = 0; _calisiyor = false; _bitti = false; }); }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _dkCtrl.dispose();
+    _snCtrl.dispose();
+    super.dispose();
+  }
 
   String _format(int sn) {
     final dk = sn ~/ 60;

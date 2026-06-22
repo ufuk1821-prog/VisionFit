@@ -11,7 +11,6 @@ dependencies:
   video_thumbnail: ^0.5.6
   flutter:
     sdk: flutter
-
   cupertino_icons: ^1.0.8
   http: ^1.2.0
   shared_preferences: ^2.2.2
@@ -21,12 +20,10 @@ dependencies:
   camera: ^0.11.0
   webview_flutter: ^4.8.0
   webview_flutter_android: ^3.16.0
-
   flutter_pose_detection:
     git:
       url: https://github.com/JaeungHyun/flutter_pose_detection.git
       ref: main
-
   google_fonts: ^6.2.1
   video_player: ^2.9.1
   path_provider: ^2.1.4
@@ -34,13 +31,11 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true
-
   assets:
     - assets/logo.png
 
