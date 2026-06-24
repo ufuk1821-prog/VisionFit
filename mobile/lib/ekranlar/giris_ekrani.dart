@@ -89,13 +89,40 @@ class _GirisEkraniState extends State<GirisEkrani> {
                 children: [
                   const SizedBox(height: 56),
                   Container(
-                    width: 64, height: 64,
+                    width: 76,
+                    height: 76,
+                    padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: kRed,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [BoxShadow(color: kRed.withOpacity(0.3), blurRadius: 20, spreadRadius: 2)],
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(18),
+                      boxShadow: [
+                        BoxShadow(
+                          color: kRed.withOpacity(0.18),
+                          blurRadius: 24,
+                          spreadRadius: 2,
+                        ),
+                      ],
                     ),
-                    child: const Icon(Icons.visibility, color: Colors.white, size: 36),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Image.asset(
+                        'assets/icon/app_icon.png',
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          color: kRed,
+                          alignment: Alignment.center,
+                          child: Text(
+                            'VF',
+                            style: kHeadline(
+                              context,
+                              size: 26,
+                              weight: FontWeight.w900,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 12),
                   Text('VisionFit', style: kHeadline(context, size: 26, weight: FontWeight.w900)),

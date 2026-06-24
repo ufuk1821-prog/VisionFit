@@ -58,6 +58,53 @@ def safe_float(value: Any) -> float | None:
         return None
 
 
+HAREKET_ONERILERI = {
+    "squat": [
+        "İnişte dizleri ayak yönünde takip ettir ve topuk temasını koru.",
+        "Ağırlığı artırmadan önce 3 saniyelik kontrollü inişlerle aynı derinliği tekrar et.",
+    ],
+    "deadlift": [
+        "Barı veya bilek hattını kaval kemiğine yakın tut ve hareketi kalçadan başlat.",
+        "Üst pozisyonda geriye aşırı yaslanmadan kalça ve dizleri birlikte kilitle.",
+    ],
+    "biceps_curl": [
+        "Dirsekleri gövdenin yanında sabit tut ve gövde salınımını azalt.",
+        "Ağırlığı düşürüp açma bölümünü 2-3 saniyede kontrollü tamamla.",
+    ],
+    "biceps curl": [
+        "Dirsekleri gövdenin yanında sabit tut ve gövde salınımını azalt.",
+        "Ağırlığı düşürüp açma bölümünü 2-3 saniyede kontrollü tamamla.",
+    ],
+    "shoulder_press": [
+        "Bilekleri dirseklerin üzerinde tut ve iki kolu aynı hızda yukarı taşı.",
+        "Üstte omuzları kulaklara sıkıştırmadan kontrollü kilitlenme yap.",
+    ],
+    "shoulder press": [
+        "Bilekleri dirseklerin üzerinde tut ve iki kolu aynı hızda yukarı taşı.",
+        "Üstte omuzları kulaklara sıkıştırmadan kontrollü kilitlenme yap.",
+    ],
+    "lateral_raise": [
+        "Dirsekleri hafif bükülü tutup kolları omuz seviyesine kadar kaldır.",
+        "Gövde salınımını azaltmak için ağırlığı düşür ve inişi yavaşlat.",
+    ],
+    "lateral raise": [
+        "Dirsekleri hafif bükülü tutup kolları omuz seviyesine kadar kaldır.",
+        "Gövde salınımını azaltmak için ağırlığı düşür ve inişi yavaşlat.",
+    ],
+}
+
+
+def hareket_onerileri_al(hareket: Any) -> list[str]:
+    anahtar = normalize_text(hareket).replace("-", "_")
+    return HAREKET_ONERILERI.get(
+        anahtar,
+        [
+            "Ağırlığı artırmadan önce hareketi daha yavaş ve kontrollü tekrar et.",
+            "Kamerayı sabit tutup tüm gerekli eklemleri kadraja alarak formunu yeniden kontrol et.",
+        ],
+    )
+
+
 def skor_dict_al(payload: dict[str, Any]) -> dict[str, float]:
     skorlar = payload.get("kategori_skorlari") or {}
 
@@ -131,20 +178,19 @@ def trainer_sonucunu_duzelt(result: dict, payload: dict) -> dict:
         else ""
     )
 
+    oneriler = hareket_onerileri_al(hareket)
+
     result["yorum"] = (
-        f"{hareket} analizinde {guclu_alan} alanındaki "
-        f"{guclu_skor:.0f} puan, hareket boyunca bu bölgedeki kontrolün "
-        f"genel olarak iyi korunduğunu gösteriyor. "
-        f"{zayif_alan} alanındaki {zayif_skor:.0f} puan ise formun özellikle "
-        f"bu bölümünde tutarlılığın azalabildiğini düşündürüyor."
+        f"{hareket} analizinde en güçlü alanın {guclu_alan} ve bu kategorideki skorun "
+        f"{guclu_skor:.0f}. Bu, ilgili teknik özelliğin tekrarların büyük bölümünde "
+        f"korunduğunu gösteriyor. En fazla dikkat gerektiren alan {zayif_alan}; "
+        f"{zayif_skor:.0f} puan, bu bölümde hareket boyunca tutarlılığın azaldığını düşündürüyor."
         f"{genel_skor_metni} "
-        f"Bir sonraki antrenmanda ağırlığı artırmadan önce hareketin iniş ve "
-        f"çıkış bölümlerini daha yavaş ve kontrollü uygula. "
-        f"Ayrıca çekimi yandan ve tüm vücut kadrajda tekrar ederek "
-        f"{zayif_alan} bölgesindeki hizayı her tekrarda korumaya odaklan. "
-        f"Ağrı veya belirgin kontrol kaybı oluşursa hareketi durdurup "
-        f"yükü azaltman daha güvenli olacaktır."
+        f"{oneriler[0]} {oneriler[1]} "
+        f"Bir sonraki kayıtta aynı kamera açısını ve benzer yükü kullanarak değişimi karşılaştır. "
+        f"Ağrı, uyuşma veya belirgin kontrol kaybı olursa hareketi durdur ve yükü azalt."
     )
+    result["oneriler"] = oneriler
 
     result.setdefault("uyarilar", []).append(
         "LLM yeterli uzunlukta yorum üretmediği için güvenli yedek yorum kullanıldı."
@@ -158,14 +204,12 @@ def build_instruction(payload: dict[str, Any]) -> str:
 
     if request_type == "diyet":
         return (
-            "Verilen hareket, genel skor ve kategori skorlarına göre ayrıntılı bir "
-            "Türkçe antrenör değerlendirmesi oluştur. "
-            "En güçlü ve en düşük kategoriyi doğru belirle fakat skorları düz biçimde tekrar etmekle yetinme."
-            "Güçlü alanın hareket açısından ne anlama geldiğini açıkla. "
-            "Zayıf alanın form ve güvenlik üzerindeki olası etkisini kesin teşhis koymadan değerlendir."
-            "Kullanıcıya bir sonraki antrenmanda uygulayabileceği en az iki somut teknik öneri ver. "
+            "Verilen kullanıcı tercihleri, hedef, alerji ve beslenme verilerine göre Türkçe diyet değerlendirmesi oluştur. "
+            "Alerji, vejetaryenlik, glutensiz beslenme ve sevilmeyen yiyecekleri kesin kısıt olarak ele al. "
+            "Kalori veya makro bilgisi verilmediyse sayı uydurma. "
+            "En az iki uygulanabilir öneri ve bir güvenlik uyarısı ver. "
             "Yorum 90 ile 150 kelime arasında olmalıdır. "
-            "JSON şu alanları içermelidir: tip, hareket, guclu_alan, gelistirilecek_alan, yorum. "
+            "JSON şu alanları içermelidir: tip, hedef, uygunluk, oneriler, yorum. "
             "Yanıt yalnızca geçerli JSON nesnesi olmalıdır."
         )
 
@@ -319,9 +363,9 @@ class VisionFitLLM:
         with torch.inference_mode():
             outputs = self.model.generate(
                 **inputs,
-                max_new_tokens=650,
+                max_new_tokens=420,
                 do_sample=False,
-                repetition_penalty=1.05,
+                repetition_penalty=1.08,
                 use_cache=True,
                 pad_token_id=self.tokenizer.pad_token_id,
                 eos_token_id=self.tokenizer.eos_token_id,

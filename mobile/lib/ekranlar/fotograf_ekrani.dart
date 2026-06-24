@@ -90,8 +90,41 @@ class _FotografEkraniState extends State<FotografEkrani> {
     } catch (e) {
       setState(() { _hata = 'Analiz sırasında hata oluştu: $e'; });
     } finally {
-      setState(() { _yukleniyor = false; });
+      if (mounted) setState(() { _yukleniyor = false; });
     }
+  }
+
+  int _sonucSkoruOku() {
+    final sonuc = _sonuc;
+    if (sonuc == null) return 0;
+    final adaylar = [
+      sonuc['skor'],
+      sonuc['eminlik_skoru'],
+      sonuc['eminlik'],
+      sonuc['genel_skor'],
+    ];
+    for (final aday in adaylar) {
+      if (aday is num) return aday.round().clamp(0, 100);
+      final donusen = num.tryParse(aday?.toString() ?? '');
+      if (donusen != null) return donusen.round().clamp(0, 100);
+    }
+    return 0;
+  }
+
+  String _sonucMesajiOku() {
+    final sonuc = _sonuc;
+    if (sonuc == null) return '';
+    final adaylar = [
+      sonuc['antrenor_mesaji'],
+      sonuc['antrenor_notu'],
+      sonuc['mesaj'],
+      sonuc['durum'],
+    ];
+    for (final aday in adaylar) {
+      final metin = aday?.toString().trim() ?? '';
+      if (metin.isNotEmpty && metin.toLowerCase() != 'null') return metin;
+    }
+    return 'Analiz tamamlandı.';
   }
 
   Color _skorRengi(int skor) {
@@ -183,17 +216,15 @@ class _FotografEkraniState extends State<FotografEkrani> {
           const SizedBox(height: 20),
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: kSurfaceLow(context), borderRadius: BorderRadius.circular(14), border: Border.all(color: _skorRengi((_sonuc!['eminlik_skoru'] as num?)?.toInt() ?? 0).withOpacity(0.4))),
+            decoration: BoxDecoration(color: kSurfaceLow(context), borderRadius: BorderRadius.circular(14), border: Border.all(color: _skorRengi(_sonucSkoruOku()).withOpacity(0.4))),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
-                Text('%${_sonuc!['eminlik_skoru']}', style: kHeadline(context, size: 32, weight: FontWeight.w900, color: _skorRengi((_sonuc!['eminlik_skoru'] as num?)?.toInt() ?? 0))),
+                Text('%${_sonucSkoruOku()}', style: kHeadline(context, size: 32, weight: FontWeight.w900, color: _skorRengi(_sonucSkoruOku()))),
                 const SizedBox(width: 10),
-                Text(_skorEtiket((_sonuc!['eminlik_skoru'] as num?)?.toInt() ?? 0), style: kBody(context, size: 14, color: _skorRengi((_sonuc!['eminlik_skoru'] as num?)?.toInt() ?? 0), weight: FontWeight.w600)),
+                Text(_skorEtiket(_sonucSkoruOku()), style: kBody(context, size: 14, color: _skorRengi(_sonucSkoruOku()), weight: FontWeight.w600)),
               ]),
-              if (_sonuc!['antrenor_notu'] != null) ...[
-                const SizedBox(height: 12),
-                Text(_sonuc!['antrenor_notu'].toString(), style: kBody(context, size: 13, color: kText(context))),
-              ],
+              const SizedBox(height: 12),
+              Text(_sonucMesajiOku(), style: kBody(context, size: 13, color: kText(context))),
             ]),
           ),
         ],

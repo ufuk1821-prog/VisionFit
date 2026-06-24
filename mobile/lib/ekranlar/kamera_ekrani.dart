@@ -154,8 +154,11 @@ class _KameraEkraniState extends State<KameraEkrani> with SingleTickerProviderSt
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(() {
+      if (_tabController.indexIsChanging) return;
       if (_tabController.index == 1) {
         _canliKey.currentState?.detectorKapat();
+      } else {
+        _canliKey.currentState?._detectorBaslat();
       }
     });
   }
@@ -320,8 +323,14 @@ class _CanliAnalizSekmeState extends State<_CanliAnalizSekme> {
 
 
   Future<void> _detectorBaslat() async {
-    _detector = NpuPoseDetector(config: PoseDetectorConfig.realtime());
-    await _detector!.initialize();
+    if (_detector != null) return;
+    final detector = NpuPoseDetector(config: PoseDetectorConfig.realtime());
+    await detector.initialize();
+    if (!mounted) {
+      detector.dispose();
+      return;
+    }
+    _detector = detector;
   }
 
   Future<void> _kamerayiBaslat() async {
@@ -415,7 +424,7 @@ class _CanliAnalizSekmeState extends State<_CanliAnalizSekme> {
 
     if (_iptalEdildi || !mounted) return;
 
-    if (_kareler.length < 5) {
+    if (_kareler.length < 8) {
       setState(() {
         _hata =
             'Yeterli vücut karesi toplanamadı. ${widget.hareket.kadrajUyarisi}';
@@ -433,7 +442,7 @@ class _CanliAnalizSekmeState extends State<_CanliAnalizSekme> {
       final foto = await _controller!.takePicture();
       final goruntuBaytlari = await File(foto.path).readAsBytes();
       final sonuc = await _detector!.detectPose(goruntuBaytlari);
-      if (sonuc.hasPoses) {
+      if (sonuc.hasPoses && sonuc.firstPose != null) {
         final codec = await ui.instantiateImageCodec(goruntuBaytlari);
         final frame = await codec.getNextFrame();
         final genislik = frame.image.width.toDouble();
@@ -472,8 +481,10 @@ class _CanliAnalizSekmeState extends State<_CanliAnalizSekme> {
     }
     try {
       final yanit = await ApiServisi.postJson(widget.hareket.endpoint, {'frames': _kareler});
+      if (!mounted) return;
       setState(() { _sonuc = Map<String, dynamic>.from(yanit); _detayAcik = false; _analizYukleniyor = false; });
     } catch (e) {
+      if (!mounted) return;
       setState(() { _hata = 'Analiz başarısız: $e'; _analizYukleniyor = false; });
     }
   }
@@ -504,11 +515,14 @@ class _CanliAnalizSekmeState extends State<_CanliAnalizSekme> {
         'genel_skor': _sonuc!['genel_skor'],
         'kategori_skorlari': kategoriSkorlari,
       });
-      setState(() { _aiYorum = yanit['yorum'] ?? ''; });
+      if (!mounted) return;
+      final yorum = yanit['yorum']?.toString().trim() ?? '';
+      setState(() { _aiYorum = yorum.isEmpty ? 'AI geçerli bir yorum üretemedi.' : yorum; });
     } catch (_) {
+      if (!mounted) return;
       setState(() { _aiYorum = 'AI yorumu alınamadı, lütfen tekrar deneyin.'; });
     } finally {
-      setState(() { _aiYukleniyor = false; });
+      if (mounted) setState(() { _aiYukleniyor = false; });
     }
   }
 
@@ -861,15 +875,18 @@ class _VideoAnalizSekmeState extends State<_VideoAnalizSekme> {
       await controller.dispose();
       setState(() { _playerController = null; });
 
-      if (kareler.isEmpty) {
-        setState(() { _hata = 'Videoda yeterli vücut tespiti yapılamadı. ${widget.hareket.kadrajUyarisi}'; _yukleniyor = false; });
+      if (kareler.length < 8) {
+        if (!mounted) return;
+        setState(() { _hata = 'Videoda yeterli sayıda net vücut karesi bulunamadı. ${widget.hareket.kadrajUyarisi}'; _yukleniyor = false; });
         return;
       }
 
       setState(() { _hata = 'Backend\'e gönderiliyor...'; });
       final yanit = await ApiServisi.postJson(widget.hareket.endpoint, {'frames': kareler});
+      if (!mounted) return;
       setState(() { _sonuc = Map<String, dynamic>.from(yanit); _detayAcik = false; _yukleniyor = false; _hata = ''; });
     } catch (e) {
+      if (!mounted) return;
       setState(() { _hata = 'Analiz başarısız: $e'; _yukleniyor = false; });
     }
   }
@@ -898,11 +915,14 @@ class _VideoAnalizSekmeState extends State<_VideoAnalizSekme> {
         'genel_skor': _sonuc!['genel_skor'],
         'kategori_skorlari': kategoriSkorlari,
       });
-      setState(() { _aiYorum = yanit['yorum'] ?? ''; });
+      if (!mounted) return;
+      final yorum = yanit['yorum']?.toString().trim() ?? '';
+      setState(() { _aiYorum = yorum.isEmpty ? 'AI geçerli bir yorum üretemedi.' : yorum; });
     } catch (_) {
+      if (!mounted) return;
       setState(() { _aiYorum = 'AI yorumu alınamadı, lütfen tekrar deneyin.'; });
     } finally {
-      setState(() { _aiYukleniyor = false; });
+      if (mounted) setState(() { _aiYukleniyor = false; });
     }
   }
 
