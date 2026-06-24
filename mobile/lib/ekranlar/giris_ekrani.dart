@@ -106,21 +106,9 @@ class _GirisEkraniState extends State<GirisEkrani> {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(16),
                       child: Image.asset(
-                        'assets/icon/app_icon.png',
+                        'assets/logo.png',
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
-                          color: kRed,
-                          alignment: Alignment.center,
-                          child: Text(
-                            'VF',
-                            style: kHeadline(
-                              context,
-                              size: 26,
-                              weight: FontWeight.w900,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
+                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                       ),
                     ),
                   ),

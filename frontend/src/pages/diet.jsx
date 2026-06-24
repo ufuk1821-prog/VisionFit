@@ -90,15 +90,18 @@ function Diet() {
   const yorumMetniHazirla = (yorum) => {
     if (!yorum) return '';
 
-    if (typeof yorum !== 'string') {
-      return yorum.yorum || JSON.stringify(yorum);
+    if (typeof yorum === 'object') {
+      return yorum.yorum || '';
     }
 
+    const temiz = String(yorum).trim();
+    if (!temiz) return '';
+
     try {
-      const parsed = JSON.parse(yorum);
-      return parsed.yorum || yorum;
+      const parsed = JSON.parse(temiz);
+      return typeof parsed?.yorum === 'string' ? parsed.yorum.trim() : temiz;
     } catch {
-      return yorum;
+      return temiz;
     }
   };
 
@@ -179,10 +182,13 @@ function Diet() {
             aksam: ogunler.aksam,
             ara_ogun: ogunler.ara_ogun,
             gunluk_kalori: seciliPlan.kalori,
+            ornek_ogunler: seciliPlan.ornek_ogunler || [],
             porsiyon_bilgisi: {
               protein_g: seciliPlan.protein_g,
               karbonhidrat_g: seciliPlan.karbonhidrat_g,
               yag_g: seciliPlan.yag_g,
+              bmi: diet.bmi,
+              bmi_kategori: diet.bmi_kategori,
             },
           },
           kullanici_notu: istek || '',
@@ -190,7 +196,8 @@ function Diet() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      setAiOneri(yorumMetniHazirla(res.data.yorum));
+      const hazirYorum = yorumMetniHazirla(res.data.yorum);
+      setAiOneri(hazirYorum || 'AI geçerli bir diyet önerisi üretemedi.');
     } catch (err) {
       console.error(err);
       setAiOneri('AI önerisi alınamadı, lütfen tekrar deneyin.');

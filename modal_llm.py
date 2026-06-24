@@ -199,6 +199,114 @@ def trainer_sonucunu_duzelt(result: dict, payload: dict) -> dict:
     return result
 
 
+def liste_yap(value: Any) -> list[str]:
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return [str(item).strip() for item in value if str(item).strip()]
+    if isinstance(value, str) and value.strip():
+        return [value.strip()]
+    return []
+
+
+def diet_sonucunu_duzelt(result: dict, payload: dict) -> dict:
+    profil = payload.get("profil") or {}
+    plan = payload.get("plan") or {}
+    not_metni = str(payload.get("kullanici_notu") or "").strip()
+
+    hedef = str(profil.get("hedef") or "kilo_koruma")
+    hedef_adlari = {
+        "kilo_verme": "kilo verme",
+        "kilo_koruma": "kilo koruma",
+        "kilo_alma": "kilo alma",
+    }
+    hedef_adi = hedef_adlari.get(hedef, hedef.replace("_", " "))
+
+    hedef_kalori = safe_float(profil.get("hedef_kalori"))
+    plan_kalori = safe_float(plan.get("gunluk_kalori"))
+    porsiyon_ham = plan.get("porsiyon_bilgisi")
+    porsiyon = porsiyon_ham if isinstance(porsiyon_ham, dict) else {}
+
+    protein = safe_float(porsiyon.get("protein_g") or plan.get("protein_g"))
+    karbonhidrat = safe_float(
+        porsiyon.get("karbonhidrat_g") or plan.get("karbonhidrat_g")
+    )
+    yag = safe_float(porsiyon.get("yag_g") or plan.get("yag_g"))
+
+    mevcut = result.get("yorum")
+    genel_kaliplar = [
+        "hedef uyumu değerlendirildi",
+        "protein dağılımı değerlendirildi",
+        "sebze içeriği değerlendirildi",
+        "meyve içeriği değerlendirildi",
+        "lif içeriği değerlendirildi",
+        "kalori ve porsiyon bilgisi değerlendirildi",
+    ]
+
+    gecerli = (
+        isinstance(mevcut, str)
+        and len(mevcut.strip()) >= 100
+        and sum(1 for kalip in genel_kaliplar if kalip in mevcut.lower()) < 2
+    )
+
+    if not gecerli:
+        cumleler = [f"Seçtiğin plan {hedef_adi} hedefin açısından değerlendirildi."]
+
+        if hedef_kalori is not None and plan_kalori is not None:
+            fark = round(plan_kalori - hedef_kalori)
+            if abs(fark) <= 100:
+                cumleler.append(
+                    f"Planın {plan_kalori:.0f} kcal değeri, {hedef_kalori:.0f} kcal hedefinle oldukça uyumlu."
+                )
+            elif fark > 0:
+                cumleler.append(
+                    f"Plan hedefinden yaklaşık {abs(fark)} kcal yüksek; porsiyonları biraz küçültmek daha uygun olur."
+                )
+            else:
+                cumleler.append(
+                    f"Plan hedefinden yaklaşık {abs(fark)} kcal düşük; antrenman günlerinde küçük bir ara öğün eklenebilir."
+                )
+
+        makrolar = []
+        if protein is not None:
+            makrolar.append(f"{protein:.0f} g protein")
+        if karbonhidrat is not None:
+            makrolar.append(f"{karbonhidrat:.0f} g karbonhidrat")
+        if yag is not None:
+            makrolar.append(f"{yag:.0f} g yağ")
+        if makrolar:
+            cumleler.append("Makro dağılımı " + ", ".join(makrolar) + " şeklinde.")
+
+        if not_metni:
+            cumleler.append(
+                f"Kullanıcı notu özellikle dikkate alınmalı: {not_metni}. Bu notla çelişen bir besin varsa plandan çıkarılmalı."
+            )
+
+        cumleler.append(
+            "Proteini gün içine dağıt, her ana öğünde sebze veya lif kaynağı bulundur ve su tüketimini düzenli sürdür."
+        )
+        cumleler.append(
+            "Planı birkaç gün uyguladıktan sonra açlık, enerji ve antrenman performansına göre porsiyonları küçük adımlarla ayarla."
+        )
+        cumleler.append(
+            "Ciddi alerji, sağlık sorunu veya ilaç kullanımı varsa kişisel plan için diyetisyene danış."
+        )
+
+        result["yorum"] = " ".join(cumleler)
+
+    result["tip"] = "diyet"
+    result["hedef"] = hedef
+    result["hedef_kalori"] = hedef_kalori
+    result["plan_kalori"] = plan_kalori
+    result["makrolar"] = {
+        "protein_g": protein,
+        "karbonhidrat_g": karbonhidrat,
+        "yag_g": yag,
+    }
+
+    return result
+
+
 def build_instruction(payload: dict[str, Any]) -> str:
     request_type = detect_request_type(payload)
 
@@ -412,6 +520,8 @@ class VisionFitLLM:
 
         if detect_request_type(payload) == "antrenor":
             result = trainer_sonucunu_duzelt(result, payload)
+        else:
+            result = diet_sonucunu_duzelt(result, payload)
 
         result["surum"] = MODEL_VERSION
         result["model_id"] = MODEL_ID

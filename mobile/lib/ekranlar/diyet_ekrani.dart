@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../tema.dart';
 import '../servisler/api_servisi.dart';
@@ -60,39 +61,110 @@ class _DiyetEkraniState extends State<DiyetEkrani> {
     }
   }
 
+  Map<String, List<String>> _ogunleriAyir(List<String> ogunler) {
+    final sonuc = <String, List<String>>{
+      'kahvalti': [],
+      'ogle': [],
+      'aksam': [],
+      'ara_ogun': [],
+    };
+
+    for (final ogun in ogunler) {
+      final metin = ogun.toLowerCase();
+      if (metin.contains('kahvalt')) {
+        sonuc['kahvalti']!.add(ogun);
+      } else if (metin.contains('öğle') || metin.contains('ogle')) {
+        sonuc['ogle']!.add(ogun);
+      } else if (metin.contains('akşam') || metin.contains('aksam')) {
+        sonuc['aksam']!.add(ogun);
+      } else if (metin.contains('ara')) {
+        sonuc['ara_ogun']!.add(ogun);
+      } else {
+        sonuc['ara_ogun']!.add(ogun);
+      }
+    }
+
+    return sonuc;
+  }
+
+  String _yorumMetniHazirla(dynamic yorum) {
+    if (yorum == null) return '';
+    if (yorum is Map) {
+      return yorum['yorum']?.toString().trim() ?? '';
+    }
+
+    final temiz = yorum.toString().trim();
+    if (temiz.isEmpty) return '';
+
+    try {
+      final parsed = jsonDecode(temiz);
+      if (parsed is Map && parsed['yorum'] != null) {
+        return parsed['yorum'].toString().trim();
+      }
+    } catch (_) {}
+
+    return temiz;
+  }
+
   Future<void> _aiOneriAl() async {
     if (_sonuc == null) return;
+
+    final planlar = _sonuc!['planlar'] as List? ?? [];
+    if (planlar.isEmpty || _secilenPlanIndex >= planlar.length) {
+      setState(() { _aiOneri = 'Seçilen diyet planı bulunamadı.'; });
+      return;
+    }
+
     setState(() { _aiYukleniyor = true; _aiOneri = ''; });
+
     try {
-      final planlar = _sonuc!['planlar'] as List? ?? [];
-      final plan = planlar.isNotEmpty ? planlar[_secilenPlanIndex] : {};
-      final ogunler = (plan['ornek_ogunler'] as List? ?? []).map((e) => e.toString()).toList();
+      final plan = Map<String, dynamic>.from(planlar[_secilenPlanIndex] as Map);
+      final ogunler = (plan['ornek_ogunler'] as List? ?? [])
+          .map((e) => e.toString())
+          .toList();
+      final ayrilmis = _ogunleriAyir(ogunler);
 
       final yanit = await ApiServisi.postJson('/api/yerel-ai/diyet-onerisi', {
         'profil': {
           'yas': int.tryParse(_yasCtrl.text),
           'cinsiyet': _cinsiyet,
-          'boy_cm': double.tryParse(_boyCtrl.text)?.round(),
-          'kilo_kg': double.tryParse(_kiloCtrl.text)?.round(),
+          'boy_cm': double.tryParse(_boyCtrl.text),
+          'kilo_kg': double.tryParse(_kiloCtrl.text),
           'aktivite_duzeyi': _aktiflik,
           'hedef': _hedef,
           'hedef_kalori': _sonuc!['hedef_kalori'],
         },
         'plan': {
           'plan_adi': plan['baslik'] ?? 'Plan',
-          'kahvalti': ogunler.isNotEmpty ? [ogunler[0]] : [],
-          'ogle': ogunler.length > 1 ? [ogunler[1]] : [],
-          'aksam': ogunler.length > 2 ? [ogunler[2]] : [],
-          'ara_ogun': [],
-          'gunluk_kalori': plan['kalori'] ?? 'Belirtilmemiş',
+          'kahvalti': ayrilmis['kahvalti'],
+          'ogle': ayrilmis['ogle'],
+          'aksam': ayrilmis['aksam'],
+          'ara_ogun': ayrilmis['ara_ogun'],
+          'ornek_ogunler': ogunler,
+          'gunluk_kalori': plan['kalori'],
+          'porsiyon_bilgisi': {
+            'protein_g': plan['protein_g'],
+            'karbonhidrat_g': plan['karbonhidrat_g'],
+            'yag_g': plan['yag_g'],
+            'bmi': _sonuc!['bmi'],
+            'bmi_kategori': _sonuc!['bmi_kategori'],
+          },
         },
         'kullanici_notu': _istekCtrl.text.trim(),
       });
-      setState(() { _aiOneri = yanit['yorum'] ?? ''; });
+
+      if (!mounted) return;
+      final yorum = _yorumMetniHazirla(yanit['yorum']);
+      setState(() {
+        _aiOneri = yorum.isEmpty
+            ? 'AI geçerli bir diyet önerisi üretemedi.'
+            : yorum;
+      });
     } catch (_) {
+      if (!mounted) return;
       setState(() { _aiOneri = 'AI önerisi alınamadı.'; });
     } finally {
-      setState(() { _aiYukleniyor = false; });
+      if (mounted) setState(() { _aiYukleniyor = false; });
     }
   }
 
