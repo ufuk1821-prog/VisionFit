@@ -100,6 +100,69 @@ def _safe_percentile(values: Sequence[float], percentile: float) -> float:
     return float(np.percentile(np.asarray(values, dtype=float), percentile))
 
 
+def _robust_mean(values: Sequence[float], trim_ratio: float = 0.15) -> float:
+    """Aykırı uçları kırparak kararlı ortalama döndürür."""
+    clean = np.asarray([float(v) for v in values if np.isfinite(float(v))], dtype=float)
+    if clean.size == 0:
+        return 0.0
+    clean.sort()
+    trim = int(clean.size * trim_ratio)
+    if trim > 0 and clean.size - 2 * trim >= 3:
+        clean = clean[trim:-trim]
+    return float(np.mean(clean))
+
+
+def _median_smooth(values: Sequence[float], window: int = 3) -> List[float]:
+    """Kısa landmark sıçramalarını azaltmak için kayan medyan filtresi."""
+    numbers = [float(v) for v in values]
+    if len(numbers) < 3 or window < 3:
+        return numbers
+    radius = window // 2
+    result: List[float] = []
+    for index in range(len(numbers)):
+        start = max(0, index - radius)
+        end = min(len(numbers), index + radius + 1)
+        result.append(float(np.median(numbers[start:end])))
+    return result
+
+
+def _session_side(
+    frames: Sequence[Sequence[float]],
+    left_indices: Sequence[int],
+    right_indices: Sequence[int],
+) -> str:
+    """Video boyunca tek taraf seçer; kareden kareye sol/sağ geçişini önler."""
+    left_scores: List[float] = []
+    right_scores: List[float] = []
+    for frame in frames:
+        if len(frame) < MIN_FRAME_LENGTH:
+            continue
+        left_scores.append(min(visibility(frame, idx) for idx in left_indices))
+        right_scores.append(min(visibility(frame, idx) for idx in right_indices))
+    if not left_scores or not right_scores:
+        return "left"
+    return "left" if float(np.median(left_scores)) >= float(np.median(right_scores)) else "right"
+
+
+def _biceps_view(frames: Sequence[Sequence[float]]) -> str:
+    """Omuz genişliği/gövde uzunluğu oranıyla önden veya yandan çekimi ayırır."""
+    ratios: List[float] = []
+    required = [LEFT_SHOULDER, RIGHT_SHOULDER, LEFT_HIP, RIGHT_HIP]
+    for frame in frames:
+        if len(frame) < MIN_FRAME_LENGTH or not landmarks_visible(frame, required, threshold=0.40):
+            continue
+        shoulder_mid = midpoint(point(frame, LEFT_SHOULDER), point(frame, RIGHT_SHOULDER))
+        hip_mid = midpoint(point(frame, LEFT_HIP), point(frame, RIGHT_HIP))
+        torso = point_distance(shoulder_mid, hip_mid)
+        if torso < EPSILON:
+            continue
+        shoulder_width = point_distance(point(frame, LEFT_SHOULDER), point(frame, RIGHT_SHOULDER))
+        ratios.append(shoulder_width / torso)
+    if not ratios:
+        return "side"
+    return "front" if float(np.median(ratios)) >= 0.42 else "side"
+
+
 def calculate_angle(a: Point, b: Point, c: Point) -> float:
     """B noktası merkez olacak biçimde 0-180 derece arası açı döndürür."""
     a_np = np.asarray(a, dtype=float)
@@ -232,44 +295,41 @@ def save_history(
     return record
 
 
-def predict_squat(frame: Sequence[float]) -> Tuple[bool, float]:
-    """
-    Model hatasında artık 'doğru + %90' varsayımı yapılmaz.
-    Tahmin üretilemiyorsa False, 0 döner.
-    """
+def predict_squat_score(frame: Sequence[float]) -> float:
+    """RandomForest çıktısını sert 0/100 yerine doğru-squat olasılığı olarak döndürür."""
     if IS_TESTING:
-        return True, 99.9
-
+        return 90.0
     if model is None:
-        return False, 0.0
-
+        return 50.0
     try:
         features = list(frame[:MIN_FRAME_LENGTH])
         prediction_frame = pd.DataFrame([features])
-        prediction = model.predict(prediction_frame)[0]
         probabilities = model.predict_proba(prediction_frame)[0]
+        classes = [str(item) for item in model.classes_]
+        if "dogru_squat" in classes:
+            index = classes.index("dogru_squat")
+            return round(float(probabilities[index]) * 100.0, 2)
+        prediction = str(model.predict(prediction_frame)[0])
         confidence = float(np.max(probabilities) * 100.0)
-        return str(prediction) == "dogru_squat", round(confidence, 2)
+        return confidence if prediction == "dogru_squat" else 100.0 - confidence
     except Exception as exc:
         print(f"Squat model tahmin hatası: {exc}")
-        return False, 0.0
+        return 50.0
 
 
-def analyze_single_frame_squat(lm_flat: Sequence[float]) -> Optional[Dict[str, float | bool]]:
+def analyze_single_frame_squat(
+    lm_flat: Sequence[float],
+    side: Optional[str] = None,
+) -> Optional[Dict[str, float | bool]]:
     left_chain = [LEFT_SHOULDER, LEFT_HIP, LEFT_KNEE, LEFT_ANKLE]
     right_chain = [RIGHT_SHOULDER, RIGHT_HIP, RIGHT_KNEE, RIGHT_ANKLE]
+    selected_side = side or choose_visible_side(lm_flat, left_chain, right_chain)
+    selected = left_chain if selected_side == "left" else right_chain
 
-    side = choose_visible_side(lm_flat, left_chain, right_chain)
-    selected = left_chain if side == "left" else right_chain
-
-    if not landmarks_visible(lm_flat, selected):
+    if not landmarks_visible(lm_flat, selected, threshold=0.50):
         return None
 
-    shoulder = point(lm_flat, selected[0])
-    hip = point(lm_flat, selected[1])
-    knee = point(lm_flat, selected[2])
-    ankle = point(lm_flat, selected[3])
-
+    shoulder, hip, knee, ankle = [point(lm_flat, idx) for idx in selected]
     torso_length = point_distance(shoulder, hip)
     shin_length = point_distance(knee, ankle)
     if torso_length < EPSILON or shin_length < EPSILON:
@@ -279,33 +339,26 @@ def analyze_single_frame_squat(lm_flat: Sequence[float]) -> Optional[Dict[str, f
     hip_angle = calculate_angle(shoulder, hip, knee)
     torso_from_vertical = abs(abs(calculate_line_angle(hip, shoulder)) - 90.0)
 
-    ml_correct, ml_confidence = predict_squat(lm_flat)
+    in_squat = 55.0 <= knee_angle <= 145.0
 
-    in_squat = 50.0 <= knee_angle <= 145.0
-
-    spine_score = score_from_error(max(0.0, torso_from_vertical - 10.0), 55.0)
-    depth_score = score_from_error(abs(knee_angle - 90.0), 65.0)
+    spine_score = score_from_error(max(0.0, torso_from_vertical - 8.0), 50.0)
+    depth_score = score_from_error(abs(knee_angle - 90.0), 60.0)
 
     knee_over_toe = normalized_distance(abs(knee[0] - ankle[0]), shin_length)
-    knee_alignment_score = score_from_error(max(0.0, knee_over_toe - 0.10), 0.85)
+    knee_alignment_score = score_from_error(max(0.0, knee_over_toe - 0.08), 0.80)
 
-    body_center_x = shoulder[0] * 0.25 + hip[0] * 0.50 + knee[0] * 0.25
+    body_center_x = shoulder[0] * 0.20 + hip[0] * 0.55 + knee[0] * 0.25
     balance_error = normalized_distance(abs(body_center_x - ankle[0]), torso_length)
-    balance_score = score_from_error(max(0.0, balance_error - 0.05), 0.70)
-
-    valgus_score = 75.0
-
-    ml_score = ml_confidence if ml_correct else max(0.0, 100.0 - ml_confidence)
+    balance_score = score_from_error(max(0.0, balance_error - 0.05), 0.65)
 
     return {
         "in_squat": in_squat,
         "knee_angle": knee_angle,
         "hip_angle": hip_angle,
-        "ml_score": ml_score,
+        "ml_score": predict_squat_score(lm_flat),
         "spine_score": spine_score,
         "depth_score": depth_score,
         "knee_alignment_score": knee_alignment_score,
-        "valgus_score": valgus_score,
         "balance_score": balance_score,
     }
 
@@ -316,40 +369,31 @@ async def analyze_squat(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    frame = data.landmarks
-    result = analyze_single_frame_squat(frame)
+    result = analyze_single_frame_squat(data.landmarks)
     if result is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Vücut noktaları yeterince net algılanamadı.",
         )
 
-    movement_class = "dogru_squat" if result["ml_score"] >= 50 else "yanlis_squat"
-    confidence = float(result["ml_score"])
+    ml_score = float(result["ml_score"])
     angle = int(round(float(result["knee_angle"])))
+    movement_class = "dogru_squat" if ml_score >= 50 else "yanlis_squat"
 
     if angle > 160:
         situation = "Ayakta Bekliyor"
-    elif angle <= 105 and confidence >= 60:
+    elif angle <= 105 and ml_score >= 60:
         situation = "İyi Form"
     elif angle > 105:
         situation = "Yarım Squat"
     else:
         situation = "Formu Kontrol Edin"
 
-    record = save_history(
-        db,
-        current_user.id,
-        movement_class,
-        confidence,
-        angle,
-        situation,
-    )
-
+    record = save_history(db, current_user.id, movement_class, ml_score, angle, situation)
     return {
         "kayit_id": record.id,
         "hareket": movement_class,
-        "eminlik": confidence,
+        "eminlik": round(ml_score, 1),
         "aci": angle,
         "antrenor_mesaji": situation,
         "mesaj": "Veritabanına başarıyla kaydedildi!",
@@ -362,116 +406,86 @@ async def analyze_session(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
+    valid_frames = [frame for frame in data.frames if len(frame) >= MIN_FRAME_LENGTH]
+    if len(valid_frames) < 8:
+        raise HTTPException(status_code=400, detail="Analiz için en az 8 geçerli kare gereklidir.")
+
+    side = _session_side(
+        valid_frames,
+        [LEFT_SHOULDER, LEFT_HIP, LEFT_KNEE, LEFT_ANKLE],
+        [RIGHT_SHOULDER, RIGHT_HIP, RIGHT_KNEE, RIGHT_ANKLE],
+    )
     results = [
         result
-        for frame in data.frames
-        if len(frame) >= MIN_FRAME_LENGTH
-        for result in [analyze_single_frame_squat(frame)]
+        for frame in valid_frames
+        for result in [analyze_single_frame_squat(frame, side=side)]
         if result is not None
     ]
+    if len(results) < 8:
+        raise HTTPException(status_code=400, detail="Yeterli sayıda net vücut karesi bulunamadı.")
 
-    if not results:
-        raise HTTPException(
-            status_code=400,
-            detail="Analiz edilecek yeterli vücut verisi bulunamadı.",
-        )
+    smoothed_angles = _median_smooth([float(item["knee_angle"]) for item in results], 5)
+    for item, angle in zip(results, smoothed_angles):
+        item["knee_angle"] = angle
+        item["in_squat"] = 55.0 <= angle <= 145.0
 
-    movement_frames = [result for result in results if bool(result["in_squat"])]
-    if len(movement_frames) < 3:
+    movement_frames = [item for item in results if bool(item["in_squat"])]
+    if len(movement_frames) < 5:
         raise HTTPException(
             status_code=400,
             detail="Squat hareketi tespit edilemedi. Tam iniş ve kalkışın görünmesini sağlayın.",
         )
 
-    sorted_frames = sorted(movement_frames, key=lambda item: float(item["knee_angle"]))
-    dip_count = max(3, min(len(sorted_frames), max(3, len(sorted_frames) // 3)))
-    dip_frames = sorted_frames[:dip_count]
-
     knee_angles = [float(item["knee_angle"]) for item in movement_frames]
     movement_range = _safe_percentile(knee_angles, 90) - _safe_percentile(knee_angles, 10)
-    if movement_range < 20:
-        raise HTTPException(
-            status_code=400,
-            detail="Yeterli squat hareket açıklığı tespit edilemedi.",
-        )
+    if movement_range < 22:
+        raise HTTPException(status_code=400, detail="Yeterli squat hareket açıklığı tespit edilemedi.")
 
-    def average_score(key: str, source: Sequence[Dict[str, float | bool]]) -> float:
-        return round(float(np.mean([float(item[key]) for item in source])), 1)
+    sorted_frames = sorted(movement_frames, key=lambda item: float(item["knee_angle"]))
+    dip_count = max(5, int(round(len(sorted_frames) * 0.35)))
+    dip_frames = sorted_frames[:min(len(sorted_frames), dip_count)]
 
-    ml_score = average_score("ml_score", movement_frames)
-    spine_score = average_score("spine_score", dip_frames)
-    depth_score = average_score("depth_score", dip_frames)
-    knee_score = average_score("knee_alignment_score", dip_frames)
-    valgus_score = average_score("valgus_score", dip_frames)
-    balance_score = average_score("balance_score", dip_frames)
+    def robust_score(key: str, source: Sequence[Dict[str, float | bool]]) -> float:
+        return round(_robust_mean([float(item[key]) for item in source]), 1)
 
-    weighted_score = (
-        ml_score * 0.25
-        + spine_score * 0.20
-        + depth_score * 0.25
-        + knee_score * 0.15
-        + balance_score * 0.10
-        + valgus_score * 0.05
-    )
-    general_score = round(_clamp(weighted_score), 1)
+    ml_score = round(float(np.median([float(item["ml_score"]) for item in movement_frames])), 1)
+    spine_score = robust_score("spine_score", dip_frames)
+    depth_score = robust_score("depth_score", dip_frames)
+    knee_score = robust_score("knee_alignment_score", dip_frames)
+    balance_score = robust_score("balance_score", dip_frames)
+
+    general_score = round(
+        _clamp(
+            ml_score * 0.10
+            + spine_score * 0.25
+            + depth_score * 0.30
+            + knee_score * 0.20
+            + balance_score * 0.15
+        ) * 2.0
+    ) / 2.0
 
     general = category(
-        ml_score,
-        "Genel hareket örüntüsü squat ile uyumlu ve form tutarlı.",
-        "Genel squat örüntüsünde form hataları tespit edildi.",
-    )
-    spine = category(
-        spine_score,
-        "Gövde kontrolü ve omurga hizası genel olarak korunuyor.",
-        "Gövde kontrolünde bozulma var. Göğsünüzü kontrollü tutun.",
-    )
-    depth = category(
-        depth_score,
-        "Squat derinliği yeterli.",
-        "Squat derinliği yetersiz veya aşırı. Kontrollü biçimde yaklaşık 90° diz açısına inin.",
-    )
-    knee_alignment = category(
-        knee_score,
-        "Diz ve ayak bileği hizası yandan görünümde dengeli.",
-        "Diz-ayak bileği hizasında belirgin sapma var.",
-    )
-    valgus = KategoriSonuc(
-        skor=valgus_score,
-        mesaj=(
-            "Diz içe çöküşü yandan çekimde kesin ölçülemez. "
-            "Bu kategori için önden çekim gerekir."
-        ),
-    )
-    balance = category(
-        balance_score,
-        "Ağırlık merkezi ayak tabanı üzerinde dengeli.",
-        "Ağırlık merkezi öne veya arkaya kayıyor.",
-    )
-
-    _, problems, positive_message, improvement_message = build_summary(
-        [
-            ("genel form", ml_score),
-            ("omurga nötrlüğü", spine_score),
-            ("kalça derinliği", depth_score),
-            ("diz hizası", knee_score),
-            ("ağırlık merkezi", balance_score),
-        ]
-    )
-
-    average_knee_angle = int(
-        round(float(np.mean([float(item["knee_angle"]) for item in dip_frames])))
-    )
-    note = f"Skor: %{general_score} | " + (
-        ", ".join(problems) if problems else "Tüm kategoriler iyi"
-    )
-    save_history(
-        db,
-        current_user.id,
-        "squat_session",
         general_score,
-        average_knee_angle,
-        note,
+        "Genel squat formu dengeli ve tutarlı.",
+        "Genel squat formunda geliştirilmesi gereken noktalar var.",
     )
+    spine = category(spine_score, "Gövde kontrolü ve omurga hizası korunuyor.", "Gövde kontrolünde bozulma var. Göğsünüzü kontrollü tutun.")
+    depth = category(depth_score, "Squat derinliği yeterli.", "Squat derinliği uygun değil. Kontrollü biçimde yaklaşık 90° diz açısına inin.")
+    knee_alignment = category(knee_score, "Diz ve ayak bileği hizası yandan görünümde dengeli.", "Diz-ayak bileği hizasında belirgin sapma var.")
+    valgus = KategoriSonuc(skor=0.0, mesaj="Diz içe çöküşü yandan çekimde güvenilir biçimde ölçülemez; önden çekim gerekir.")
+    balance = category(balance_score, "Ağırlık merkezi ayak tabanı üzerinde dengeli.", "Ağırlık merkezi öne veya arkaya kayıyor.")
+
+    _, problems, positive_message, improvement_message = build_summary([
+        ("genel form", general_score),
+        ("omurga nötrlüğü", spine_score),
+        ("kalça derinliği", depth_score),
+        ("diz hizası", knee_score),
+        ("ağırlık merkezi", balance_score),
+    ])
+
+    average_knee_angle = int(round(_robust_mean([float(item["knee_angle"]) for item in dip_frames])))
+    note = f"Skor: %{general_score} | " + (", ".join(problems) if problems else "Tüm kategoriler iyi")
+    save_history(db, current_user.id, "squat_session", general_score, average_knee_angle, note)
 
     return SessionResult(
         toplam_kare=len(results),
@@ -490,50 +504,77 @@ async def analyze_session(
 
 def analyze_single_frame_biceps_curl(
     lm_flat: Sequence[float],
+    view: str,
+    side: Optional[str] = None,
 ) -> Optional[Dict[str, float | str]]:
-    left_chain = [LEFT_SHOULDER, LEFT_ELBOW, LEFT_WRIST]
-    right_chain = [RIGHT_SHOULDER, RIGHT_ELBOW, RIGHT_WRIST]
-    side = choose_visible_side(lm_flat, left_chain, right_chain)
-    chain = left_chain if side == "left" else right_chain
-
     torso_indices = [LEFT_SHOULDER, RIGHT_SHOULDER, LEFT_HIP, RIGHT_HIP]
-    if not landmarks_visible(lm_flat, chain):
-        return None
     if not landmarks_visible(lm_flat, torso_indices, threshold=0.40):
         return None
 
-    shoulder = point(lm_flat, chain[0])
-    elbow = point(lm_flat, chain[1])
-    wrist = point(lm_flat, chain[2])
-
-    shoulder_mid = midpoint(
-        point(lm_flat, LEFT_SHOULDER),
-        point(lm_flat, RIGHT_SHOULDER),
-    )
+    shoulder_mid = midpoint(point(lm_flat, LEFT_SHOULDER), point(lm_flat, RIGHT_SHOULDER))
     hip_mid = midpoint(point(lm_flat, LEFT_HIP), point(lm_flat, RIGHT_HIP))
-
     torso_length = point_distance(shoulder_mid, hip_mid)
+    if torso_length < EPSILON:
+        return None
+
+    if view == "front":
+        arm_data: List[Tuple[float, float, float]] = []
+        for shoulder_idx, elbow_idx, wrist_idx in [
+            (LEFT_SHOULDER, LEFT_ELBOW, LEFT_WRIST),
+            (RIGHT_SHOULDER, RIGHT_ELBOW, RIGHT_WRIST),
+        ]:
+            if not landmarks_visible(lm_flat, [shoulder_idx, elbow_idx, wrist_idx], threshold=0.45):
+                continue
+            shoulder = point(lm_flat, shoulder_idx)
+            elbow = point(lm_flat, elbow_idx)
+            wrist = point(lm_flat, wrist_idx)
+            upper_arm = point_distance(shoulder, elbow)
+            if upper_arm < EPSILON:
+                continue
+            angle = calculate_angle(shoulder, elbow, wrist)
+            lateral_drift = normalized_distance(abs(elbow[0] - shoulder[0]), upper_arm)
+            arm_data.append((angle, lateral_drift, visibility(lm_flat, elbow_idx)))
+        if not arm_data:
+            return None
+        elbow_angle = float(np.average([a[0] for a in arm_data], weights=[max(a[2], 0.1) for a in arm_data]))
+        elbow_drift = float(np.average([a[1] for a in arm_data], weights=[max(a[2], 0.1) for a in arm_data]))
+        torso_metric = normalized_distance(abs(shoulder_mid[0] - hip_mid[0]), torso_length)
+        return {
+            "view": "front",
+            "elbow_angle": elbow_angle,
+            "elbow_drift": elbow_drift,
+            "torso_metric": torso_metric,
+            "wrist_score": -1.0,
+        }
+
+    left_chain = [LEFT_SHOULDER, LEFT_ELBOW, LEFT_WRIST]
+    right_chain = [RIGHT_SHOULDER, RIGHT_ELBOW, RIGHT_WRIST]
+    selected_side = side or choose_visible_side(lm_flat, left_chain, right_chain)
+    chain = left_chain if selected_side == "left" else right_chain
+    if not landmarks_visible(lm_flat, chain, threshold=0.45):
+        return None
+
+    shoulder, elbow, wrist = [point(lm_flat, idx) for idx in chain]
     upper_arm_length = point_distance(shoulder, elbow)
-    if torso_length < EPSILON or upper_arm_length < EPSILON:
+    if upper_arm_length < EPSILON:
         return None
 
     elbow_angle = calculate_angle(shoulder, elbow, wrist)
     elbow_drift = normalized_distance(abs(elbow[0] - shoulder[0]), upper_arm_length)
-    torso_angle = calculate_line_angle(hip_mid, shoulder_mid)
+    torso_from_vertical = abs(abs(calculate_line_angle(hip_mid, shoulder_mid)) - 90.0)
 
-    index_idx = LEFT_INDEX if side == "left" else RIGHT_INDEX
-    wrist_score: Optional[float] = None
+    index_idx = LEFT_INDEX if selected_side == "left" else RIGHT_INDEX
+    wrist_score = -1.0
     if visibility(lm_flat, index_idx) >= 0.45:
-        index_point = point(lm_flat, index_idx)
-        wrist_angle = calculate_angle(elbow, wrist, index_point)
+        wrist_angle = calculate_angle(elbow, wrist, point(lm_flat, index_idx))
         wrist_score = score_from_error(abs(wrist_angle - 170.0), 70.0)
 
     return {
-        "side": side,
+        "view": "side",
         "elbow_angle": elbow_angle,
         "elbow_drift": elbow_drift,
-        "torso_angle": torso_angle,
-        "wrist_score": wrist_score if wrist_score is not None else -1.0,
+        "torso_metric": torso_from_vertical,
+        "wrist_score": wrist_score,
     }
 
 
@@ -543,61 +584,61 @@ async def analyze_biceps_curl_session(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    results = [
-        result
-        for frame in data.frames
-        if len(frame) >= MIN_FRAME_LENGTH
-        for result in [analyze_single_frame_biceps_curl(frame)]
-        if result is not None
-    ]
+    valid_frames = [frame for frame in data.frames if len(frame) >= MIN_FRAME_LENGTH]
+    if len(valid_frames) < 8:
+        raise HTTPException(status_code=400, detail="Biceps curl analizi için en az 8 geçerli kare gereklidir.")
 
-    if len(results) < 5:
-        raise HTTPException(
-            status_code=400,
-            detail="Biceps curl analizi için yeterli sayıda net kare bulunamadı.",
+    view = _biceps_view(valid_frames)
+    side = None
+    if view == "side":
+        side = _session_side(
+            valid_frames,
+            [LEFT_SHOULDER, LEFT_ELBOW, LEFT_WRIST],
+            [RIGHT_SHOULDER, RIGHT_ELBOW, RIGHT_WRIST],
         )
 
-    elbow_angles = [float(item["elbow_angle"]) for item in results]
+    results = [
+        result
+        for frame in valid_frames
+        for result in [analyze_single_frame_biceps_curl(frame, view=view, side=side)]
+        if result is not None
+    ]
+    if len(results) < 6:
+        raise HTTPException(status_code=400, detail="Biceps curl analizi için yeterli sayıda net kare bulunamadı.")
+
+    elbow_angles = _median_smooth([float(item["elbow_angle"]) for item in results], 5)
     min_angle = _safe_percentile(elbow_angles, 10)
     max_angle = _safe_percentile(elbow_angles, 90)
     movement_range = max_angle - min_angle
+    if movement_range < 28:
+        raise HTTPException(status_code=400, detail="Biceps curl hareketi tespit edilemedi. Kolunuzu tam açıp kontrollü biçimde bükün.")
 
-    if movement_range < 25:
-        raise HTTPException(
-            status_code=400,
-            detail="Biceps curl hareketi tespit edilemedi. Kolunuzu açıp kontrollü biçimde bükün.",
-        )
-
-    extension_score = score_from_error(max(0.0, 145.0 - max_angle), 65.0)
-    flexion_score = score_from_error(max(0.0, min_angle - 65.0), 75.0)
+    extension_score = score_from_error(max(0.0, 145.0 - max_angle), 60.0)
+    flexion_score = score_from_error(max(0.0, min_angle - 65.0), 70.0)
     rom_score = round((extension_score + flexion_score) / 2.0, 1)
 
-    drift_values = [float(item["elbow_drift"]) for item in results]
-    drift_90 = _safe_percentile(drift_values, 90)
-    elbow_stability_score = score_from_error(max(0.0, drift_90 - 0.10), 0.70)
+    drift_values = _median_smooth([float(item["elbow_drift"]) for item in results], 5)
+    drift_85 = _safe_percentile(drift_values, 85)
+    drift_free = 0.32 if view == "front" else 0.10
+    drift_penalty = 0.75 if view == "front" else 0.70
+    elbow_stability_score = score_from_error(max(0.0, drift_85 - drift_free), drift_penalty)
 
-    torso_angles = [float(item["torso_angle"]) for item in results]
-    torso_variation = _safe_percentile(torso_angles, 90) - _safe_percentile(
-        torso_angles, 10
-    )
-    torso_stability_score = score_from_error(max(0.0, torso_variation - 3.0), 25.0)
+    torso_values = _median_smooth([float(item["torso_metric"]) for item in results], 5)
+    torso_variation = _safe_percentile(torso_values, 90) - _safe_percentile(torso_values, 10)
+    if view == "front":
+        torso_stability_score = score_from_error(max(0.0, torso_variation - 0.025), 0.22)
+    else:
+        torso_stability_score = score_from_error(max(0.0, torso_variation - 3.0), 24.0)
 
-    wrist_values = [
-        float(item["wrist_score"])
-        for item in results
-        if float(item["wrist_score"]) >= 0
-    ]
-    wrist_reliable = len(wrist_values) >= max(3, len(results) // 3)
-    wrist_score = (
-        round(float(np.mean(wrist_values)), 1)
-        if wrist_reliable
-        else 0.0
-    )
+    wrist_values = [float(item["wrist_score"]) for item in results if float(item["wrist_score"]) >= 0]
+    wrist_reliable = view == "side" and len(wrist_values) >= max(3, len(results) // 3)
+    wrist_score = round(_robust_mean(wrist_values), 1) if wrist_reliable else 0.0
 
+    view_name = "önden" if view == "front" else "yandan"
     elbow_category = category(
         elbow_stability_score,
-        "Dirsek gövde yanında genel olarak sabit kaldı.",
-        "Dirsek öne veya yana kayıyor. Üst kolunuzu gövdenize yakın tutun.",
+        f"Dirsekler {view_name} çekimde genel olarak sabit kaldı.",
+        f"Dirseklerde {view_name} çekimde belirgin kayma var. Üst kolunuzu sabit tutun.",
     )
     torso_category = category(
         torso_stability_score,
@@ -610,59 +651,24 @@ async def analyze_biceps_curl_session(
         "Hareket açıklığı sınırlı. Dirseği kontrollü açıp daha fazla bükün.",
     )
     wrist_category = (
-        category(
-            wrist_score,
-            "Bilek hizası genel olarak nötr.",
-            "Bilekte belirgin bükülme var. Bileği ön kolla aynı hizada tutun.",
-        )
+        category(wrist_score, "Bilek hizası genel olarak nötr.", "Bilekte belirgin bükülme var. Bileği ön kolla aynı hizada tutun.")
         if wrist_reliable
-        else KategoriSonuc(
-            skor=0,
-            mesaj="Bilek hizası bu çekimde güvenilir biçimde değerlendirilemedi.",
-        )
+        else KategoriSonuc(skor=0.0, mesaj="Bilek hizası bu açıdan güvenilir biçimde değerlendirilemedi.")
     )
 
-    score_parts = [
-        (elbow_stability_score, 0.35),
-        (torso_stability_score, 0.30),
-        (rom_score, 0.35),
-    ]
     if wrist_reliable:
-        score_parts = [
-            (elbow_stability_score, 0.30),
-            (torso_stability_score, 0.25),
-            (rom_score, 0.30),
-            (wrist_score, 0.15),
-        ]
+        score_parts = [(elbow_stability_score, 0.30), (torso_stability_score, 0.25), (rom_score, 0.30), (wrist_score, 0.15)]
+    else:
+        score_parts = [(elbow_stability_score, 0.35), (torso_stability_score, 0.30), (rom_score, 0.35)]
+    general_score = round(_clamp(sum(score * weight for score, weight in score_parts)) * 2.0) / 2.0
 
-    general_score = round(
-        _clamp(sum(score * weight for score, weight in score_parts)),
-        1,
-    )
-
-    summary_categories = [
-        ("dirsek sabitliği", elbow_stability_score),
-        ("gövde salınımı kontrolü", torso_stability_score),
-        ("hareket açıklığı", rom_score),
-    ]
+    summary_categories = [("dirsek sabitliği", elbow_stability_score), ("gövde salınımı kontrolü", torso_stability_score), ("hareket açıklığı", rom_score)]
     if wrist_reliable:
         summary_categories.append(("bilek hizası", wrist_score))
+    _, problems, positive_message, improvement_message = build_summary(summary_categories)
 
-    _, problems, positive_message, improvement_message = build_summary(
-        summary_categories
-    )
-
-    note = f"Skor: %{general_score} | " + (
-        ", ".join(problems) if problems else "Tüm kategoriler iyi"
-    )
-    save_history(
-        db,
-        current_user.id,
-        "biceps_curl_session",
-        general_score,
-        int(round((min_angle + max_angle) / 2.0)),
-        note,
-    )
+    note = f"Skor: %{general_score} | Açı: {view_name} | " + (", ".join(problems) if problems else "Tüm kategoriler iyi")
+    save_history(db, current_user.id, "biceps_curl_session", general_score, int(round((min_angle + max_angle) / 2.0)), note)
 
     return BicepsCurlSessionResult(
         toplam_kare=len(results),
@@ -672,9 +678,10 @@ async def analyze_biceps_curl_session(
         govde_salinimi=torso_category,
         hareket_acikligi=rom_category,
         bilek_hizasi=wrist_category,
-        olumlu_mesaj=positive_message,
+        olumlu_mesaj=f"{positive_message} Çekim açısı otomatik olarak {view_name} algılandı.",
         gelistirilecek_mesaj=improvement_message,
     )
+
 
 def analyze_single_frame_deadlift(
     lm_flat: Sequence[float],

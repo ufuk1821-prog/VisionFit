@@ -7,17 +7,24 @@ import modal
 
 MODEL_ID = "213asdfdws/visionfit-llm-v2"
 MODEL_DIR = "/model"
-MODEL_VERSION = "v25-visionfit-qwen25-final-deterministic"
+MODEL_VERSION = "v26-visionfit-qwen25-final-deterministic"
 
 
 SYSTEM_PROMPT = (
-    "Sen VisionFit uygulamasının Türkçe yapay zeka asistanısın. "
+    "Sen VisionFit uygulamasının Türkçe yapay zekâ destekli fitness koçusun. "
     "Sana verilen antrenman veya diyet verilerini dikkatle analiz et. "
-    "Girdide bulunmayan bilgi uydurma. "
+    "Girdide bulunmayan bilgi uydurma ve kesin tıbbi teşhis koyma. "
     "Kategori adlarını girdide verildiği biçimiyle kullan. "
-    "Sayısal skorlarda en yüksek kategori güçlü alan, en düşük kategori geliştirilmesi gereken alandır. "
+    "Antrenman yorumunda skorları yalnızca tekrar etme. "
+    "Güçlü alanın kullanıcı açısından ne ifade ettiğini açıkla. "
+    "Geliştirilmesi gereken alanın hareket formuna olası etkisini belirt. "
+    "Kesinlik bildirmeden muhtemel teknik nedenleri açıkla. "
+    "Kullanıcının bir sonraki antrenmanda uygulayabileceği en az iki somut öneri ver. "
+    "Ağırlık artırma, tempo, hareket kontrolü, kamera açısı veya teknik çalışma gibi "
+    "uygulanabilir önerilerden veriye uygun olanları seç. "
+    "Yanıt doğal, profesyonel ve motive edici olmalı; gereksiz övgü yapmamalıdır. "
     "Yanıtın yalnızca geçerli bir JSON nesnesi olmalıdır. "
-    "JSON dışında açıklama, başlık, markdown veya kod bloğu yazma."
+    "JSON dışında açıklama, markdown veya kod bloğu yazma."
 )
 
 
@@ -87,21 +94,61 @@ def trainer_sonucunu_duzelt(result: dict, payload: dict) -> dict:
     guclu_alan = max(skorlar, key=skorlar.get)
     zayif_alan = min(skorlar, key=skorlar.get)
 
-    hareket = payload.get("hareket") or result.get("hareket") or "antrenman"
-    genel_skor = payload.get("genel_skor") or result.get("genel_skor") or ""
+    guclu_skor = skorlar[guclu_alan]
+    zayif_skor = skorlar[zayif_alan]
+
+    hareket = (
+        payload.get("hareket")
+        or result.get("hareket")
+        or "antrenman"
+    )
+
+    genel_skor = safe_float(
+        payload.get("genel_skor")
+        or result.get("genel_skor")
+    )
 
     result["tip"] = "antrenor"
     result["hareket"] = hareket
+
     result["guclu_alan"] = guclu_alan
     result["gelistirilecek_alan"] = zayif_alan
+    result["guclu_alan_skoru"] = round(guclu_skor, 1)
+    result["gelistirilecek_alan_skoru"] = round(zayif_skor, 1)
 
-    if "gecmis_antrenmanlar" not in payload:
-        result["yorum"] = (
-            f"{hareket} hareketindeki kategori skorlarını inceledim. "
-            f"{guclu_alan} alanındaki {skorlar[guclu_alan]:.0f} puan en güçlü alanını gösteriyor. "
-            f"{zayif_alan} alanındaki {skorlar[zayif_alan]:.0f} puan ise geliştirilmesi gereken ana noktayı gösteriyor. "
-            f"Genel skorun {genel_skor}; bu iki alan arasındaki farkı azaltmak daha dengeli ve güvenli bir form sağlayacaktır."
-        )
+    if genel_skor is not None:
+        result["genel_skor"] = round(genel_skor, 1)
+
+    mevcut_yorum = result.get("yorum")
+
+    if isinstance(mevcut_yorum, str) and len(mevcut_yorum.strip()) >= 80:
+        result["yorum"] = mevcut_yorum.strip()
+        return result
+
+    genel_skor_metni = (
+        f" Genel skorun {genel_skor:.1f}."
+        if genel_skor is not None
+        else ""
+    )
+
+    result["yorum"] = (
+        f"{hareket} analizinde {guclu_alan} alanındaki "
+        f"{guclu_skor:.0f} puan, hareket boyunca bu bölgedeki kontrolün "
+        f"genel olarak iyi korunduğunu gösteriyor. "
+        f"{zayif_alan} alanındaki {zayif_skor:.0f} puan ise formun özellikle "
+        f"bu bölümünde tutarlılığın azalabildiğini düşündürüyor."
+        f"{genel_skor_metni} "
+        f"Bir sonraki antrenmanda ağırlığı artırmadan önce hareketin iniş ve "
+        f"çıkış bölümlerini daha yavaş ve kontrollü uygula. "
+        f"Ayrıca çekimi yandan ve tüm vücut kadrajda tekrar ederek "
+        f"{zayif_alan} bölgesindeki hizayı her tekrarda korumaya odaklan. "
+        f"Ağrı veya belirgin kontrol kaybı oluşursa hareketi durdurup "
+        f"yükü azaltman daha güvenli olacaktır."
+    )
+
+    result.setdefault("uyarilar", []).append(
+        "LLM yeterli uzunlukta yorum üretmediği için güvenli yedek yorum kullanıldı."
+    )
 
     return result
 
@@ -111,10 +158,15 @@ def build_instruction(payload: dict[str, Any]) -> str:
 
     if request_type == "diyet":
         return (
-            "Seçilmiş diyet planını kullanıcı profili ve kullanıcı notuna göre değerlendir. "
-            "Protein dağılımını, sebze, meyve, lif, kalori ve porsiyon bilgisini kontrol et. "
-            "Alerji veya beslenme tercihi çelişkisini açıkça belirt. "
-            "Yanıt yalnızca geçerli JSON olmalıdır."
+            "Verilen hareket, genel skor ve kategori skorlarına göre ayrıntılı bir "
+            "Türkçe antrenör değerlendirmesi oluştur. "
+            "En güçlü ve en düşük kategoriyi doğru belirle fakat skorları düz biçimde tekrar etmekle yetinme."
+            "Güçlü alanın hareket açısından ne anlama geldiğini açıkla. "
+            "Zayıf alanın form ve güvenlik üzerindeki olası etkisini kesin teşhis koymadan değerlendir."
+            "Kullanıcıya bir sonraki antrenmanda uygulayabileceği en az iki somut teknik öneri ver. "
+            "Yorum 90 ile 150 kelime arasında olmalıdır. "
+            "JSON şu alanları içermelidir: tip, hareket, guclu_alan, gelistirilecek_alan, yorum. "
+            "Yanıt yalnızca geçerli JSON nesnesi olmalıdır."
         )
 
     history = payload.get("gecmis_antrenmanlar")
