@@ -268,7 +268,7 @@ function Nutrition() {
                       </div>
 
                       {ogunMeals.length === 0 ? (
-                        <div className="h-[105px] flex items-center justify-center rounded-lg border border-dashed border-outline-variant/60 bg-surface-container-lowest/40">
+                        <div className="h-[105px] flex items-center justify-center rounded-lg bg-surface-container-lowest/40">
                           <p className="text-xs text-on-surface-variant font-label-mono text-center px-4">
                             Bu öğüne henüz besin eklenmedi.
                           </p>
