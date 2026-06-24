@@ -1,42 +1,54 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from datetime import datetime as dt
 from typing import List
+
+from fastapi import APIRouter, Depends, HTTPException, Response, status
+from sqlalchemy.orm import Session
+
 from app.core.database import get_db
 from app.core.security import get_current_user
-from app.models.user import User
 from app.models.steps import StepLog
+from app.models.user import User
 from app.schemas.steps import StepCreate, StepRead
-from app.services.steps import calculate_calories_burned, ACTIVITY_PROFILES
+from app.services.steps import ACTIVITY_PROFILES, calculate_calories_burned
+
 
 router = APIRouter(prefix="/api/steps", tags=["Adim Sayaci"])
+
 
 @router.post("", response_model=StepRead, status_code=status.HTTP_201_CREATED)
 def log_steps(
     data: StepCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     if current_user.kilo is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Kalori hesaplaması için profilinizde kilo bilgisi gereklidir."
+            detail="Kalori hesaplaması için profilinizde kilo bilgisi gereklidir.",
         )
 
     if data.aktivite_tipi not in ACTIVITY_PROFILES:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Geçersiz aktivite tipi."
+            detail="Geçersiz aktivite tipi.",
         )
 
-    yakilan_kalori = calculate_calories_burned(data.adim_sayisi, data.aktivite_tipi, current_user.kilo)
-
-    from datetime import datetime as dt
     hedef_tarih = dt.now()
+
     if data.tarih:
         try:
-            hedef_tarih = dt.fromisoformat(data.tarih)
-        except ValueError:
-            pass
+            hedef_tarih = dt.fromisoformat(data.tarih.replace("Z", "+00:00"))
+        except ValueError as hata:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Geçersiz tarih formatı.",
+            ) from hata
+
+    yakilan_kalori = calculate_calories_burned(
+        data.adim_sayisi,
+        data.aktivite_tipi,
+        current_user.kilo,
+    )
 
     kayit = StepLog(
         user_id=current_user.id,
@@ -45,14 +57,49 @@ def log_steps(
         yakilan_kalori=yakilan_kalori,
         tarih=hedef_tarih,
     )
+
     db.add(kayit)
     db.commit()
     db.refresh(kayit)
+
     return kayit
+
 
 @router.get("", response_model=List[StepRead])
 def get_step_logs(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
-    return db.query(StepLog).filter(StepLog.user_id == current_user.id).order_by(StepLog.tarih.desc()).all()
+    return (
+        db.query(StepLog)
+        .filter(StepLog.user_id == current_user.id)
+        .order_by(StepLog.tarih.desc())
+        .all()
+    )
+
+
+@router.delete("/{kayit_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_step_log(
+    kayit_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    kayit = (
+        db.query(StepLog)
+        .filter(
+            StepLog.id == kayit_id,
+            StepLog.user_id == current_user.id,
+        )
+        .first()
+    )
+
+    if kayit is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Adım kaydı bulunamadı.",
+        )
+
+    db.delete(kayit)
+    db.commit()
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
