@@ -63,6 +63,47 @@ const HAREKETLER = {
       'Gövdeyi sallamadan en az 3-5 tekrar yapın.',
     ],
   },
+
+  shoulder_press: {
+    label: 'Shoulder Press',
+    endpoint: '/api/analyze/shoulder-press-session',
+    aiHareket: 'shoulder press',
+    aciklama: 'Önden çekilmiş, iki kolun ve gövdenin net göründüğü bir shoulder press videosu yükleyin.',
+    canliTalimat: 'Shoulder press yapın. Kolları omuz seviyesinden tam yukarı uzatın.',
+    kategoriLabels: {
+      hareket_acikligi: 'Hareket Açıklığı',
+      dirsek_bilek_hizasi: 'Dirsek-Bilek Hizası',
+      sag_sol_simetri: 'Sağ-Sol Simetri',
+      ust_kilitleme: 'Üst Kilitleme',
+      govde_kontrolu: 'Gövde Kontrolü',
+    },
+    videoIpuclari: [
+      'Kamerayı tam önden ve sabit konumlandırın.',
+      'Baş, omuzlar, dirsekler, bilekler ve kalça kadrajda olsun.',
+      'Kolları omuz seviyesinden başlayıp tam yukarı uzatın.',
+      'Gövdeyi geriye yatırmadan en az 3-5 tekrar yapın.',
+    ],
+  },
+  lateral_raise: {
+    label: 'Lateral Raise',
+    endpoint: '/api/analyze/lateral-raise-session',
+    aiHareket: 'lateral raise',
+    aciklama: 'Önden çekilmiş, iki kolun ve gövdenin net göründüğü bir lateral raise videosu yükleyin.',
+    canliTalimat: 'Lateral raise yapın. Kolları yandan omuz seviyesine kaldırın.',
+    kategoriLabels: {
+      kol_kaldirma_acisi: 'Kol Kaldırma Açısı',
+      sag_sol_simetri: 'Sağ-Sol Simetri',
+      dirsek_pozisyonu: 'Dirsek Pozisyonu',
+      govde_salinimi: 'Gövde Salınımı',
+      hareket_acikligi: 'Hareket Açıklığı',
+    },
+    videoIpuclari: [
+      'Kamerayı tam önden ve sabit konumlandırın.',
+      'Omuzlar, dirsekler, bilekler ve kalça kadrajda olsun.',
+      'Kolları yandan omuz seviyesine kadar kaldırın.',
+      'Gövdeyi sallamadan en az 3-5 tekrar yapın.',
+    ],
+  },
 };
 
 function skorRengi(skor) {
@@ -129,12 +170,16 @@ function VideoAnalizBolumu({ apiUrl, token, hareket, hareketConfig }) {
     setVideoHata('');
     setVideoSonuc(null);
 
+    let poseLandmarker;
+
     try {
-      const { PoseLandmarker, FilesetResolver } = await import('@mediapipe/tasks-vision');
-      const vision = await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm');
-      const poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
+      const vision = await FilesetResolver.forVisionTasks(
+        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
+      );
+      poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
         baseOptions: {
-          modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',
+          modelAssetPath:
+            'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',
           delegate: 'GPU',
         },
         runningMode: 'VIDEO',
@@ -142,51 +187,74 @@ function VideoAnalizBolumu({ apiUrl, token, hareket, hareketConfig }) {
       });
 
       const video = videoRef2.current;
+
+      if (video.readyState < 1) {
+        await new Promise((resolve, reject) => {
+          video.addEventListener('loadedmetadata', resolve, { once: true });
+          video.addEventListener('error', reject, { once: true });
+        });
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      const duration = video.duration;
+      const sampleCount = Math.min(60, Math.max(30, Math.round(duration * 6)));
       const frames = [];
 
-      await new Promise((resolve, reject) => {
-        video.currentTime = 0;
-        video.muted = true;
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        video.onloadedmetadata = () => { canvas.width = video.videoWidth; canvas.height = video.videoHeight; };
+      video.pause();
+      video.muted = true;
 
-        let sonZaman = -1;
-        let frameNo = 0;
+      for (let index = 0; index < sampleCount; index += 1) {
+        const ratio = sampleCount === 1 ? 0 : index / (sampleCount - 1);
+        const targetTime = Math.min(
+          Math.max(duration * ratio, 0),
+          Math.max(0, duration - 0.001)
+        );
 
-        const isle = () => {
-          if (video.ended || video.paused) { poseLandmarker.close(); resolve(); return; }
-          frameNo++;
-          const simdikiZaman = video.currentTime * 1000;
-          if (simdikiZaman !== sonZaman && frameNo % 2 === 0) {
-            sonZaman = simdikiZaman;
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            try {
-              const sonuc = poseLandmarker.detectForVideo(canvas, simdikiZaman);
-              if (sonuc.landmarks && sonuc.landmarks.length > 0) {
-                const flat = [];
-                sonuc.landmarks[0].forEach((lm) => flat.push(lm.x, lm.y, lm.z, lm.visibility ?? 0));
-                frames.push(flat);
-              }
-            } catch {}
-          }
-          requestAnimationFrame(isle);
-        };
-        video.onplay = () => requestAnimationFrame(isle);
-        video.onerror = reject;
-        video.play();
-      });
+        if (Math.abs(video.currentTime - targetTime) > 0.001) {
+          await new Promise((resolve, reject) => {
+            const handleSeeked = () => resolve();
+            const handleError = () => reject(new Error('Video karesi okunamadı.'));
+            video.addEventListener('seeked', handleSeeked, { once: true });
+            video.addEventListener('error', handleError, { once: true });
+            video.currentTime = targetTime;
+          });
+        }
+
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const timestamp = index * 1000;
+        const sonuc = poseLandmarker.detectForVideo(canvas, timestamp);
+
+        if (sonuc.landmarks && sonuc.landmarks.length > 0) {
+          const flat = [];
+          sonuc.landmarks[0].forEach((lm) => {
+            flat.push(lm.x, lm.y, lm.z, lm.visibility ?? 0);
+          });
+          frames.push(flat);
+        }
+      }
 
       if (frames.length < 10) {
-        setVideoHata('Videoda yeterli vücut tespiti yapılamadı. Yandan, tüm vücudun göründüğü bir video yükleyin.');
+        setVideoHata(
+          'Videoda yeterli vücut tespiti yapılamadı. Çekim önerilerine uygun, net bir video yükleyin.'
+        );
         return;
       }
 
-      const res = await axios.post(`${apiUrl}${hareketConfig.endpoint}`, { frames }, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await axios.post(
+        `${apiUrl}${hareketConfig.endpoint}`,
+        { frames },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       setVideoSonuc(res.data);
     } catch (err) {
-      setVideoHata(err.response?.data?.detail || 'Video analizi sırasında hata oluştu.');
+      setVideoHata(
+        err.response?.data?.detail || 'Video analizi sırasında hata oluştu.'
+      );
     } finally {
+      if (poseLandmarker) poseLandmarker.close();
       setVideoYukleniyor(false);
     }
   };
@@ -385,7 +453,6 @@ function Dashboard() {
       if (streamRef.current) streamRef.current.getTracks().forEach((t) => t.stop());
       if (poseLandmarker) poseLandmarker.close();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const setPhaseSync = (val) => { phaseRef.current = val; setPhase(val); };
@@ -482,7 +549,7 @@ function Dashboard() {
       <Sidebar />
       <main className="md:ml-64 min-h-screen pt-16 md:pt-0 relative overflow-hidden flex flex-col">
         <div className="absolute top-20 md:top-6 left-1/2 -translate-x-1/2 z-30 flex flex-col md:flex-row items-center gap-2">
-          <div className="flex bg-surface-container rounded-full p-1 border border-outline-variant shadow-xl">
+          <div className="flex flex-wrap justify-center bg-surface-container rounded-2xl p-1 border border-outline-variant shadow-xl max-w-[95vw]">
             <button
               className={`px-6 py-2 rounded-full font-label-mono uppercase transition-all ${activeTab === 'canli' ? 'bg-primary-container text-on-primary-container font-bold' : 'text-on-surface-variant font-medium hover:text-on-surface'}`}
               onClick={() => setActiveTab('canli')}
@@ -497,13 +564,13 @@ function Dashboard() {
             </button>
           </div>
 
-          <div className="flex bg-surface-container rounded-full p-1 border border-outline-variant shadow-xl">
+          <div className="flex flex-wrap justify-center bg-surface-container rounded-2xl p-1 border border-outline-variant shadow-xl max-w-[95vw]">
             {Object.entries(HAREKETLER).map(([key, config]) => (
               <button
                 key={key}
                 disabled={phase === 'recording' || phase === 'countdown' || phase === 'analyzing'}
                 onClick={() => hareketDegistir(key)}
-                className={`px-4 py-2 rounded-full font-label-mono text-xs uppercase transition-all disabled:opacity-40 ${
+                className={`px-3 py-2 rounded-full font-label-mono text-[10px] uppercase transition-all disabled:opacity-40 ${
                   hareket === key
                     ? 'bg-primary text-on-primary font-bold'
                     : 'text-on-surface-variant hover:text-on-surface'
