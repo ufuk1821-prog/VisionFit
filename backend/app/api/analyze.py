@@ -296,22 +296,39 @@ def save_history(
 
 
 def predict_squat_score(frame: Sequence[float]) -> float:
-    """RandomForest çıktısını sert 0/100 yerine doğru-squat olasılığı olarak döndürür."""
+    """
+    RandomForest kararını puana dönüştürür.
+
+    Eski sürümde doğru squat olasılığı doğrudan skor olarak kullanılıyordu.
+    Model doğru sınıfı seçse bile %55-%70 güven üretirse düzgün bir squat
+    gereksiz yere düşük puan alabiliyordu.
+
+    Yeni sürümde:
+    - doğru_squat tahmini 75-100 puan aralığına,
+    - yanlış_squat tahmini 0-55 puan aralığına
+    ölçeklenir.
+
+    Böylece sınıf kararı korunur; yalnızca güven yüzdesinin genel skoru
+    gereğinden fazla aşağı çekmesi engellenir.
+    """
     if IS_TESTING:
         return 90.0
     if model is None:
         return 50.0
+
     try:
         features = list(frame[:MIN_FRAME_LENGTH])
         prediction_frame = pd.DataFrame([features])
-        probabilities = model.predict_proba(prediction_frame)[0]
-        classes = [str(item) for item in model.classes_]
-        if "dogru_squat" in classes:
-            index = classes.index("dogru_squat")
-            return round(float(probabilities[index]) * 100.0, 2)
+
         prediction = str(model.predict(prediction_frame)[0])
-        confidence = float(np.max(probabilities) * 100.0)
-        return confidence if prediction == "dogru_squat" else 100.0 - confidence
+        probabilities = model.predict_proba(prediction_frame)[0]
+        confidence = float(np.max(probabilities))
+
+        if prediction == "dogru_squat":
+            return round(_clamp(75.0 + confidence * 25.0), 2)
+
+        return round(_clamp((1.0 - confidence) * 55.0), 2)
+
     except Exception as exc:
         print(f"Squat model tahmin hatası: {exc}")
         return 50.0
@@ -341,8 +358,14 @@ def analyze_single_frame_squat(
 
     in_squat = 55.0 <= knee_angle <= 145.0
 
-    spine_score = score_from_error(max(0.0, torso_from_vertical - 8.0), 50.0)
-    depth_score = score_from_error(abs(knee_angle - 90.0), 60.0)
+    spine_score = score_from_error(max(0.0, torso_from_vertical - 10.0), 55.0)
+
+    if 65.0 <= knee_angle <= 105.0:
+        depth_score = 100.0
+    elif knee_angle > 105.0:
+        depth_score = score_from_error(knee_angle - 105.0, 55.0)
+    else:
+        depth_score = score_from_error(65.0 - knee_angle, 45.0)
 
     knee_over_toe = normalized_distance(abs(knee[0] - ankle[0]), shin_length)
     knee_alignment_score = score_from_error(max(0.0, knee_over_toe - 0.08), 0.80)
@@ -456,9 +479,9 @@ async def analyze_session(
 
     general_score = round(
         _clamp(
-            ml_score * 0.10
+            ml_score * 0.15
             + spine_score * 0.25
-            + depth_score * 0.30
+            + depth_score * 0.25
             + knee_score * 0.20
             + balance_score * 0.15
         ) * 2.0
@@ -470,7 +493,11 @@ async def analyze_session(
         "Genel squat formunda geliştirilmesi gereken noktalar var.",
     )
     spine = category(spine_score, "Gövde kontrolü ve omurga hizası korunuyor.", "Gövde kontrolünde bozulma var. Göğsünüzü kontrollü tutun.")
-    depth = category(depth_score, "Squat derinliği yeterli.", "Squat derinliği uygun değil. Kontrollü biçimde yaklaşık 90° diz açısına inin.")
+    depth = category(
+        depth_score,
+        "Squat derinliği yeterli.",
+        "Squat derinliği uygun değil. Kontrollü biçimde diz seviyesine veya biraz altına inmeyi deneyin.",
+    )
     knee_alignment = category(knee_score, "Diz ve ayak bileği hizası yandan görünümde dengeli.", "Diz-ayak bileği hizasında belirgin sapma var.")
     valgus = KategoriSonuc(skor=0.0, mesaj="Diz içe çöküşü yandan çekimde güvenilir biçimde ölçülemez; önden çekim gerekir.")
     balance = category(balance_score, "Ağırlık merkezi ayak tabanı üzerinde dengeli.", "Ağırlık merkezi öne veya arkaya kayıyor.")
