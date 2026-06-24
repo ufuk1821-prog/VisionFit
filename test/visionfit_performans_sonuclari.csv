@@ -1,6 +1,0 @@
-﻿"Islem","IstekSayisi","OrtalamaSn","EnDusukSn","EnYuksekSn","Basarili","Basarisiz","BasariOrani"
-"KullanÄ±cÄ± GiriÅŸi (/api/auth/login)","20","1,628","0,077","2,072","19","1","95"
-"Profil Getirme (/api/users/me)","20","0,064","0,058","0,079","20","0","100"
-"Su KaydÄ± Ekleme (/api/nutrition/water)","20","0,076","0,07","0,091","20","0","100"
-"Squat Analizi (/api/analyze/session)","10","0,069","0,062","0,097","0","10","0"
-"LLM SÄ±cak Ä°stek (/api/yerel-ai/diyet-onerisi)","10","29,802","28,733","33,208","10","0","100"

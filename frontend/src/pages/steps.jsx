@@ -33,6 +33,20 @@ function Steps() {
       .then((res) => setKayitlar(res.data)).catch(() => {});
   };
 
+  const kayitSil = async (id) => {
+    if (!window.confirm('Bu adım kaydını silmek istediğinize emin misiniz?')) return;
+
+    try {
+      await axios.delete(
+        `${import.meta.env.VITE_API_URL}/api/steps/${id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setKayitlar((onceki) => onceki.filter((kayit) => kayit.id !== id));
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Kayıt silinemedi.');
+    }
+  };
+
   useEffect(() => { fetchKayitlar(); }, []);
 
   const handleSubmit = async (e) => {
@@ -201,11 +215,11 @@ function Steps() {
                 <h3 className="font-headline-md text-headline-md text-on-surface">Aktivite Geçmişi</h3>
               </div>
 
-              {kayitlar.length === 0 ? (
+              {secilenGunKayitlari.length === 0 ? (
                 <div className="p-8"><EmptyState type="footprint" title="Henüz adım kaydı yok" description="Yukarıdaki formdan günlük adım sayını ekleyerek takibe başla." /></div>
               ) : (
                 <div className="divide-y divide-outline-variant">
-                  {kayitlar.map((k) => {
+                  {secilenGunKayitlari.map((k) => {
                     const aktivite = AKTIVITE_OPTIONS.find((o) => o.value === k.aktivite_tipi);
                     return (
                       <div key={k.id} className="p-6 md:p-7 flex items-center justify-between hover:bg-surface-container-high transition-colors">
@@ -218,9 +232,20 @@ function Steps() {
                             <p className="text-sm text-on-surface-variant font-label-mono mt-0.5">{new Date(k.tarih).toLocaleString('tr-TR')}</p>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="font-stat-lg text-2xl text-primary">{k.adim_sayisi.toLocaleString('tr-TR')}</p>
-                          <p className="text-xs text-on-surface-variant font-label-mono uppercase">ADIM</p>
+                        <div className="flex items-center gap-4">
+                          <div className="text-right">
+                            <p className="font-stat-lg text-2xl text-primary">{k.adim_sayisi.toLocaleString('tr-TR')}</p>
+                            <p className="text-xs text-on-surface-variant font-label-mono uppercase">ADIM</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => kayitSil(k.id)}
+                            className="w-10 h-10 rounded-lg border border-brand-red/40 text-brand-red hover:bg-brand-red/10 transition-colors flex items-center justify-center"
+                            aria-label="Adım kaydını sil"
+                            title="Kaydı sil"
+                          >
+                            <span className="material-symbols-outlined text-[20px]">delete</span>
+                          </button>
                         </div>
                       </div>
                     );
