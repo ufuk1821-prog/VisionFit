@@ -15,7 +15,6 @@ const HAREKETLER = {
       omurga_notrluğu: 'Omurga Nötrlüğü',
       kalca_derinligi: 'Kalça Derinliği',
       diz_hizasi: 'Diz Hizası',
-      diz_cokusu: 'Diz Çöküşü',
       agirlik_merkezi: 'Ağırlık Merkezi',
     },
     videoIpuclari: [

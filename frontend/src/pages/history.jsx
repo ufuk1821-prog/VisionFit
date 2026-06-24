@@ -7,6 +7,10 @@ import EmptyState from '../components/EmptyState';
 
 const HAREKET_BILGI = {
   squat_session: { etiket: 'Squat', tip: 'oturum', icon: 'fitness_center' },
+  deadlift_session: { etiket: 'Deadlift', tip: 'oturum', icon: 'fitness_center' },
+  biceps_curl_session: { etiket: 'Biceps Curl', tip: 'oturum', icon: 'fitness_center' },
+  shoulder_press_session: { etiket: 'Shoulder Press', tip: 'oturum', icon: 'fitness_center' },
+  lateral_raise_session: { etiket: 'Lateral Raise', tip: 'oturum', icon: 'fitness_center' },
   dogru_squat: { etiket: 'Squat', tip: 'anlik', icon: 'fitness_center' },
   yanlis_squat: { etiket: 'Squat', tip: 'anlik', icon: 'fitness_center' },
   plank: { etiket: 'Plank', tip: 'anlik', icon: 'self_improvement' },

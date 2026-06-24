@@ -45,7 +45,6 @@ const List<_HareketAyari> _hareketler = [
       'omurga_notrluğu': 'Omurga Nötrlüğü',
       'kalca_derinligi': 'Kalça Derinliği',
       'diz_hizasi': 'Diz Hizası',
-      'diz_cokusu': 'Diz Çöküşü',
       'agirlik_merkezi': 'Ağırlık Merkezi',
     },
   ),
@@ -79,6 +78,40 @@ const List<_HareketAyari> _hareketler = [
       'govde_salinimi': 'Gövde Salınımı',
       'hareket_acikligi': 'Hareket Açıklığı',
       'bilek_hizasi': 'Bilek Hizası',
+    },
+  ),
+  _HareketAyari(
+    id: 'shoulder_press',
+    etiket: 'Shoulder Press',
+    endpoint: '/api/analyze/shoulder-press-session',
+    aciklama:
+        'Önden çekilmiş, iki kolun ve gövdenin net göründüğü bir shoulder press videosu yükleyin.',
+    canliTalimat: 'Shoulder press yapın! 🏋️',
+    kadrajUyarisi:
+        'Kameraya önden dönün; omuz, dirsek, bilek ve kalçalar kadrajda olsun.',
+    kategoriler: {
+      'hareket_acikligi': 'Hareket Açıklığı',
+      'dirsek_bilek_hizasi': 'Dirsek-Bilek Hizası',
+      'sag_sol_simetri': 'Sağ-Sol Simetri',
+      'ust_kilitleme': 'Üst Kilitleme',
+      'govde_kontrolu': 'Gövde Kontrolü',
+    },
+  ),
+  _HareketAyari(
+    id: 'lateral_raise',
+    etiket: 'Lateral Raise',
+    endpoint: '/api/analyze/lateral-raise-session',
+    aciklama:
+        'Önden çekilmiş, iki kolun omuz seviyesine kadar yükseldiği bir lateral raise videosu yükleyin.',
+    canliTalimat: 'Lateral raise yapın! 💪',
+    kadrajUyarisi:
+        'Kameraya önden dönün; iki kol, omuzlar ve kalçalar kadrajda olsun.',
+    kategoriler: {
+      'kol_kaldirma_acisi': 'Kol Kaldırma Açısı',
+      'sag_sol_simetri': 'Sağ-Sol Simetri',
+      'dirsek_pozisyonu': 'Dirsek Pozisyonu',
+      'govde_salinimi': 'Gövde Salınımı',
+      'hareket_acikligi': 'Hareket Açıklığı',
     },
   ),
 ];
@@ -175,11 +208,12 @@ class _KameraEkraniState extends State<KameraEkrani> with SingleTickerProviderSt
         color: kSurfaceLow(context),
         border: Border(bottom: BorderSide(color: kBorder(context))),
       ),
-      child: Row(
-        children: _hareketler.map((hareket) {
-          final secili = hareket.id == _secilenHareket.id;
-          return Expanded(
-            child: Padding(
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: _hareketler.map((hareket) {
+            final secili = hareket.id == _secilenHareket.id;
+            return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 3),
               child: GestureDetector(
                 onTap: () {
@@ -192,7 +226,11 @@ class _KameraEkraniState extends State<KameraEkrani> with SingleTickerProviderSt
                 },
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 180),
-                  padding: const EdgeInsets.symmetric(vertical: 9),
+                  constraints: const BoxConstraints(minWidth: 92),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 9,
+                  ),
                   decoration: BoxDecoration(
                     color: secili ? kRed : kSurfaceContainer(context),
                     borderRadius: BorderRadius.circular(9),
@@ -211,9 +249,9 @@ class _KameraEkraniState extends State<KameraEkrani> with SingleTickerProviderSt
                   ),
                 ),
               ),
-            ),
-          );
-        }).toList(),
+            );
+          }).toList(),
+        ),
       ),
     );
   }
@@ -556,7 +594,7 @@ class _CanliAnalizSekmeState extends State<_CanliAnalizSekme> {
                 Text('$_toplananKare kare toplandı', style: kBody(context, size: 13, weight: FontWeight.w600, color: kGreen)),
               ]),
               const SizedBox(height: 6),
-              Text('Squat yapın! 🏋️', style: kBody(context, size: 15, weight: FontWeight.w600, color: Colors.white)),
+              Text(widget.hareket.canliTalimat, style: kBody(context, size: 15, weight: FontWeight.w600, color: Colors.white)),
             ]),
           ),
           const SizedBox(height: 20),
@@ -986,7 +1024,6 @@ class _VideoAnalizSekmeState extends State<_VideoAnalizSekme> {
                   _kategoriSkoru(context, 'Omurga Nötrlüğü', _sonuc!['omurga_notrluğu']?['skor']),
                   _kategoriSkoru(context, 'Kalça Derinliği', _sonuc!['kalca_derinligi']?['skor']),
                   _kategoriSkoru(context, 'Diz Hizası', _sonuc!['diz_hizasi']?['skor']),
-                  _kategoriSkoru(context, 'Diz Çöküşü', _sonuc!['diz_cokusu']?['skor']),
                   _kategoriSkoru(context, 'Ağırlık Merkezi', _sonuc!['agirlik_merkezi']?['skor']),
                 ]),
               ],

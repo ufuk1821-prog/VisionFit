@@ -31,7 +31,6 @@ class SessionResult(BaseModel):
     diz_hizasi: KategoriSonuc
     omurga_notrluğu: KategoriSonuc
     kalca_derinligi: KategoriSonuc
-    diz_cokusu: KategoriSonuc
     agirlik_merkezi: KategoriSonuc
     olumlu_mesaj: str
     gelistirilecek_mesaj: str

@@ -179,7 +179,6 @@ def build_biceps_curl_motion_frames():
 
 
 def build_deadlift_frame(progress):
-    # progress=0: alt pozisyon, progress=1: kilitlenme
     hip = (0.45 + 0.05 * progress, 0.58 - 0.03 * progress)
     knee = (0.50, 0.72)
     ankle = (0.50, 0.92)
@@ -219,6 +218,99 @@ def build_deadlift_motion_frames():
     return [build_deadlift_frame(progress) for progress in phases]
 
 
+
+
+def build_arm_motion_frame(shoulder_angle, elbow_angle):
+    import math
+
+    left_shoulder = (0.40, 0.35)
+    right_shoulder = (0.60, 0.35)
+    left_hip = (0.43, 0.72)
+    right_hip = (0.57, 0.72)
+    upper_length = 0.18
+    forearm_length = 0.18
+
+    left_upper_direction = math.radians(90.0 + shoulder_angle)
+    right_upper_direction = math.radians(90.0 - shoulder_angle)
+
+    left_elbow = (
+        left_shoulder[0] + upper_length * math.cos(left_upper_direction),
+        left_shoulder[1] + upper_length * math.sin(left_upper_direction),
+    )
+    right_elbow = (
+        right_shoulder[0] + upper_length * math.cos(right_upper_direction),
+        right_shoulder[1] + upper_length * math.sin(right_upper_direction),
+    )
+
+    left_to_shoulder = math.atan2(
+        left_shoulder[1] - left_elbow[1],
+        left_shoulder[0] - left_elbow[0],
+    )
+    right_to_shoulder = math.atan2(
+        right_shoulder[1] - right_elbow[1],
+        right_shoulder[0] - right_elbow[0],
+    )
+
+    left_forearm_direction = left_to_shoulder - math.radians(elbow_angle)
+    right_forearm_direction = right_to_shoulder + math.radians(elbow_angle)
+
+    left_wrist = (
+        left_elbow[0] + forearm_length * math.cos(left_forearm_direction),
+        left_elbow[1] + forearm_length * math.sin(left_forearm_direction),
+    )
+    right_wrist = (
+        right_elbow[0] + forearm_length * math.cos(right_forearm_direction),
+        right_elbow[1] + forearm_length * math.sin(right_forearm_direction),
+    )
+
+    return _pose_frame({
+        11: (*left_shoulder, 0.0, 0.98),
+        12: (*right_shoulder, 0.0, 0.98),
+        13: (*left_elbow, 0.0, 0.98),
+        14: (*right_elbow, 0.0, 0.98),
+        15: (*left_wrist, 0.0, 0.98),
+        16: (*right_wrist, 0.0, 0.98),
+        23: (*left_hip, 0.0, 0.98),
+        24: (*right_hip, 0.0, 0.98),
+    })
+
+
+def build_shoulder_press_motion_frames():
+    phases = [
+        (70, 90),
+        (85, 105),
+        (105, 125),
+        (125, 145),
+        (145, 165),
+        (160, 175),
+        (145, 165),
+        (125, 145),
+        (100, 120),
+        (75, 95),
+    ]
+    return [
+        build_arm_motion_frame(shoulder_angle, elbow_angle)
+        for shoulder_angle, elbow_angle in phases
+    ]
+
+
+def build_lateral_raise_motion_frames():
+    phases = [
+        (15, 165),
+        (25, 165),
+        (40, 165),
+        (60, 165),
+        (80, 165),
+        (95, 165),
+        (80, 165),
+        (60, 165),
+        (35, 165),
+        (15, 165),
+    ]
+    return [
+        build_arm_motion_frame(shoulder_angle, elbow_angle)
+        for shoulder_angle, elbow_angle in phases
+    ]
 
 def test_11_squat_eksik_landmark_hatasi():
     token = get_token("squat1@test.com")
@@ -1103,3 +1195,65 @@ def test_65_deadlift_hareket_yoksa_reddedilir():
         headers={"Authorization": f"Bearer {token}"},
     )
     assert response.status_code == 400
+
+def test_66_shoulder_press_session_basarili():
+    token = get_token("shoulder-press-session@test.com")
+    response = client.post(
+        "/api/analyze/shoulder-press-session",
+        json={"frames": build_shoulder_press_motion_frames()},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert 0 <= data["genel_skor"] <= 100
+    assert data["analiz_kare"] >= 8
+    assert {
+        "hareket_acikligi",
+        "dirsek_bilek_hizasi",
+        "sag_sol_simetri",
+        "ust_kilitleme",
+        "govde_kontrolu",
+    } <= set(data)
+
+
+def test_67_shoulder_press_hareket_yoksa_reddedilir():
+    token = get_token("shoulder-press-static@test.com")
+    static_frame = build_arm_motion_frame(90, 120)
+    response = client.post(
+        "/api/analyze/shoulder-press-session",
+        json={"frames": [static_frame for _ in range(8)]},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 400
+
+
+def test_68_lateral_raise_session_basarili():
+    token = get_token("lateral-raise-session@test.com")
+    response = client.post(
+        "/api/analyze/lateral-raise-session",
+        json={"frames": build_lateral_raise_motion_frames()},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert 0 <= data["genel_skor"] <= 100
+    assert data["analiz_kare"] >= 8
+    assert {
+        "kol_kaldirma_acisi",
+        "sag_sol_simetri",
+        "dirsek_pozisyonu",
+        "govde_salinimi",
+        "hareket_acikligi",
+    } <= set(data)
+
+
+def test_69_lateral_raise_hareket_yoksa_reddedilir():
+    token = get_token("lateral-raise-static@test.com")
+    static_frame = build_arm_motion_frame(45, 165)
+    response = client.post(
+        "/api/analyze/lateral-raise-session",
+        json={"frames": [static_frame for _ in range(8)]},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 400
+

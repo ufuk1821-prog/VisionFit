@@ -177,24 +177,6 @@ def point(lm_flat: Sequence[float], idx: int) -> Point:
     return x, y
 
 
-def point_xz(lm_flat: Sequence[float], idx: int) -> Point:
-    x, _, z, _ = extract_landmark(lm_flat, idx)
-    return x, z
-
-
-def point_line_distance(value: Point, start: Point, end: Point) -> float:
-    line_length = point_distance(start, end)
-    if line_length < EPSILON:
-        return 0.0
-    numerator = abs(
-        (end[1] - start[1]) * value[0]
-        - (end[0] - start[0]) * value[1]
-        + end[0] * start[1]
-        - end[1] * start[0]
-    )
-    return float(numerator / line_length)
-
-
 def visibility(lm_flat: Sequence[float], idx: int) -> float:
     return extract_landmark(lm_flat, idx)[3]
 
@@ -321,16 +303,6 @@ def analyze_single_frame_squat(
     knee_over_toe = normalized_distance(abs(knee[0] - ankle[0]), shin_length)
     knee_alignment_score = score_from_error(max(0.0, knee_over_toe - 0.12), 0.85)
 
-    hip_xz = point_xz(lm_flat, selected[1])
-    knee_xz = point_xz(lm_flat, selected[2])
-    ankle_xz = point_xz(lm_flat, selected[3])
-    leg_line_length = point_distance(hip_xz, ankle_xz)
-    valgus_deviation = normalized_distance(
-        point_line_distance(knee_xz, hip_xz, ankle_xz),
-        leg_line_length,
-    )
-    valgus_score = score_from_error(max(0.0, valgus_deviation - 0.035), 0.20)
-
     body_center_x = shoulder[0] * 0.20 + hip[0] * 0.55 + knee[0] * 0.25
     balance_error = normalized_distance(abs(body_center_x - ankle[0]), torso_length)
     balance_score = score_from_error(max(0.0, balance_error - 0.12), 0.75)
@@ -342,7 +314,6 @@ def analyze_single_frame_squat(
         "spine_score": spine_score,
         "depth_score": depth_score,
         "knee_alignment_score": knee_alignment_score,
-        "valgus_score": valgus_score,
         "balance_score": balance_score,
     }
 
@@ -363,11 +334,10 @@ async def analyze_squat(
     angle = int(round(float(result["knee_angle"])))
     geometric_score = round(
         _clamp(
-            float(result["spine_score"]) * 0.22
-            + float(result["depth_score"]) * 0.25
-            + float(result["knee_alignment_score"]) * 0.18
-            + float(result["valgus_score"]) * 0.15
-            + float(result["balance_score"]) * 0.20
+            float(result["spine_score"]) * 0.25
+            + float(result["depth_score"]) * 0.30
+            + float(result["knee_alignment_score"]) * 0.20
+            + float(result["balance_score"]) * 0.25
         ),
         1,
     )
@@ -454,16 +424,14 @@ async def analyze_session(
     spine_score = robust_score("spine_score", dip_frames)
     depth_score = robust_score("depth_score", dip_frames)
     knee_score = robust_score("knee_alignment_score", dip_frames)
-    valgus_score = robust_score("valgus_score", dip_frames)
     balance_score = robust_score("balance_score", dip_frames)
 
     general_score = round(
         _clamp(
-            spine_score * 0.22
-            + depth_score * 0.25
-            + knee_score * 0.18
-            + valgus_score * 0.15
-            + balance_score * 0.20
+            spine_score * 0.25
+            + depth_score * 0.30
+            + knee_score * 0.20
+            + balance_score * 0.25
         ) * 2.0
     ) / 2.0
 
@@ -475,7 +443,6 @@ async def analyze_session(
     spine = category(spine_score, "Gövde kontrolü ve omurga hizası korunuyor.", "Gövde kontrolünde bozulma var. Göğsünüzü kontrollü tutun.")
     depth = category(depth_score, "Squat derinliği yeterli.", "Squat derinliği uygun değil. Diz seviyesine veya biraz altına kontrollü biçimde inin.")
     knee_alignment = category(knee_score, "Diz ve ayak bileği hizası dengeli.", "Diz-ayak bileği hizasında belirgin sapma var.")
-    valgus = category(valgus_score, "Dizlerin kalça-ayak bileği hattı korunuyor.", "Dizlerde içe veya dışa doğru sapma tespit edildi.")
     balance = category(balance_score, "Ağırlık merkezi ayak tabanı üzerinde dengeli.", "Ağırlık merkezi öne veya arkaya kayıyor.")
 
     _, problems, positive_message, improvement_message = build_summary([
@@ -483,7 +450,6 @@ async def analyze_session(
         ("omurga nötrlüğü", spine_score),
         ("kalça derinliği", depth_score),
         ("diz hizası", knee_score),
-        ("diz çöküşü", valgus_score),
         ("ağırlık merkezi", balance_score),
     ])
 
@@ -499,7 +465,6 @@ async def analyze_session(
         omurga_notrluğu=spine,
         kalca_derinligi=depth,
         diz_hizasi=knee_alignment,
-        diz_cokusu=valgus,
         agirlik_merkezi=balance,
         olumlu_mesaj=positive_message,
         gelistirilecek_mesaj=improvement_message,
