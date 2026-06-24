@@ -293,12 +293,12 @@ def analyze_single_frame_squat(
 
     spine_score = score_from_error(max(0.0, torso_from_vertical - 18.0), 48.0)
 
-    if 65.0 <= knee_angle <= 105.0:
+    if 85.0 <= knee_angle <= 95.0:
         depth_score = 100.0
-    elif knee_angle > 105.0:
-        depth_score = score_from_error(knee_angle - 105.0, 55.0)
+    elif knee_angle < 85.0:
+        depth_score = score_from_error(85.0 - knee_angle, 50.0)
     else:
-        depth_score = score_from_error(65.0 - knee_angle, 45.0)
+        depth_score = score_from_error(knee_angle - 95.0, 55.0)
 
     knee_over_toe = normalized_distance(abs(knee[0] - ankle[0]), shin_length)
     knee_alignment_score = score_from_error(max(0.0, knee_over_toe - 0.12), 0.85)
@@ -441,7 +441,7 @@ async def analyze_session(
         "Genel squat formunda geliştirilmesi gereken noktalar var.",
     )
     spine = category(spine_score, "Gövde kontrolü ve omurga hizası korunuyor.", "Gövde kontrolünde bozulma var. Göğsünüzü kontrollü tutun.")
-    depth = category(depth_score, "Squat derinliği yeterli.", "Squat derinliği uygun değil. Diz seviyesine veya biraz altına kontrollü biçimde inin.")
+    depth = category(depth_score, "Squat derinliği yeterli.", "Squat derinliği uygun değil. Kontrollü biçimde yaklaşık 85-95 derece diz açısına inmeyi deneyin.")
     knee_alignment = category(knee_score, "Diz ve ayak bileği hizası dengeli.", "Diz-ayak bileği hizasında belirgin sapma var.")
     balance = category(balance_score, "Ağırlık merkezi ayak tabanı üzerinde dengeli.", "Ağırlık merkezi öne veya arkaya kayıyor.")
 
