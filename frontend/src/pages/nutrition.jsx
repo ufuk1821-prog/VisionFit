@@ -249,14 +249,16 @@ function Nutrition() {
             </AnimatePresence>
 
             <div>
-              <h3 className="font-label-mono text-label-mono uppercase text-on-surface-variant tracking-widest mb-4">BUGÜNKÜ ÖĞÜNLER</h3>
-              <div className="space-y-4">
+              <h3 className="font-label-mono text-label-mono uppercase text-on-surface-variant tracking-widest mb-4">
+                {bugunMu ? 'BUGÜNKÜ ÖĞÜNLER' : `${formatTarihGoster(selectedDate)} ÖĞÜNLERİ`}
+              </h3>
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                 {OGUN_OPTIONS.map((ogun) => {
                   const ogunMeals = meals.filter((m) => m.ogun_tipi === ogun.value);
-                  if (ogunMeals.length === 0) return null;
-                  const ogunKalori = ogunMeals.reduce((acc, m) => acc + m.kalori, 0);
+                  const ogunKalori = ogunMeals.reduce((acc, m) => acc + Number(m.kalori || 0), 0);
+
                   return (
-                    <div key={ogun.value} className="p-4 bg-surface-container-low border border-outline-variant rounded-xl">
+                    <div key={ogun.value} className="p-4 bg-surface-container-low border border-outline-variant rounded-xl min-h-[170px]">
                       <div className="flex justify-between items-center mb-4">
                         <div className="flex items-center gap-2">
                           <span className="material-symbols-outlined text-primary">{ogun.icon}</span>
@@ -264,27 +266,42 @@ function Nutrition() {
                         </div>
                         <span className="font-label-mono text-xs text-on-surface-variant">{Math.round(ogunKalori)} kcal</span>
                       </div>
-                      <div className="space-y-2">
-                        {ogunMeals.map((m) => (
-                          <div key={m.id} className="flex justify-between items-center text-base py-3 border-b border-outline-variant/30 last:border-b-0">
-                            <div>
-                              <span className="text-on-surface">{m.besin_adi} ({m.gram}g)</span>
-                              <div className="text-xs text-on-surface-variant/80 font-label-mono mt-0.5">P: {m.protein_g}g · K: {m.karbonhidrat_g}g · Y: {m.yag_g}g</div>
+
+                      {ogunMeals.length === 0 ? (
+                        <div className="h-[105px] flex items-center justify-center rounded-lg border border-dashed border-outline-variant/60 bg-surface-container-lowest/40">
+                          <p className="text-xs text-on-surface-variant font-label-mono text-center px-4">
+                            Bu öğüne henüz besin eklenmedi.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {ogunMeals.map((m) => (
+                            <div key={m.id} className="flex justify-between items-center gap-4 text-base py-3 border-b border-outline-variant/30 last:border-b-0">
+                              <div className="min-w-0">
+                                <span className="text-on-surface block truncate">{m.besin_adi} ({m.gram}g)</span>
+                                <div className="text-xs text-on-surface-variant/80 font-label-mono mt-0.5">
+                                  P: {m.protein_g}g · K: {m.karbonhidrat_g}g · Y: {m.yag_g}g
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3 shrink-0">
+                                <span className="font-label-mono text-brand-red font-bold">{m.kalori} kcal</span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteMeal(m.id)}
+                                  className="text-on-surface-variant hover:text-brand-red"
+                                  aria-label={`${m.besin_adi} kaydını sil`}
+                                  title="Kaydı sil"
+                                >
+                                  <span className="material-symbols-outlined text-lg">delete_outline</span>
+                                </button>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-3">
-                              <span className="font-label-mono text-brand-red font-bold">{m.kalori} kcal</span>
-                              <button onClick={() => handleDeleteMeal(m.id)} className="text-on-surface-variant hover:text-brand-red">
-                                <span className="material-symbols-outlined text-lg">delete_outline</span>
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
-
-                {meals.length === 0 && <EmptyState type="plate" title="Bugün için öğün kaydı yok" description="Yukarıdaki arama kutusundan bir besin seçerek öğün eklemeye başla." />}
               </div>
             </div>
           </div>
