@@ -361,33 +361,18 @@ def analyze_single_frame_squat(
     in_squat = 55.0 <= knee_angle <= 145.0
 
 
-    spine_score = score_from_error(max(0.0, torso_from_vertical - 8.0), 50.0)
-    depth_score = score_from_error(abs(knee_angle - 90.0), 60.0)
+    spine_score = score_from_error(max(0.0, torso_from_vertical - 20.0), 50.0)
+    depth_score = score_from_error(max(0.0, knee_angle - 105.0), 55.0)
 
     knee_over_toe = normalized_distance(abs(knee[0] - ankle[0]), shin_length)
-    knee_alignment_score = score_from_error(max(0.0, knee_over_toe - 0.08), 0.80)
+    knee_alignment_score = score_from_error(max(0.0, knee_over_toe - 0.10), 0.80)
 
-    valgus_errors: List[float] = []
-    for hip_idx, knee_idx, ankle_idx in [
-        (LEFT_HIP, LEFT_KNEE, LEFT_ANKLE),
-        (RIGHT_HIP, RIGHT_KNEE, RIGHT_ANKLE),
-    ]:
-        if landmarks_visible(lm_flat, [hip_idx, knee_idx, ankle_idx], threshold=0.40):
-            hip_xz = point_xz(lm_flat, hip_idx)
-            knee_xz = point_xz(lm_flat, knee_idx)
-            ankle_xz = point_xz(lm_flat, ankle_idx)
-            leg_scale = point_distance(hip_xz, ankle_xz)
-            if leg_scale >= EPSILON:
-                valgus_errors.append(
-                    point_line_distance(knee_xz, hip_xz, ankle_xz) / leg_scale
-                )
-
-    valgus_error = float(np.median(valgus_errors)) if valgus_errors else 0.0
-    valgus_score = score_from_error(max(0.0, valgus_error - 0.025), 0.28)
+    lateral_knee = abs(knee[0] - ankle[0]) / shin_length if shin_length > EPSILON else 0.0
+    valgus_score = score_from_error(max(0.0, lateral_knee - 0.22), 0.60)
 
     body_center_x = shoulder[0] * 0.20 + hip[0] * 0.55 + knee[0] * 0.25
     balance_error = normalized_distance(abs(body_center_x - ankle[0]), torso_length)
-    balance_score = score_from_error(max(0.0, balance_error - 0.05), 0.65)
+    balance_score = score_from_error(max(0.0, balance_error - 0.10), 0.70)
 
     return {
         "in_squat": in_squat,
@@ -499,11 +484,11 @@ async def analyze_session(
 
     general_score = round(
         _clamp(
-            ml_score * 0.10
-            + spine_score * 0.22
-            + depth_score * 0.28
+            ml_score * 0.15
+            + spine_score * 0.18
+            + depth_score * 0.25
             + knee_score * 0.15
-            + valgus_score * 0.10
+            + valgus_score * 0.12
             + balance_score * 0.15
         ) * 2.0
     ) / 2.0
