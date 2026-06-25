@@ -376,7 +376,7 @@ function Dashboard() {
   const [aiHata, setAiHata] = useState('');
   const [kategoriAcik, setKategoriAcik] = useState(false);
   const [onKamera, setOnKamera] = useState(true);
-  const [activeTab, setActiveTab] = useState('canli');
+  const [activeTab, setActiveTab] = useState('video');
   const [elapsedSec, setElapsedSec] = useState(0);
   const [hareket, setHareket] = useState('squat');
 
